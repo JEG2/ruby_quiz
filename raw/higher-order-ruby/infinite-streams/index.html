@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Higher-Order Ruby / Infinite Streams</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="In this fifth article of the Higher-Order Ruby series, I show how Ruby&#39;s classes can improve on the syntax of MJD&#39;s lazy streams.">
+    <meta name="keywords"    content="Perl, Functional Programming, Object Orientation, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/higher-order-ruby/infinite-streams/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/higher-order-ruby">Higher-Order Ruby</a></h1>
+            <span>A Rubyification of the Perl book about functional programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>20</h4>
+    <span>
+      FEB<br>
+      2006
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Infinite Streams</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/higher-order-ruby/iterators-chapters-4-and-5">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/higher-order-ruby/currying">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p>I've tried to summarize this chapter a couple of times now, but I keep getting tripped up over syntax.  So, let's talk about that…</p>
+
+<h4>Functional Perl</h4>
+
+<p>Obviously, the examples in the book can be more or less directly translated.  Here's a sample from the first couple of pages:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/local/bin/ruby -w</span>
+
+<span class="c1">### Stream Methods ###</span>
+
+<span class="k">def</span> <span class="nf">node</span><span class="p">(</span><span class="n">head</span><span class="p">,</span> <span class="n">tail</span><span class="p">)</span>
+  <span class="o">[</span><span class="n">head</span><span class="p">,</span> <span class="n">tail</span><span class="o">]</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">head</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+  <span class="n">stream</span><span class="o">.</span><span class="n">first</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">tail</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+  <span class="n">tail</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">last</span>
+  <span class="k">if</span> <span class="n">tail</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">Proc</span><span class="p">)</span>
+    <span class="n">tail</span><span class="o">.</span><span class="n">call</span>
+  <span class="k">else</span>
+    <span class="n">tail</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">drop</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+  <span class="n">head</span>                 <span class="o">=</span> <span class="n">head</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+  <span class="n">stream</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span><span class="p">,</span> <span class="n">stream</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">=</span> <span class="nb">Array</span><span class="p">(</span><span class="n">tail</span><span class="p">(</span><span class="n">stream</span><span class="p">))</span>
+  <span class="n">head</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">limit</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+  <span class="k">while</span> <span class="n">head</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">limit</span><span class="o">.</span><span class="n">nil?</span> <span class="ow">or</span> <span class="p">(</span><span class="n">limit</span> <span class="o">-=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="n">drop</span><span class="p">(</span><span class="n">stream</span><span class="p">),</span> <span class="vg">$,</span> <span class="o">||</span> <span class="s2">" "</span>
+  <span class="k">end</span>
+  <span class="nb">print</span> <span class="vg">$/</span>
+<span class="k">end</span>
+
+<span class="c1">### Examples ###</span>
+
+<span class="k">def</span> <span class="nf">upto</span><span class="p">(</span><span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span>
+  <span class="k">return</span> <span class="k">if</span> <span class="n">from</span> <span class="o">&gt;</span> <span class="n">to</span>
+  <span class="n">node</span><span class="p">(</span><span class="n">from</span><span class="p">,</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="n">upto</span><span class="p">(</span><span class="n">from</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span> <span class="p">})</span>
+<span class="k">end</span>
+<span class="n">show</span><span class="p">(</span><span class="n">upto</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>  <span class="c1"># =&gt; 3 4 5 6</span>
+
+<span class="k">def</span> <span class="nf">upfrom</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+  <span class="n">node</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="n">upfrom</span><span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="p">})</span>
+<span class="k">end</span>
+<span class="n">show</span><span class="p">(</span><span class="n">upfrom</span><span class="p">(</span><span class="mi">7</span><span class="p">),</span> <span class="mi">10</span><span class="p">)</span>  <span class="c1"># =&gt; 7 8 9 10 11 12 13 14 15 16</span>
+</pre></div>
+
+<p>Already though this is feeling very un-Rubyish, and it will only get worse if we keep going down this path.</p>
+
+<p>I suspect the main reason MJD took such a functional approach with his book is that Perl's objects can be heavy and awkward.  That doesn't make for great book examples.  Ruby isn't like that though and the previous code is just crying out to be objectified.</p>
+
+<h4>Ruby's Object Orientation</h4>
+
+<p>We will start at the beginning.  Clearly we need a constructor.  Now the whole point of all this is building lazy streams, so we're always going to be using some head value and a promise for the tail.  A promise is a chunk of code, and in Ruby we call that a block:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">LazyStream</span>
+  <span class="k">class</span> <span class="nc">Node</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">head</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">promise</span><span class="p">)</span>
+      <span class="vi">@head</span><span class="p">,</span> <span class="vi">@tail</span> <span class="o">=</span> <span class="n">head</span><span class="p">,</span> <span class="n">promise</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That's already an improvement, since it will allow us to drop the calls to <code>Kernel#lambda</code>.  The name is a bit lengthy, but we can easily fix that after we have the rest of this down.  For now, we're just tucking our work into a safe namespace.</p>
+
+<p>The next step is to restore access to the head and tail.  These are pretty simple readers in this form and while we are building them, let's add some Rubyish aliases:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">LazyStream</span>
+  <span class="k">class</span> <span class="nc">Node</span>
+    <span class="kp">attr_reader</span>  <span class="ss">:head</span>
+    <span class="n">alias_method</span> <span class="ss">:current</span><span class="p">,</span> <span class="ss">:head</span>
+
+    <span class="k">def</span> <span class="nf">tail</span>
+      <span class="k">if</span> <span class="vi">@tail</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">Proc</span><span class="p">)</span>
+        <span class="vi">@tail</span><span class="o">.</span><span class="n">call</span>
+      <span class="k">else</span>
+        <span class="vi">@tail</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+    <span class="n">alias_method</span> <span class="ss">:next</span><span class="p">,</span> <span class="ss">:tail</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Now, adding back support for drop is where things start to get a little tricky.  If a call to <code>LazyStream::Node#tail</code> returns a <code>LazyStream::Node</code>, we want that to replace the current <code>LazyStream::Node</code>.  If we get anything else, we'll just assign it normally.  Again, here's the code, with aliases:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">LazyStream</span>
+  <span class="k">class</span> <span class="nc">Node</span>
+    <span class="k">def</span> <span class="nf">drop</span>
+      <span class="n">result</span><span class="p">,</span> <span class="n">next_stream</span> <span class="o">=</span> <span class="n">head</span><span class="p">,</span> <span class="n">tail</span>
+      <span class="vi">@head</span><span class="p">,</span> <span class="vi">@tail</span>        <span class="o">=</span> <span class="k">if</span> <span class="n">next_stream</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="p">)</span>
+        <span class="n">next_stream</span><span class="o">.</span><span class="n">instance_eval</span> <span class="p">{</span> <span class="o">[</span><span class="vi">@head</span><span class="p">,</span> <span class="vi">@tail</span><span class="o">]</span> <span class="p">}</span>
+      <span class="k">else</span>
+        <span class="nb">Array</span><span class="p">(</span><span class="n">next_stream</span><span class="p">)</span>
+      <span class="k">end</span>
+      <span class="n">result</span>
+    <span class="k">end</span>
+    <span class="n">alias_method</span> <span class="ss">:tail!</span><span class="p">,</span> <span class="ss">:drop</span>
+    <span class="n">alias_method</span> <span class="ss">:next!</span><span class="p">,</span> <span class="ss">:drop</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>When using our objectified <code>LazyStream</code>, users won't see a <code>nil</code> return for streams that terminate.  Because of that, we should add methods for checking if we are at the end of a stream:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">LazyStream</span>
+  <span class="k">class</span> <span class="nc">Node</span>
+    <span class="k">def</span> <span class="nf">end?</span>
+      <span class="vi">@tail</span><span class="o">.</span><span class="n">nil?</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">next?</span>
+      <span class="o">!</span><span class="k">end</span><span class="p">?</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Let's add a quick <code>LazyStream::Node#show</code> and see how we have done.  We will again toss in an alias, an I'm sorry, but the ugly Perl variables have to go:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">LazyStream</span>
+  <span class="k">class</span> <span class="nc">Node</span>
+    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="o">*</span><span class="n">limit_and_options</span><span class="p">)</span>
+      <span class="n">options</span> <span class="o">=</span> <span class="p">{</span><span class="ss">:sep</span> <span class="o">=&gt;</span> <span class="s2">" "</span><span class="p">,</span> <span class="ss">:end</span> <span class="o">=&gt;</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">}</span><span class="o">.</span><span class="n">merge!</span><span class="p">(</span>
+        <span class="n">limit_and_options</span><span class="o">.</span><span class="n">last</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">Hash</span><span class="p">)</span> <span class="p">?</span> <span class="n">limit_and_options</span><span class="o">.</span><span class="n">pop</span> <span class="p">:</span> <span class="no">Hash</span><span class="o">.</span><span class="n">new</span>
+      <span class="p">)</span>
+      <span class="n">limit</span> <span class="o">=</span> <span class="n">limit_and_options</span><span class="o">.</span><span class="n">shift</span>
+
+      <span class="k">while</span> <span class="n">head</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">limit</span><span class="o">.</span><span class="n">nil?</span> <span class="ow">or</span> <span class="p">(</span><span class="n">limit</span> <span class="o">-=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="n">drop</span><span class="p">,</span> <span class="n">options</span><span class="o">[</span><span class="ss">:sep</span><span class="o">]</span>
+      <span class="k">end</span>
+      <span class="nb">print</span> <span class="n">options</span><span class="o">[</span><span class="ss">:end</span><span class="o">]</span>
+    <span class="k">end</span>
+    <span class="n">alias_method</span> <span class="ss">:display</span><span class="p">,</span> <span class="ss">:show</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>On with the examples:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/local/bin/ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"lazy_stream"</span>
+
+<span class="k">def</span> <span class="nf">upto</span><span class="p">(</span><span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span>
+  <span class="k">return</span> <span class="k">if</span> <span class="n">from</span> <span class="o">&gt;</span> <span class="n">to</span>
+  <span class="no">LazyStream</span><span class="o">::</span><span class="no">Node</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">from</span><span class="p">)</span> <span class="p">{</span> <span class="n">upto</span><span class="p">(</span><span class="n">from</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span> <span class="p">}</span>
+<span class="k">end</span>
+<span class="n">upto</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">show</span>  <span class="c1"># =&gt; 3 4 5 6</span>
+
+<span class="k">def</span> <span class="nf">upfrom</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+  <span class="no">LazyStream</span><span class="o">::</span><span class="no">Node</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">start</span><span class="p">)</span> <span class="p">{</span> <span class="n">upfrom</span><span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="p">}</span>
+<span class="k">end</span>
+<span class="n">upfrom</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># =&gt; 7 8 9 10 11 12 13 14 15 16</span>
+</pre></div>
+
+<p>We're making progress.  This is starting to feel more like Ruby.  Time for me to make good on my promise for a shorter constructor though.  We can just add this to the end of lazy_stream.rb:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Kernel</span>
+  <span class="k">def</span> <span class="nf">lazy_stream</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+    <span class="no">LazyStream</span><span class="o">::</span><span class="no">Node</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That allows us to trim our functional usage to:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/local/bin/ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"lazy_stream"</span>
+
+<span class="k">def</span> <span class="nf">upto</span><span class="p">(</span><span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span>
+  <span class="k">return</span> <span class="k">if</span> <span class="n">from</span> <span class="o">&gt;</span> <span class="n">to</span>
+  <span class="n">lazy_stream</span><span class="p">(</span><span class="n">from</span><span class="p">)</span> <span class="p">{</span> <span class="n">upto</span><span class="p">(</span><span class="n">from</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span> <span class="p">}</span>
+<span class="k">end</span>
+<span class="n">upto</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">show</span>  <span class="c1"># =&gt; 3 4 5 6</span>
+
+<span class="k">def</span> <span class="nf">upfrom</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+  <span class="n">lazy_stream</span><span class="p">(</span><span class="n">start</span><span class="p">)</span> <span class="p">{</span> <span class="n">upfrom</span><span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="p">}</span>
+<span class="k">end</span>
+<span class="n">upfrom</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># =&gt; 7 8 9 10 11 12 13 14 15 16</span>
+</pre></div>
+
+<p>Even better though, this is Ruby and we can make full objects:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/local/bin/ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"lazy_stream"</span>
+
+<span class="k">class</span> <span class="nc">Upto</span> <span class="o">&lt;</span> <span class="no">LazyStream</span><span class="o">::</span><span class="no">Node</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">from</span> <span class="o">&gt;</span> <span class="n">to</span>
+      <span class="k">super</span><span class="p">(</span><span class="kp">nil</span><span class="p">,</span> <span class="o">&amp;</span><span class="kp">nil</span><span class="p">)</span>
+    <span class="k">else</span>
+      <span class="k">super</span><span class="p">(</span><span class="n">from</span><span class="p">)</span> <span class="p">{</span> <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">from</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span> <span class="p">}</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="no">Upto</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">show</span>  <span class="c1"># =&gt; 3 4 5 6</span>
+
+<span class="k">class</span> <span class="nc">Upfrom</span> <span class="o">&lt;</span> <span class="no">LazyStream</span><span class="o">::</span><span class="no">Node</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">from</span><span class="p">)</span>
+    <span class="k">super</span><span class="p">(</span><span class="n">from</span><span class="p">)</span> <span class="p">{</span> <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">from</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="p">}</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="no">Upfrom</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># =&gt; 7 8 9 10 11 12 13 14 15 16</span>
+</pre></div>
+
+<p>Now we can have our interface any way we like it.  Some things still need work though…</p>
+
+<h4>Inside-out Iteration</h4>
+
+<p>So far, I've just copied MJD's external iterator interface.  Those are certainly helpful with lazy streams, because you may want to pull values for a while, stop to do something else, and come back to the stream later.</p>
+
+<p>However, Ruby just doesn't feel right without an <code>#each</code> method and <code>Enumerable</code> mixed-in.  In this particular case, we really want two forms of iteration, one each for <code>LazyStream::Node#tail</code> and <code>LazyStream::Node#drop</code> so we can advance the stream, or just peek ahead.</p>
+
+<p>It's easier to build the destructive version first.  In fact, we already have the implementation coded up inside <code>LazyStream::Node#show</code>.  Let's even keep the limit as a handy way to keep from going too deep:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">LazyStream</span>
+  <span class="k">class</span> <span class="nc">Node</span>
+    <span class="k">def</span> <span class="nf">each!</span><span class="p">(</span><span class="n">limit</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+      <span class="kp">loop</span> <span class="k">do</span>
+        <span class="k">break</span> <span class="k">unless</span> <span class="n">limit</span><span class="o">.</span><span class="n">nil?</span> <span class="o">||</span> <span class="p">(</span><span class="n">limit</span> <span class="o">-=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="k">yield</span><span class="p">(</span><span class="n">drop</span><span class="p">)</span>
+
+        <span class="k">break</span> <span class="k">if</span> <span class="k">end</span><span class="p">?</span>
+      <span class="k">end</span>
+
+      <span class="nb">self</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Then we can use that to build the standard iterator:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">LazyStream</span>
+  <span class="k">class</span> <span class="nc">Node</span>
+    <span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">limit</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+      <span class="nb">clone</span><span class="o">.</span><span class="n">each!</span><span class="p">(</span><span class="n">limit</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+
+      <span class="nb">self</span>
+    <span class="k">end</span>
+    <span class="n">alias_method</span> <span class="ss">:peek</span><span class="p">,</span> <span class="ss">:each</span>
+    <span class="kp">include</span> <span class="no">Enumerable</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That let's us use standard Ruby iteration, for the most part.  We can even set a limit to keep from going too far.  We can also use methods like <code>Enumerable#find</code> on an infinite stream, since it will stop as soon as it finds a match.</p>
+
+<p>Where this system has trouble is if we want to use something like <code>Enumerable#map</code> on an infinite stream.  The problem here is that we have no good way to pass the limit down.  It's also tricky to use <code>LazyStream::Node#each!</code> with the <code>Enumerable</code> methods.  Let's fix both issues:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"enumerator"</span>
+
+<span class="k">module</span> <span class="nn">LazyStream</span>
+  <span class="k">class</span> <span class="nc">Node</span>
+    <span class="k">def</span> <span class="nf">limit</span><span class="p">(</span><span class="n">max_depth</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+      <span class="n">enum_for</span><span class="p">(</span><span class="ss">:each</span><span class="p">,</span> <span class="n">max_depth</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">limit!</span><span class="p">(</span><span class="n">max_depth</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+      <span class="n">enum_for</span><span class="p">(</span><span class="ss">:each!</span><span class="p">,</span> <span class="n">max_depth</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>There's a little black magic there we need to see in action, but before we go back to examples we can simplify <code>LazyStream::Node#show</code> to use the new iterators:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">LazyStream</span>
+  <span class="k">class</span> <span class="nc">Node</span>
+    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="o">*</span><span class="n">limit_and_options</span><span class="p">)</span>
+      <span class="n">options</span> <span class="o">=</span> <span class="p">{</span><span class="ss">:sep</span> <span class="o">=&gt;</span> <span class="s2">" "</span><span class="p">,</span> <span class="ss">:end</span> <span class="o">=&gt;</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">}</span><span class="o">.</span><span class="n">merge!</span><span class="p">(</span>
+        <span class="n">limit_and_options</span><span class="o">.</span><span class="n">last</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">Hash</span><span class="p">)</span> <span class="p">?</span> <span class="n">limit_and_options</span><span class="o">.</span><span class="n">pop</span> <span class="p">:</span> <span class="no">Hash</span><span class="o">.</span><span class="n">new</span>
+      <span class="p">)</span>
+      <span class="n">limit</span> <span class="o">=</span> <span class="n">limit_and_options</span><span class="o">.</span><span class="n">shift</span>
+
+      <span class="n">each</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">cur</span><span class="o">|</span> <span class="nb">print</span> <span class="n">cur</span><span class="p">,</span> <span class="n">options</span><span class="o">[</span><span class="ss">:sep</span><span class="o">]</span> <span class="p">}</span>
+      <span class="nb">print</span> <span class="n">options</span><span class="o">[</span><span class="ss">:end</span><span class="o">]</span>
+    <span class="k">end</span>
+    <span class="n">alias_method</span> <span class="ss">:display</span><span class="p">,</span> <span class="ss">:show</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Okay, let's see what we have created.  Here's an infinite stream iterator, using <code>Enumerable#map</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/local/bin/ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"lazy_stream"</span>
+
+<span class="k">class</span> <span class="nc">Step</span> <span class="o">&lt;</span> <span class="no">LazyStream</span><span class="o">::</span><span class="no">Node</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">super</span><span class="p">(</span><span class="n">start</span><span class="p">)</span> <span class="p">{</span> <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="p">}</span>
+
+    <span class="vi">@step</span> <span class="o">=</span> <span class="n">step</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">next_group</span><span class="p">(</span><span class="n">count</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span>
+    <span class="n">limit!</span><span class="p">(</span><span class="n">count</span><span class="p">)</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span> <span class="n">i</span> <span class="o">*</span> <span class="vi">@step</span> <span class="p">}</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">evens</span> <span class="o">=</span> <span class="no">Step</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="nb">puts</span> <span class="s2">"The first ten even numbers are:"</span>
+<span class="nb">puts</span> <span class="n">evens</span><span class="o">.</span><span class="n">next_group</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span>  <span class="c1"># =&gt; 2 4 6 8 10 12 14 16 18 20</span>
+
+<span class="c1"># later...</span>
+
+<span class="nb">puts</span>
+<span class="nb">puts</span> <span class="s2">"The next ten even numbers are:"</span>
+<span class="nb">puts</span> <span class="n">evens</span><span class="o">.</span><span class="n">next_group</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span>  <span class="c1"># =&gt; 22 24 26 28 30 32 34 36 38 40</span>
+
+<span class="nb">puts</span>
+<span class="nb">puts</span> <span class="s2">"The current index for future calculations is:"</span>
+<span class="nb">puts</span> <span class="n">evens</span><span class="o">.</span><span class="n">current</span> <span class="c1"># =&gt; 21</span>
+</pre></div>
+
+<p>That feels a lot more like Ruby to me.  Now we can get back to MJD's examples.</p>
+
+<h4>Adding <code>#filter</code> and <code>#transform</code>
+</h4>
+
+<p>MJD adds both a <code>#filter</code> and <code>#transform</code> method next.  Technically, my last example is a transformation of the stream and we could do filtering the same way.  Still it's nice to have these built-in and we should add them.</p>
+
+<p>The <code>#filter</code> is easy enough, we just have to keep dropping items until we find a match and make sure setting a filter is viral to future nodes:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">LazyStream</span>
+  <span class="k">class</span> <span class="nc">Node</span>
+    <span class="k">def</span> <span class="nf">tail</span>
+      <span class="n">result</span> <span class="o">=</span> <span class="k">if</span> <span class="vi">@tail</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">Proc</span><span class="p">)</span>
+        <span class="vi">@tail</span><span class="o">.</span><span class="n">call</span>
+      <span class="k">else</span>
+        <span class="vi">@tail</span>
+      <span class="k">end</span>
+
+      <span class="n">result</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="vi">@filter</span><span class="p">)</span> <span class="k">unless</span> <span class="vi">@filter</span><span class="o">.</span><span class="n">nil?</span> <span class="o">||</span> <span class="o">!</span><span class="n">result</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="p">)</span>
+
+      <span class="n">result</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">pattern</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+      <span class="vi">@filter</span> <span class="o">=</span> <span class="n">pattern</span> <span class="o">||</span> <span class="n">block</span>
+
+      <span class="n">drop</span> <span class="k">until</span> <span class="n">matches_filter?</span><span class="p">(</span><span class="vi">@head</span><span class="p">)</span>
+
+      <span class="nb">self</span>
+    <span class="k">end</span>
+
+    <span class="kp">private</span>
+
+    <span class="k">def</span> <span class="nf">matches_filter?</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+      <span class="k">case</span> <span class="vi">@filter</span>
+      <span class="k">when</span> <span class="kp">nil</span>
+        <span class="kp">true</span>
+      <span class="k">when</span> <span class="no">Proc</span>
+        <span class="vi">@filter</span><span class="o">[</span><span class="n">current</span><span class="o">]</span>
+      <span class="k">else</span>
+        <span class="vi">@filter</span> <span class="o">===</span> <span class="n">current</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>We can add <code>#transform</code> by defining an actual getter for <code>@head</code>, instead of the <code>attr_reader</code> shortcut I've been using and, again, making the setting viral:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">LazyStream</span>
+  <span class="k">class</span> <span class="nc">Node</span>
+    <span class="k">def</span> <span class="nf">head</span>
+      <span class="vi">@transformer</span><span class="o">.</span><span class="n">nil?</span> <span class="p">?</span> <span class="vi">@head</span> <span class="p">:</span> <span class="vi">@transformer</span><span class="o">[</span><span class="vi">@head</span><span class="o">]</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">tail</span>
+      <span class="n">result</span> <span class="o">=</span> <span class="k">if</span> <span class="vi">@tail</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">Proc</span><span class="p">)</span>
+        <span class="vi">@tail</span><span class="o">.</span><span class="n">call</span>
+      <span class="k">else</span>
+        <span class="vi">@tail</span>
+      <span class="k">end</span>
+
+      <span class="n">result</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="vi">@filter</span><span class="p">)</span>          <span class="k">unless</span> <span class="vi">@filter</span><span class="o">.</span><span class="n">nil?</span> <span class="o">||</span>
+                                      <span class="o">!</span><span class="n">result</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="p">)</span>
+      <span class="n">result</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="o">&amp;</span><span class="vi">@transformer</span><span class="p">)</span> <span class="k">unless</span> <span class="vi">@transformer</span><span class="o">.</span><span class="n">nil?</span> <span class="o">||</span>
+                                      <span class="o">!</span><span class="n">result</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="p">)</span>
+
+      <span class="n">result</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="o">&amp;</span><span class="n">transformer</span><span class="p">)</span>
+      <span class="vi">@transformer</span> <span class="o">=</span> <span class="n">transformer</span>
+
+      <span class="nb">self</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Here are trivial examples with both:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/local/bin/ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"lazy_stream"</span>
+
+<span class="k">def</span> <span class="nf">letters</span><span class="p">(</span><span class="n">letter</span><span class="p">)</span>
+  <span class="n">lazy_stream</span><span class="p">(</span><span class="n">letter</span><span class="p">)</span> <span class="p">{</span> <span class="n">letters</span><span class="p">(</span><span class="n">letter</span><span class="o">.</span><span class="n">succ</span><span class="p">)</span> <span class="p">}</span>
+<span class="k">end</span>
+
+<span class="n">letters</span><span class="p">(</span><span class="s2">"a"</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="sr">/[aeiou]/</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>           <span class="c1"># =&gt; a e i o u aa ab ac ad ae</span>
+<span class="n">letters</span><span class="p">(</span><span class="s2">"a"</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span> <span class="p">{</span> <span class="o">|</span><span class="n">l</span><span class="o">|</span> <span class="n">l</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">2</span> <span class="p">}</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>   <span class="c1"># =&gt; aa ab ac </span>
+
+<span class="n">letters</span><span class="p">(</span><span class="s2">"a"</span><span class="p">)</span><span class="o">.</span><span class="n">transform</span> <span class="p">{</span> <span class="o">|</span><span class="n">l</span><span class="o">|</span> <span class="n">l</span> <span class="o">+</span> <span class="s2">"..."</span> <span class="p">}</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>  <span class="c1"># =&gt; a... b... c...</span>
+</pre></div>
+
+<h4>Recursive Streams</h4>
+
+<p>I think we can fix the recursive issues MJD discusses with ease in our Ruby version, just by passing the stream head to the promise block:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">LazyStream</span>
+  <span class="k">class</span> <span class="nc">Node</span>
+    <span class="k">def</span> <span class="nf">tail</span>
+      <span class="n">result</span> <span class="o">=</span> <span class="k">if</span> <span class="vi">@tail</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">Proc</span><span class="p">)</span>
+        <span class="vi">@tail</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">head</span><span class="p">)</span>
+      <span class="k">else</span>
+        <span class="vi">@tail</span>
+      <span class="k">end</span>
+
+      <span class="k">unless</span> <span class="n">result</span> <span class="o">==</span> <span class="vi">@tail</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="vi">@filter</span><span class="p">)</span>          <span class="k">unless</span> <span class="vi">@filter</span><span class="o">.</span><span class="n">nil?</span> <span class="o">||</span>
+                                        <span class="o">!</span><span class="n">result</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="o">&amp;</span><span class="vi">@transformer</span><span class="p">)</span> <span class="k">unless</span> <span class="vi">@transformer</span><span class="o">.</span><span class="n">nil?</span> <span class="o">||</span>
+                                        <span class="o">!</span><span class="n">result</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="p">)</span>
+      <span class="k">end</span>
+
+      <span class="vi">@tail</span> <span class="o">=</span> <span class="n">result</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>With that, MJD's example is trivial:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/local/bin/ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"lazy_stream"</span>
+
+<span class="k">class</span> <span class="nc">Powers</span> <span class="o">&lt;</span> <span class="no">LazyStream</span><span class="o">::</span><span class="no">Node</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">of</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">super</span><span class="p">(</span><span class="n">start</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">last</span><span class="o">|</span> <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">of</span><span class="p">,</span> <span class="n">last</span> <span class="o">*</span> <span class="n">of</span><span class="p">)</span> <span class="p">}</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">powers_of_two</span> <span class="o">=</span> <span class="no">Powers</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">powers_of_two</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># =&gt; 1 2 4 8 16 32 64 128 256 512</span>
+</pre></div>
+
+<p>In all honesty though, you seldom need that with the blocks being closures.  You can just reference the local variables instead.</p>
+
+<p>You also don't need merging to solve the Hamming Sequence.  Here's a simple example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/local/bin/ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"lazy_stream"</span>
+
+<span class="k">class</span> <span class="nc">Hamming</span> <span class="o">&lt;</span> <span class="no">LazyStream</span><span class="o">::</span><span class="no">Node</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">seq</span> <span class="o">=</span> <span class="o">[</span><span class="mi">1</span><span class="o">]</span><span class="p">)</span>
+    <span class="n">cur</span> <span class="o">=</span> <span class="n">seq</span><span class="o">.</span><span class="n">shift</span>
+    <span class="k">super</span><span class="p">(</span><span class="n">cur</span><span class="p">)</span> <span class="k">do</span> 
+      <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">new</span><span class="p">((</span><span class="n">seq</span> <span class="o">&lt;&lt;</span> <span class="n">cur</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">&lt;&lt;</span> <span class="n">cur</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">&lt;&lt;</span> <span class="n">cur</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">uniq</span><span class="o">.</span><span class="n">sort</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="no">Hamming</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>  <span class="c1"># =&gt; 1 2 3 4 5 6 8 9 10 12 15 16 18 20 24</span>
+</pre></div>
+
+<h4>Regexp String Generation</h4>
+
+<p>We don't need too many modifications to be able to create this example.  First, let's build a <code>LazyStream::union</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">LazyStream</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">union</span><span class="p">(</span><span class="o">*</span><span class="n">streams</span><span class="p">)</span>
+    <span class="n">current</span> <span class="o">=</span> <span class="n">streams</span><span class="o">.</span><span class="n">shift</span> <span class="ow">or</span> <span class="k">return</span>
+    <span class="no">Node</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">current</span><span class="o">.</span><span class="n">head</span><span class="p">)</span> <span class="p">{</span> <span class="n">union</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">streams</span> <span class="o">&lt;&lt;</span> <span class="n">current</span><span class="o">.</span><span class="n">tail</span><span class="p">))</span> <span class="p">}</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>We can even add a little syntax sugar for calling that:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">LazyStream</span>
+  <span class="k">class</span> <span class="nc">Node</span>
+    <span class="k">def</span> <span class="nf">+</span><span class="p">(</span><span class="n">other_stream</span><span class="p">)</span>
+      <span class="no">LazyStream</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">other_stream</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Finally, because I made <code>LazyStream::Node#transform</code> modify the stream, we will need a <code>LazyStream::Node#dup</code> to build MJD's <code>#concat</code> method:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">LazyStream</span>
+  <span class="k">class</span> <span class="nc">Node</span>
+    <span class="k">def</span> <span class="nf">dup</span>
+      <span class="k">if</span> <span class="n">tail</span><span class="o">.</span><span class="n">nil?</span> <span class="o">||</span> <span class="n">tail</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">Proc</span><span class="p">)</span>
+        <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">head</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">tail</span><span class="p">)</span>
+      <span class="k">else</span>
+        <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">head</span><span class="p">)</span> <span class="p">{</span> <span class="n">tail</span> <span class="p">}</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>From there we can build a <code>RegexpMatchesGenerator</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/local/bin/ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"lazy_stream"</span>
+
+<span class="k">module</span> <span class="nn">RegexpMatchesGenerator</span>
+  <span class="kp">extend</span> <span class="nb">self</span>
+
+  <span class="k">def</span> <span class="nf">literal</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+    <span class="n">lazy_stream</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">stream1</span><span class="p">,</span> <span class="n">stream2</span><span class="p">)</span>
+    <span class="n">lazy_stream</span><span class="p">(</span><span class="n">stream1</span><span class="o">.</span><span class="n">head</span> <span class="o">+</span> <span class="n">stream2</span><span class="o">.</span><span class="n">head</span><span class="p">)</span> <span class="k">do</span>
+      <span class="n">combinations</span> <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span>
+      <span class="k">unless</span> <span class="n">stream1</span><span class="o">.</span><span class="n">end?</span>
+        <span class="n">combinations</span> <span class="o">&lt;&lt;</span> <span class="n">stream1</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">dup</span><span class="o">.</span><span class="n">transform</span> <span class="p">{</span> <span class="o">|</span><span class="n">str</span><span class="o">|</span> <span class="n">str</span> <span class="o">+</span> <span class="n">stream2</span><span class="o">.</span><span class="n">head</span> <span class="p">}</span>
+      <span class="k">end</span>
+      <span class="k">unless</span> <span class="n">stream2</span><span class="o">.</span><span class="n">end?</span>
+        <span class="n">combinations</span> <span class="o">&lt;&lt;</span> <span class="n">stream2</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">dup</span><span class="o">.</span><span class="n">transform</span> <span class="p">{</span> <span class="o">|</span><span class="n">str</span><span class="o">|</span> <span class="n">stream1</span><span class="o">.</span><span class="n">head</span> <span class="o">+</span> <span class="n">str</span> <span class="p">}</span>
+      <span class="k">end</span>
+      <span class="k">unless</span> <span class="n">stream1</span><span class="o">.</span><span class="n">end?</span> <span class="o">||</span> <span class="n">stream2</span><span class="o">.</span><span class="n">end?</span>
+        <span class="n">combinations</span> <span class="o">&lt;&lt;</span> <span class="n">concat</span><span class="p">(</span><span class="n">stream1</span><span class="o">.</span><span class="n">tail</span><span class="p">,</span> <span class="n">stream2</span><span class="o">.</span><span class="n">tail</span><span class="p">)</span>
+      <span class="k">end</span>
+      <span class="no">LazyStream</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="o">*</span><span class="n">combinations</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">star</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">head</span> <span class="o">=</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="n">lazy_stream</span><span class="p">(</span><span class="n">head</span><span class="p">)</span> <span class="p">{</span> <span class="n">star</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">head</span> <span class="o">+</span> <span class="n">stream</span><span class="o">.</span><span class="n">head</span><span class="p">)</span> <span class="p">}</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">char_class</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+    <span class="no">LazyStream</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="o">*</span><span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">str</span><span class="o">|</span> <span class="n">literal</span><span class="p">(</span><span class="n">str</span><span class="p">)</span> <span class="p">})</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">plus</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+    <span class="n">star</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">stream</span><span class="o">.</span><span class="n">head</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">if</span> <span class="bp">__FILE__</span> <span class="o">==</span> <span class="vg">$0</span>
+  <span class="kp">include</span> <span class="no">RegexpMatchesGenerator</span>
+
+  <span class="c1"># /^(a|b)(c|d)$/</span>
+  <span class="n">concat</span><span class="p">(</span><span class="n">literal</span><span class="p">(</span><span class="s2">"a"</span><span class="p">)</span> <span class="o">+</span> <span class="n">literal</span><span class="p">(</span><span class="s2">"b"</span><span class="p">),</span> <span class="n">literal</span><span class="p">(</span><span class="s2">"c"</span><span class="p">)</span> <span class="o">+</span> <span class="n">literal</span><span class="p">(</span><span class="s2">"d"</span><span class="p">))</span><span class="o">.</span><span class="n">show</span>
+
+  <span class="c1"># /^(HONK)*$/</span>
+  <span class="nb">puts</span> <span class="n">star</span><span class="p">(</span><span class="n">literal</span><span class="p">(</span><span class="s2">"HONK"</span><span class="p">))</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">str</span><span class="o">|</span> <span class="n">str</span><span class="o">.</span><span class="n">inspect</span> <span class="p">}</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span>
+
+  <span class="c1"># /^ab*$/</span>
+  <span class="nb">puts</span><span class="p">(</span><span class="n">concat</span><span class="p">(</span><span class="n">literal</span><span class="p">(</span><span class="s2">"a"</span><span class="p">),</span> <span class="n">star</span><span class="p">(</span><span class="n">literal</span><span class="p">(</span><span class="s2">"b"</span><span class="p">)))</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">to_a</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+<h4>The Rest</h4>
+
+<p>That should be enough example translation to address most of the highlights from this chapter.  All those math problems at the end make me drowsy, so I'll leave those as an exercise for the reader…</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/higher-order-ruby/iterators-chapters-4-and-5">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/higher-order-ruby/currying">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="higher-order-ruby/infinite-streams">
+  In: <a href="/higher-order-ruby">Higher-Order Ruby</a>
+  <span>|</span>
+  Tags: <a href="/tags/Functional%20Programming">Functional Programming</a> &amp; <a href="/tags/Object%20Orientation">Object Orientation</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/higher-order-ruby/infinite-streams#comments">4 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (4)</span></h5>
+
+    <ol>
+        <li id="comment_136">
+    <div class="avatar"><img alt="Raul Parolari" height="70" src="http://www.gravatar.com/avatar/1ebbd2ca9df3016f6c4f685bc75fe66d?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="136">
+      <span class="c_name"><a href="http://www.raulparolari.com">Raul Parolari</a></span>
+      <span class="c_date">November 15th, 2007</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/infinite-streams#comment_136">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Hi, James,</p>
+
+<p>I began to follow the Ruby Forum recently, and from there I discovered your blog. I have a question on this code (I hope that formatting works, if I got Markdown reqs correctly):</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">drop</span>
+  <span class="n">result</span><span class="p">,</span> <span class="n">next_stream</span> <span class="o">=</span> <span class="n">head</span><span class="p">,</span> <span class="n">tail</span>
+  <span class="vi">@head</span><span class="p">,</span> <span class="vi">@tail</span>        <span class="o">=</span> <span class="k">if</span> <span class="n">next_stream</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="p">)</span>
+    <span class="n">next_stream</span><span class="o">.</span><span class="n">instance_eval</span> <span class="p">{</span> <span class="o">[</span><span class="vi">@head</span><span class="p">,</span> <span class="vi">@tail</span><span class="o">]</span> <span class="p">}</span>
+  <span class="k">else</span>
+    <span class="c1"># ...</span>
+</pre></div>
+
+<p>Why the <code>instance_eval</code>? we have just checked that <code>next_stream</code> is of the class we are in, so we do not need to 'pry' on <code>next_stream</code>; we can just "ask him" (like OO fans like to say) to share its secrets with us spontaneously:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">[</span><span class="n">next_stream</span><span class="o">.</span><span class="n">head</span><span class="p">,</span> <span class="n">next_stream</span><span class="o">.</span><span class="n">tail</span><span class="o">]</span>
+</pre></div>
+
+<p>I tested it; let me know if I missed something.</p>
+
+<p>One other point, even less important: the name of the method <code>show</code> is a bit curious. It takes a reader (ok, me!) some time to understand the method before he realizes that the intent is to destroy what is read. I would have called <code>show_and_consume</code> (as it consumes everything it reads). Ok, a naming point (but names are important, the last resort as programming becomes more abstract and mysterious by the day).</p>
+
+<p>I have just read a third of the entry, I will devour every bit of it.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/infinite-streams/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="4M+qqa6bxDsCYtWjYGPiTeBc6yT99BqWaGahFVa6kCg=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="136" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Finfinite-streams" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Finfinite-streams" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_136" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_137">
+    <div class="avatar"><img alt="Raul Parolari" height="70" src="http://www.gravatar.com/avatar/1ebbd2ca9df3016f6c4f685bc75fe66d?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="137">
+      <span class="c_name"><a href="mailto:raulparolari@gmail.com">Raul Parolari</a></span>
+      <span class="c_date">November 15th, 2007</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/infinite-streams#comment_137">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I see: the line    </p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">next_stream</span><span class="o">.</span><span class="n">instance_eval</span> <span class="p">{</span> <span class="o">[</span><span class="vi">@head</span><span class="p">,</span> <span class="vi">@tail</span><span class="o">]</span> <span class="p">}</span>
+</pre></div>
+
+<p>does not execute the tail promise, it just retrieves the variable(s).    </p>
+
+<p>While the line    </p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">[</span><span class="n">next_stream</span><span class="o">.</span><span class="n">head</span><span class="p">,</span> <span class="n">next_stream</span><span class="o">.</span><span class="n">tail</span><span class="o">]</span> 
+</pre></div>
+
+<p>would seem to execute it. However, this code works, giving the same results as the above.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/infinite-streams/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="4M+qqa6bxDsCYtWjYGPiTeBc6yT99BqWaGahFVa6kCg=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="137" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Finfinite-streams" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Finfinite-streams" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_137" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_138">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="138">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">November 15th, 2007</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/infinite-streams#comment_138">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>It works the same because the <code>tail()</code> method will return a non-Proc object, what you get from the promise, normally.  The rewrite causes the promise to be delivered at the wrong time though, which may cause problems if the promise code is time sensitive or in other similar scenarios.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/infinite-streams/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="4M+qqa6bxDsCYtWjYGPiTeBc6yT99BqWaGahFVa6kCg=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="138" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Finfinite-streams" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Finfinite-streams" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_138" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_139">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="139">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">November 15th, 2007</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/infinite-streams#comment_139">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><blockquote>
+<p>One other point, even less important: the name of the method <code>show</code> is a bit curious. It takes a reader (ok, me!) some time to understand the method before he realizes that the intent is to destroy what is read.</p>
+</blockquote>
+
+<p>Yeah, I don't like that name either.  I most likely used it because it was used in the book and I wanted to keep the code similar.  I agree that it could be better though.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/infinite-streams/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="4M+qqa6bxDsCYtWjYGPiTeBc6yT99BqWaGahFVa6kCg=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="139" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Finfinite-streams" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Finfinite-streams" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_139" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/higher-order-ruby/infinite-streams/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="4M+qqa6bxDsCYtWjYGPiTeBc6yT99BqWaGahFVa6kCg=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Finfinite-streams" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Finfinite-streams" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

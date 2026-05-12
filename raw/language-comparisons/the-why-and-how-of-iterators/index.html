@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Language Comparisons / The Why and How of Iterators</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This explanation I gave to a friend about iterators might help other understand why we have them and how to use them.">
+    <meta name="keywords"    content="polyglot programming, Iterators, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/language-comparisons/the-why-and-how-of-iterators/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/language-comparisons">Language Comparisons</a></h1>
+            <span>Comparisons of programming languages, usually Ruby and something else.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      MAR<br>
+      2006
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">The Why and How of Iterators</h3>
+        
+        <p>A friend of mine has been asking some general questions about iterators in private emails we have traded.  I wanted to put some of my answers here, in case they appeal to a wider audience.</p>
+
+<h4>Why do we have iterators?</h4>
+
+<p>First, let's invent a little data to play with:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="no">Name</span> <span class="o">=</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:first</span><span class="p">,</span> <span class="ss">:last</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="no">Name</span>
+<span class="o">&gt;&gt;</span> <span class="n">names</span> <span class="o">=</span> <span class="o">[</span> <span class="no">Name</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"James"</span><span class="p">,</span> <span class="s2">"Gray"</span><span class="p">),</span>
+<span class="sc">?&gt;</span>           <span class="no">Name</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"Dana"</span><span class="p">,</span> <span class="s2">"Gray"</span><span class="p">),</span>
+<span class="sc">?&gt;</span>           <span class="no">Name</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"Caleb"</span><span class="p">,</span> <span class="s2">"Nordloh"</span><span class="p">),</span>
+<span class="sc">?&gt;</span>           <span class="no">Name</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"Tina"</span><span class="p">,</span> <span class="s2">"Nordloh"</span><span class="p">)</span> <span class="o">]</span>
+<span class="o">=&gt;</span> <span class="o">[</span><span class="c1">#&lt;struct Name first="James", last="Gray"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="Dana", last="Gray"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="Caleb", last="Nordloh"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="Tina", last="Nordloh"&gt;]</span>
+</pre></div>
+
+<p>Now let's assume we want to print some names.  We can use the <code>each()</code> iterator for that, no index:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">names</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="nb">puts</span> <span class="s2">"</span><span class="si">#{</span><span class="nb">name</span><span class="o">.</span><span class="n">last</span><span class="si">}</span><span class="s2">, </span><span class="si">#{</span><span class="nb">name</span><span class="o">.</span><span class="n">first</span><span class="si">}</span><span class="s2">"</span> <span class="p">}</span>
+<span class="no">Gray</span><span class="p">,</span> <span class="no">James</span>
+<span class="no">Gray</span><span class="p">,</span> <span class="no">Dana</span>
+<span class="no">Nordloh</span><span class="p">,</span> <span class="no">Caleb</span>
+<span class="no">Nordloh</span><span class="p">,</span> <span class="no">Tina</span>
+<span class="o">=&gt;</span> <span class="o">[</span><span class="c1">#&lt;struct Name first="James", last="Gray"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="Dana", last="Gray"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="Caleb", last="Nordloh"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="Tina", last="Nordloh"&gt;]</span>
+</pre></div>
+
+<p>That's not too different from a loop, but let's say we want to <code>find()</code> a specific name:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">names</span><span class="o">.</span><span class="n">find</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="nb">name</span><span class="o">.</span><span class="n">first</span> <span class="o">==</span> <span class="s2">"Caleb"</span> <span class="p">}</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;struct Name first="Caleb", last="Nordloh"&gt;</span>
+</pre></div>
+
+<p>Maybe we would just like to see which last names are in our records.  We can do that by <code>map()</code>ping (another iterator) the names to just the last name and using a simple helper:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">names</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="nb">name</span><span class="o">.</span><span class="n">last</span> <span class="p">}</span><span class="o">.</span><span class="n">uniq</span>
+<span class="o">=&gt;</span> <span class="o">[</span><span class="s2">"Gray"</span><span class="p">,</span> <span class="s2">"Nordloh"</span><span class="o">]</span>
+</pre></div>
+
+<p>Perhaps we just want to work with some members of the set.  We can <code>select()</code> those:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">names</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="nb">name</span><span class="o">.</span><span class="n">first</span> <span class="o">=~</span> <span class="sr">/^(?:J|C)/</span> <span class="p">}</span>
+<span class="o">=&gt;</span> <span class="o">[</span><span class="c1">#&lt;struct Name first="James", last="Gray"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="Caleb", last="Nordloh"&gt;]</span>
+</pre></div>
+
+<p>Or we can <code>sort_by()</code> certain criteria:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">names</span> <span class="o">=</span> <span class="n">names</span><span class="o">.</span><span class="n">sort_by</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="o">[</span><span class="nb">name</span><span class="o">.</span><span class="n">last</span><span class="p">,</span> <span class="nb">name</span><span class="o">.</span><span class="n">first</span><span class="o">]</span> <span class="p">}</span>
+<span class="o">=&gt;</span> <span class="o">[</span><span class="c1">#&lt;struct Name first="Dana", last="Gray"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="James", last="Gray"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="Caleb", last="Nordloh"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="Tina", last="Nordloh"&gt;]</span>
+</pre></div>
+
+<p>Now remember, in loop centric languages you have one tool for most of this and it looks something like:</p>
+
+<div class="highlight highlight-c"><pre><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="p">...;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+  <span class="p">...</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>You have to provide all the other details each and every time you want to find one object in a list, or toss some objects out.  You track the indices, you manage the new <code>Array</code>/<code>Hash</code>/whatever you are putting things in, you break out of the loop when you are finished, etc.  Notice how in all the Ruby example above I am only ever focused on the individual object and what I need to do to it.  The iterators are handling all of the repetitive and boring work for me, leaving me to focus on the task at hand.</p>
+
+<p>I guess you could say the downside is that you have to learn all the iterator names and what they do instead of just one loop.  Ruby tries to lessen the blow on this though, by sticking all the iterators in one <em>mix-in</em> and using that same set in all the standard objects, like <code>Array</code> and <code>Hash</code>.  Even better, all you have to do is define the easy <code>each()</code> iterator, mix-in Enumerable just like those standard classes do, and you get all the other iterators for free.  So basically, you just learn them once and use them everywhere.</p>
+
+<h4>How do we build iterators?</h4>
+
+<p>Let's say we want to make a <code>LinkedList</code> in Ruby.  Something like:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="k">class</span> <span class="nc">LinkedList</span>
+<span class="o">&gt;&gt;</span>   <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">head</span><span class="p">)</span>
+<span class="o">&gt;&gt;</span>     <span class="vi">@node</span> <span class="o">=</span> <span class="n">head</span>
+<span class="o">&gt;&gt;</span>     <span class="vi">@next</span> <span class="o">=</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span>   <span class="k">end</span>
+<span class="o">&gt;&gt;</span>   <span class="k">def</span> <span class="nf">value</span>
+<span class="o">&gt;&gt;</span>     <span class="vi">@node</span>
+<span class="o">&gt;&gt;</span>   <span class="k">end</span>
+<span class="o">&gt;&gt;</span>   <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="n">value</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+<span class="o">&gt;&gt;</span>     <span class="k">unless</span> <span class="n">value</span><span class="o">.</span><span class="n">nil?</span>
+<span class="o">&gt;&gt;</span>       <span class="vi">@next</span> <span class="o">=</span> <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<span class="o">&gt;&gt;</span>     <span class="k">end</span>
+<span class="o">&gt;&gt;</span>     <span class="vi">@next</span>
+<span class="o">&gt;&gt;</span>   <span class="k">end</span>
+<span class="o">&gt;&gt;</span> <span class="k">end</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+</pre></div>
+
+<p>Let's build a quick routine to populate it with some data:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="k">def</span> <span class="nf">fib_seq</span>
+<span class="o">&gt;&gt;</span>   <span class="n">start</span> <span class="o">=</span> <span class="no">LinkedList</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="o">&gt;&gt;</span>   <span class="n">first</span> <span class="o">=</span> <span class="n">start</span>
+<span class="o">&gt;&gt;</span>   <span class="n">sec</span>   <span class="o">=</span> <span class="n">first</span><span class="o">.</span><span class="n">next</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="o">&gt;&gt;</span>   <span class="mi">100</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+<span class="sc">?&gt;</span>     <span class="n">new_node</span> <span class="o">=</span> <span class="n">sec</span><span class="o">.</span><span class="n">next</span><span class="p">(</span><span class="n">first</span><span class="o">.</span><span class="n">value</span> <span class="o">+</span> <span class="n">sec</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+<span class="o">&gt;&gt;</span>     <span class="n">first</span>    <span class="o">=</span> <span class="n">sec</span>
+<span class="o">&gt;&gt;</span>     <span class="n">sec</span>      <span class="o">=</span> <span class="n">new_node</span>
+<span class="o">&gt;&gt;</span>   <span class="k">end</span>
+<span class="o">&gt;&gt;</span>   <span class="n">start</span>
+<span class="o">&gt;&gt;</span> <span class="k">end</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">fib</span> <span class="o">=</span> <span class="n">fib_seq</span>
+<span class="o">=&gt;</span> <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</pre></div>
+
+<p>Now, let's write the <code>each()</code> iterator for this class, to allow users to walk the values.  We will use an optional limit too, since the lists can get quite long:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="k">class</span> <span class="nc">LinkedList</span>
+<span class="o">&gt;&gt;</span>   <span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">limit</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+<span class="o">&gt;&gt;</span>     <span class="n">current</span> <span class="o">=</span> <span class="nb">self</span>
+<span class="o">&gt;&gt;</span>     <span class="k">until</span> <span class="n">current</span><span class="o">.</span><span class="n">nil?</span> <span class="o">||</span> <span class="p">(</span><span class="o">!</span><span class="n">limit</span><span class="o">.</span><span class="n">nil?</span> <span class="o">&amp;&amp;</span> <span class="n">limit</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+<span class="o">&gt;&gt;</span>       <span class="k">yield</span><span class="p">(</span><span class="n">current</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+<span class="o">&gt;&gt;</span>       <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">.</span><span class="n">next</span>
+<span class="o">&gt;&gt;</span>       <span class="n">limit</span>  <span class="o">-=</span> <span class="mi">1</span> <span class="k">unless</span> <span class="n">limit</span><span class="o">.</span><span class="n">nil?</span>
+<span class="o">&gt;&gt;</span>     <span class="k">end</span>
+<span class="o">&gt;&gt;</span>   <span class="k">end</span>
+<span class="o">&gt;&gt;</span> <span class="k">end</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+</pre></div>
+
+<p>Notice how I just use <code>yield</code> to hand the values to the block as I get to each one.</p>
+
+<p>Let's see how that works in action:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">fib</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="nb">puts</span> <span class="n">n</span> <span class="p">}</span>
+<span class="mi">0</span>
+<span class="mi">1</span>
+<span class="mi">1</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">fib</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="nb">puts</span> <span class="n">n</span> <span class="p">}</span>
+<span class="mi">0</span>
+<span class="mi">1</span>
+<span class="mi">1</span>
+<span class="mi">2</span>
+<span class="mi">3</span>
+<span class="mi">5</span>
+<span class="mi">8</span>
+<span class="mi">13</span>
+<span class="mi">21</span>
+<span class="mi">34</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+</pre></div>
+
+<p>Let's write one more, the <code>find()</code> iterator (technically we could use a mix-in to get it for free, but seeing it is instructive):</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="k">class</span> <span class="nc">LinkedList</span>
+<span class="o">&gt;&gt;</span>   <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="n">limit</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+<span class="o">&gt;&gt;</span>     <span class="n">results</span> <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span>
+<span class="o">&gt;&gt;</span>     <span class="n">each</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">value</span><span class="o">|</span>
+<span class="sc">?&gt;</span>       <span class="n">results</span> <span class="o">&lt;&lt;</span> <span class="n">value</span> <span class="k">if</span> <span class="k">yield</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<span class="o">&gt;&gt;</span>     <span class="k">end</span>
+<span class="o">&gt;&gt;</span>     <span class="n">results</span>
+<span class="o">&gt;&gt;</span>   <span class="k">end</span>
+<span class="o">&gt;&gt;</span> <span class="k">end</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+</pre></div>
+
+<p>Here I am using <code>yield</code> to see if the user is interested in this value.  I pass the value into the block and expect it to return a <code>true</code>/<code>false</code> answer.</p>
+
+<p>We can use that to find out which of the first 100 Fibonacci numbers are divisible by three:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">fib</span><span class="o">.</span><span class="n">find</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="n">n</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">}</span>
+<span class="o">=&gt;</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">144</span><span class="p">,</span> <span class="mi">987</span><span class="p">,</span> <span class="mi">6765</span><span class="p">,</span> <span class="mi">46368</span><span class="p">,</span> <span class="mi">317811</span><span class="p">,</span> <span class="mi">2178309</span><span class="p">,</span> <span class="mi">14930352</span><span class="p">,</span> <span class="mi">102334155</span><span class="p">,</span>
+    <span class="mi">701408733</span><span class="p">,</span> <span class="mi">4807526976</span><span class="p">,</span> <span class="mi">32951280099</span><span class="p">,</span> <span class="mi">225851433717</span><span class="p">,</span> <span class="mi">1548008755920</span><span class="p">,</span>
+    <span class="mi">10610209857723</span><span class="p">,</span> <span class="mi">72723460248141</span><span class="p">,</span> <span class="mi">498454011879264</span><span class="p">,</span> <span class="mi">3416454622906707</span><span class="p">,</span>
+    <span class="mi">23416728348467685</span><span class="p">,</span> <span class="mi">160500643816367088</span><span class="p">,</span> <span class="mi">1100087778366101931</span><span class="p">,</span>
+    <span class="mi">7540113804746346429</span><span class="p">,</span> <span class="mi">51680708854858323072</span><span class="p">,</span> <span class="mi">354224848179261915075</span><span class="o">]</span>
+</pre></div>
+        
+      </div>
+      <div class="meta-info" data-slug="language-comparisons/the-why-and-how-of-iterators">
+  In: <a href="/language-comparisons">Language Comparisons</a>
+  <span>|</span>
+  Tags: <a href="/tags/Iterators">Iterators</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/language-comparisons/the-why-and-how-of-iterators#comments">3 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (3)</span></h5>
+
+    <ol>
+        <li id="comment_21">
+    <div class="avatar"><img alt="Felix McAllister" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="21">
+      <span class="c_name">Felix McAllister</span>
+      <span class="c_date">March 22nd, 2006</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/the-why-and-how-of-iterators#comment_21">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Good post - well explained.</p>
+
+<p>One thing - if you're putting in code fragments could you leave out the irb output (e.g. <code>&gt;&gt;</code> and <code>=&gt;</code>)? It would make it easier for me to paste into an editor when trying stuff out.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/language-comparisons/the-why-and-how-of-iterators/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="QBMCRA047jMknimrrwgaIWH6B0FOWphbFjo6IrN/1LI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="21" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Flanguage-comparisons%2Fthe-why-and-how-of-iterators" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Flanguage-comparisons%2Fthe-why-and-how-of-iterators" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_21" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_22">
+    <div class="avatar"><img alt="Pat" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="22">
+      <span class="c_name"><a href="http://www.flpr.org">Pat</a></span>
+      <span class="c_date">March 22nd, 2006</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/the-why-and-how-of-iterators#comment_22">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Very useful post.</p>
+
+<p>Felix: It's more helpful to readers to see what is actually happening, I'm sure.  To get rid of the <code>&gt;&gt;</code> stuff you can just paste into an editor and use column editing to remove it.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/language-comparisons/the-why-and-how-of-iterators/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="QBMCRA047jMknimrrwgaIWH6B0FOWphbFjo6IrN/1LI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="22" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Flanguage-comparisons%2Fthe-why-and-how-of-iterators" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Flanguage-comparisons%2Fthe-why-and-how-of-iterators" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_22" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_23">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="23">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">March 22nd, 2006</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/the-why-and-how-of-iterators#comment_23">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks for the feedback Felix, but Pat pretty much nailed my thinking.  I want readers to see both the cause and effect of the code which makes <code>&gt;&gt;</code> and <code>=&gt;</code> critical for telling them apart.</p>
+
+<p>Maybe we should do a Ruby Quiz to strip them out though...  ;)</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/language-comparisons/the-why-and-how-of-iterators/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="QBMCRA047jMknimrrwgaIWH6B0FOWphbFjo6IrN/1LI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="23" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Flanguage-comparisons%2Fthe-why-and-how-of-iterators" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Flanguage-comparisons%2Fthe-why-and-how-of-iterators" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_23" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/language-comparisons/the-why-and-how-of-iterators/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="QBMCRA047jMknimrrwgaIWH6B0FOWphbFjo6IrN/1LI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Flanguage-comparisons%2Fthe-why-and-how-of-iterators" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Flanguage-comparisons%2Fthe-why-and-how-of-iterators" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

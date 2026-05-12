@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Character Encodings / Ruby 1.9&#39;s Three Default Encodings</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Now that we&#39;ve covered String, we need to talk about how String&#39;s get their initial Encoding.">
+    <meta name="keywords"    content="encodings, m17n, Multilingualization, Unicode, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/character-encodings/ruby-19s-three-default-encodings/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/character-encodings">Character Encodings</a></h1>
+            <span>My extensive coverage of a complex topic all programmers should study a little.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>5</h4>
+    <span>
+      APR<br>
+      2009
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Ruby 1.9&#39;s Three Default Encodings</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/character-encodings/ruby-19s-string/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/character-encodings/understanding-m17n-multilingualization/">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/character-encodings/miscellaneous-m17n-details/">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p>I suspect early contact with the new m17n (multilingualization) engine is going to come to Rubyists in the form of this error message:</p>
+
+<pre><code>invalid multibyte char (US-ASCII)
+</code></pre>
+
+<p>Ruby 1.8 didn't care what you stuck in a random <code>String</code> literal, but 1.9 is a touch pickier.  I think you'll see that the change is for the better, but we do need to spend some time learning to play by Ruby's new rules.</p>
+
+<p>That takes us to the first of Ruby's three default <code>Encoding</code>s.</p>
+
+<h4>The Source Encoding</h4>
+
+<p>In Ruby's new grown up world of all encoded data, each and every <code>String</code> needs an <code>Encoding</code>.  That means an <code>Encoding</code> must be selected for a <code>String</code> as soon as it is created.  One way that a <code>String</code> can be created is for Ruby to execute some code with a <code>String</code> literal in it, like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">str</span> <span class="o">=</span> <span class="s2">"A new String"</span>
+</pre></div>
+
+<p>That's a pretty simple <code>String</code>, but what if I use a literal like the following instead?</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">str</span> <span class="o">=</span> <span class="s2">"Résumé"</span>
+</pre></div>
+
+<p>What <code>Encoding</code> is that in?  That fundamental question is probably the main reason we all struggle a bit with character encodings.  You can't tell just from looking at that data what <code>Encoding</code> it is in.  Now, if I showed you the bytes you may be able to make an educated guess, but the data just isn't wearing an <code>Encoding</code> name tag.</p>
+
+<p>That's true of a frightening lot of data we deal with every day.  A plain text file doesn't generally say what <code>Encoding</code> the data inside is in.  When you think about that, it's a miracle we can successfully read a lot of things.</p>
+
+<p>When we're talking about program code, the problem gets worse.  I may want to write my code in UTF-8, but some Japanese programmer may want to write his code in Shift JIS.  Ruby should support that and, in fact, 1.9 does.  Let's complicate things a bit more though:  imagine that I bundle up that UTF-8 code I wrote in a gem and the Japanese programmer later uses it to help with his Shift JIS code.  How do we make that work seamlessly?</p>
+
+<p>The Ruby 1.8 strategy of one global variable won't survive a test like this, so it was time to switch strategies.  Ruby 1.9's answer to this problem is the source <code>Encoding</code>.</p>
+
+<p>All Ruby source code now has some <code>Encoding</code>.  When you create a <code>String</code> literal in your code, it is assigned the <code>Encoding</code> of your source.  That simple rule solves all the problems I just described pretty nicely.  As long my source <code>Encoding</code> is UTF-8 and the Japanese programmer's source <code>Encoding</code> is Shift JIS, my literals will work as I expect and his will work as he expects.  Obviously if we share any data, we will need to establish some rules about our shared formats using documentation or code that can adapt to different <code>Encoding</code>s, but we should have been doing that all along anyway.</p>
+
+<p>Thus the only question becomes, what's my source <code>Encoding</code> and how do I change it?</p>
+
+<p>There are a few different ways Ruby can select a source <code>Encoding</code>.  Here are the options:</p>
+
+<pre><code>$ cat no_encoding.rb 
+p __ENCODING__
+$ ruby no_encoding.rb 
+#&lt;Encoding:US-ASCII&gt;
+
+$ cat magic_comment.rb 
+# encoding: UTF-8
+p __ENCODING__
+$ ruby magic_comment.rb 
+#&lt;Encoding:UTF-8&gt;
+$ cat magic_comment2.rb 
+#!/usr/bin/env ruby -w
+# encoding: UTF-8
+p __ENCODING__
+$ ruby magic_comment2.rb 
+#&lt;Encoding:UTF-8&gt;
+
+$ echo $LC_CTYPE
+en_US.UTF-8
+$ ruby -e 'p __ENCODING__'
+#&lt;Encoding:UTF-8&gt;
+
+$ ruby -KU no_encoding.rb 
+#&lt;Encoding:UTF-8&gt;
+</code></pre>
+
+<p>The first example shows us two important things.  The first is the main rule of source <code>Encoding</code>s:  source files receive a US-ASCII <code>Encoding</code>, unless you say otherwise.  <em>[<strong>Update</strong>:  this was changed to UTF-8 in Ruby 2.0 and up.]</em>  This is where I expect programmers to run into the error I mentioned earlier.  If you place any non-ASCII content in a <code>String</code> literal without changing the source <code>Encoding</code>, Ruby will die with that error.  Thus you need to change the source <code>Encoding</code> to work with any non-ASCII data.  The second thing we see here is the new <code>__ENCODING__</code> keyword that can be used to get the source <code>Encoding</code> that's active where it is executed.</p>
+
+<p>The second example shows the preferred way to set your source <code>Encoding</code> and it's called a magic comment.  If the first line of your code is a comment that includes the word <code>coding</code>, followed by a colon and space, and then an <code>Encoding</code> name, the source <code>Encoding</code> for that file is changed to the indicated <code>Encoding</code>.  If your code has a shebang line, the magic comment must come on the second line, with no spacing between them.  Once set, all <code>String</code> literals you create in that file will have that <code>Encoding</code> attached to them.</p>
+
+<p>The third example shows an exception to the rule for your convenience.  When you feed Ruby some code on the command-line using the <code>-e</code> switch, it gets a source <code>Encoding</code> from your environment.  I have UTF-8 set in the <code>LC_CTYPE</code> environment variable, but some people also use the <code>LANG</code> variable for this.  This makes scripting easier since Ruby will (hopefully) match the <code>Encoding</code> of any other commands you chain together.</p>
+
+<p>The fourth example is another interesting exception to the rule.  Ruby 1.9 still supports the <code>-K*</code> style switches from Ruby 1.8 including the <a href="http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/19552"><code>-KU</code> switch</a> I've recommended so heavily in this series.  These switches have a couple of effects, but of particular note they are the only non-magic comment way to modify the source <code>Encoding</code>.  This is good news for backwards compatibility, because some Ruby 1.8 code may be able to run on Ruby 1.9 without <code>Encoding</code> problems thanks to this.  I must stress that this is just for backwards compatibility though, and magic comments are the future.</p>
+
+<p>With magic comments the code will include its <code>Encoding</code> data.  It will probably seem a little tedious to add them to all your source files at first, but it's really not that big of a change.  In the past, I've recommended we stick the following shebang line at the top of our files:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+</pre></div>
+
+<p>Now, for Ruby 1.9, I'm recommending we switch to something like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+<span class="c1"># encoding: UTF-8</span>
+</pre></div>
+
+<p>Note that the magic comment format rules are pretty loose and all of following examples would work the same:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># encoding: UTF-8</span>
+
+<span class="c1"># coding: UTF-8</span>
+
+<span class="c1"># -*- coding: UTF-8 -*-</span>
+</pre></div>
+
+<p>This is nice for support in some text editors that also read such comments.</p>
+
+<p>If we all get into that habit of adding magic comments, our code can work together regardless of the various <code>Encoding</code>s we personally favor.  Ruby will know how to handle each separate file.  As an added bonus, we programmers also get to see these comments and know more about the code we are working with.  That makes it a good habit to get into, I think.</p>
+
+<h4>The Default External and Internal Encodings</h4>
+
+<p>There's another way <code>String</code>s are commonly created and that's by reading from some <code>IO</code> object.  It doesn't make sense to give those <code>String</code>s the source <code>Encoding</code> because the external data doesn't have to be related to your source code.  Also, you really need to know how data is encoded to read it correctly.  Even a simple concept like reading the next line of data changes if you are talking about UTF-8 or UTF-16LE (the LE stands for a <a href="http://en.wikipedia.org/wiki/Endianness">Little Endian byte order</a>) data.  Thus, it makes sense for <code>IO</code> objects to have at least one <code>Encoding</code> attached to them.  Ruby 1.9 is generous and gives them two:  the external <code>Encoding</code> and the internal <code>Encoding</code>.</p>
+
+<p>The external <code>Encoding</code> is the <code>Encoding</code> the data is in inside the <code>IO</code> object.  That affects how data will be read and this is the <code>Encoding</code> data will be returned in as long as the internal <code>Encoding</code> isn't set (more on that in a bit).  Let's look at an example of how this plays out in practice:</p>
+
+<pre><code>$ cat show_external.rb 
+open(__FILE__, "r:UTF-8") do |file|
+  puts file.external_encoding.name
+  p    file.internal_encoding
+  file.each do |line|
+    p [line.encoding.name, line]
+  end
+end
+$ ruby show_external.rb 
+UTF-8
+nil
+["UTF-8", "open(__FILE__, \"r:UTF-8\") do |file|\n"]
+["UTF-8", "  puts file.external_encoding.name\n"]
+["UTF-8", "  p    file.internal_encoding\n"]
+["UTF-8", "  file.each do |line|\n"]
+["UTF-8", "    p [line.encoding.name, line]\n"]
+["UTF-8", "  end\n"]
+["UTF-8", "end\n"]
+</code></pre>
+
+<p>There are four things to notice in this example:</p>
+
+<ol>
+<li>I set the external <code>Encoding</code> by tacking <code>:UTF-8</code> onto the end of my mode <code>String</code> when I opened the <code>File</code>
+</li>
+<li>You can use <code>external_encoding()</code> to check the external <code>Encoding</code> as I have here</li>
+<li>
+<code>internal_encoding()</code> works the same for the internal <code>Encoding</code>, which will be <code>nil</code> unless you explicitly set it</li>
+<li>Note how each <code>String</code> created as I read the data is given the <code>external_encoding()</code>
+</li>
+</ol><p>The internal <code>Encoding</code> just adds one more twist.  When set, data will still be read in the external <code>Encoding</code>, but transcoded to the internal <code>Encoding</code> as the <code>String</code> is created.  It's a convenience for you as the programmer.  Watch how that changes things:</p>
+
+<pre><code>$ cat show_internal.rb 
+open(__FILE__, "r:UTF-8:UTF-16LE") do |file|
+  puts file.external_encoding.name
+  puts file.internal_encoding.name
+  file.each do |line|
+    p [line.encoding.name, line[0..3]]
+  end
+end
+$ ruby show_internal.rb 
+UTF-8
+UTF-16LE
+["UTF-16LE", "o\x00p\x00e\x00n\x00"]
+["UTF-16LE", " \x00 \x00p\x00u\x00"]
+["UTF-16LE", " \x00 \x00p\x00u\x00"]
+["UTF-16LE", " \x00 \x00f\x00i\x00"]
+["UTF-16LE", " \x00 \x00 \x00 \x00"]
+["UTF-16LE", " \x00 \x00e\x00n\x00"]
+["UTF-16LE", "e\x00n\x00d\x00\n\x00"]
+</code></pre>
+
+<p>There are a couple differences here:</p>
+
+<ol>
+<li>A second added <code>Encoding</code> on the mode <code>String</code> (my <code>:UTF-16LE</code> in this example) sets the <code>internal_encoding()</code> as I show with the second <code>puts()</code>
+</li>
+<li>This little change gets Ruby to translate all of the data for me (I just shortened the output because UTF-16LE is noisy)</li>
+</ol><p>The external <code>Encoding</code> works the same when writing.  It still represents the <code>Encoding</code> in the <code>IO</code> object, or the <code>Encoding</code> data is going to.  However, you don't need to specify an internal <code>Encoding</code> when writing.  Ruby will automatically use the <code>Encoding</code> of a <code>String</code> you output as the internal <code>Encoding</code> and transcode as needed to reach the external <code>Encoding</code>.  For example:</p>
+
+<pre><code>$ cat write_internal.rb 
+# encoding: UTF-8
+open("data.txt", "w:UTF-16LE") do |file|
+  puts file.external_encoding.name
+  p    file.internal_encoding
+  data = "My data…"
+  p [data.encoding.name, data]
+  file &lt;&lt; data
+end
+p File.read("data.txt")
+$ ruby write_internal.rb 
+UTF-16LE
+nil
+["UTF-8", "My data…"]
+"M\x00y\x00 \x00d\x00a\x00t\x00a\x00&amp; "
+</code></pre>
+
+<p>Note how my data was transcoded before it was written even though the <code>internal_encoding()</code> was <code>nil</code>.  Ruby used the <code>String</code>'s <code>Encoding</code> to decide what was needed.</p>
+
+<p>Both of those <code>IO</code> <code>Encoding</code>s should be pretty straight forward.  The only question left about them is:  what happens if you don't set them?  The answer is that the <code>IO</code> inherits the default external <code>Encoding</code> and/or the default internal <code>Encoding</code> whenever one isn't set.  Now we need to know how Ruby chooses those defaults.</p>
+
+<p>The default external <code>Encoding</code> is pulled from your environment, much like the source <code>Encoding</code> is for code given on the command-line.  Have a look:</p>
+
+<pre><code>$ echo $LC_CTYPE
+en_US.UTF-8
+$ ruby -e 'puts Encoding.default_external.name'
+UTF-8
+$ LC_CTYPE=ja_JP.sjis ruby -e 'puts Encoding.default_external.name'
+Shift_JIS
+</code></pre>
+
+<p>The default internal <code>Encoding</code> is simply <code>nil</code>.  You must actively change it to get anything else.</p>
+
+<p>Both default <code>IO</code> <code>Encoding</code>s have a global setter:  <code>Encoding.default_external=()</code> and <code>Encoding.default_internal=()</code>.  You can set them to an <code>Encoding</code> object or just the <code>String</code> name of an <code>Encoding</code>.</p>
+
+<p>You can also change these default <code>Encoding</code>s using some command-line switches.  The new <code>-E</code> switch can be used to set one or both of the <code>IO</code> <code>Encoding</code>s:</p>
+
+<pre><code>$ ruby -e 'p [Encoding.default_external, Encoding.default_internal]'
+[#&lt;Encoding:UTF-8&gt;, nil]
+$ ruby -E Shift_JIS \
+&gt; -e 'p [Encoding.default_external, Encoding.default_internal]'
+[#&lt;Encoding:Shift_JIS&gt;, nil]
+$ ruby -E :UTF-16LE \
+&gt; -e 'p [Encoding.default_external, Encoding.default_internal]'
+[#&lt;Encoding:UTF-8&gt;, #&lt;Encoding:UTF-16LE&gt;]
+$ ruby -E Shift_JIS:UTF-16LE \
+&gt; -e 'p [Encoding.default_external, Encoding.default_internal]'
+[#&lt;Encoding:Shift_JIS&gt;, #&lt;Encoding:UTF-16LE&gt;]
+</code></pre>
+
+<p>As you can see, the argument for this switch is just like what you would append to a mode <code>String</code> in a call to <code>File.open()</code>.</p>
+
+<p>There's one more command-line switch shortcut for those of us who prefer to just use UTF-8 everywhere.  The new <code>-U</code> switch sets <code>Encoding.default_internal()</code> to UTF-8.  Using that, you can just set the external <code>Encoding</code> for your <code>IO</code> objects, or let it default from your environment, and all <code>String</code>s you read will be transcoded to the preferred UTF-8.</p>
+
+<p>Probably the most important thing to note about <code>Encoding.default_external()</code> and <code>Encoding.default_internal()</code> is that you should really just treat them as shortcuts for your own scripting.  Pulling <code>Encoding</code>s from the environment or command-line switches can be handy when you're in control of where the code runs, but you're going to need to be more explicit for code you intend for others to run.  When in doubt, set the external and internal <code>Encoding</code>s the way you want them for each <code>IO</code> object.  It's a bit more tedious, but also safer in that it won't mysteriously be changed by some outside force.  Also remember that the defaults are global settings affecting all loaded code, including any libraries you <code>require()</code>.  That can be a boon or bane, so just remember to factor it into your thinking when you're wondering, "Where does this <code>String</code> get its <code>Encoding</code> from?"</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/character-encodings/ruby-19s-string/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/character-encodings/understanding-m17n-multilingualization/">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/character-encodings/miscellaneous-m17n-details/">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="character-encodings/ruby-19s-three-default-encodings">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/ruby-19s-three-default-encodings#comments">41 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (41)</span></h5>
+
+    <ol>
+        <li id="comment_266">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="266">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">April 6th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_266">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>It's probably worth noting that using the default <code>Encoding</code> setters will trigger warnings:</p>
+
+<pre><code>$ ruby -we 'Encoding.default_internal = Encoding.default_external = "UTF-8"'
+-e:1: warning: setting Encoding.default_external
+-e:1: warning: setting Encoding.default_internal
+</code></pre>
+
+<p>That makes sense, as it's really too late to set these in code after <code>IO</code> objects may have already been created.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_267">
+    <div class="avatar"><img alt="Saimon Moore" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="267">
+      <span class="c_name"><a href="http://saimonmoore.net">Saimon Moore</a></span>
+      <span class="c_date">April 7th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_267">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>James,</p>
+
+<p>A possible typo:</p>
+
+<p>"If the first line of your code is a comment that includes the word 'coding' &lt;== (shouldn't this be 'encoding'), followed by a colon and space"</p></div>
+    <ol>
+      
+        <li id="comment_268">
+    <div class="avatar"><img alt="Saimon Moore" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="268">
+      <span class="c_name"><a href="http://saimonmoore.net">Saimon Moore</a></span>
+      <span class="c_date">April 7th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_268">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I see that both 'coding' and 'encoding' are valid but since the example shown immediately before that paragraph used 'encoding' and I had my finger on the trigger....</p>
+
+<p>My apologies..</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_271">
+    <div class="avatar"><img alt="Nathan de Vries" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="271">
+      <span class="c_name"><a href="http://nathandevries.com">Nathan de Vries</a></span>
+      <span class="c_date">April 16th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_271">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>When using <code>File#open</code>, is it still possible to specify the file mode using the integer values available through the constants of the File class? How would you represent encoding intentions while specifying a mode of <code>File::WRONLY | File::CREAT | File::TRUNC</code>, for example?</p></div>
+    <ol>
+      
+        <li id="comment_272">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="272">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">April 16th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_272">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>It's easy to use an <code>Integer</code> mode with an <code>Encoding</code>.  Most <code>open()</code>-like methods now take an optional <code>Hash</code> of arguments at the end where you can set things like <code>:mode</code>, <code>:external_encoding</code>, or <code>:internal_encoding</code>.  Thus your example could be written as:</p>
+
+<pre><code>$ cat modes_and_encoding.rb 
+open( "utf16.txt", File::WRONLY | File::CREAT | File::TRUNC,
+                   external_encoding: "UTF-16BE" ) do |f|
+  f.puts "Some data."
+end
+$ ruby modes_and_encoding.rb 
+$ ruby -e 'p File.binread("utf16.txt")'
+"\x00S\x00o\x00m\x00e\x00 \x00d\x00a\x00t\x00a\x00.\x00\n"
+</code></pre>
+
+<p>I do talk about this <a href="/character-encodings/miscellaneous-m17n-details/">later in the series</a>.  I just had to spread some of these topics out a bit because there's a lot to cover and the articles where already very long.</p></div>
+    <ol>
+      
+        <li id="comment_274">
+    <div class="avatar"><img alt="Nathan de Vries" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="274">
+      <span class="c_name"><a href="http://nathandevries.com">Nathan de Vries</a></span>
+      <span class="c_date">April 17th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_274">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks for answering such an obvious question, James. I should have read the <a href="http://www.ruby-doc.org/core-2.1.1/IO.html#method-c-new">RDoc for <code>IO#new</code></a>, which clearly describes the API changes.</p></div>
+    <ol>
+      
+        <li id="comment_275">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="275">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">April 17th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_275">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>No worries.  My hope is that we are making things better for all by talking this stuff out.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_301">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="301">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">August 7th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_301">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>It's worth noting, Ruby currently requires that a source <code>Encoding</code> be ASCII compatible.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_359">
+    <div class="avatar"><img alt="Julio Fernández" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="359">
+      <span class="c_name">Julio Fernández</span>
+      <span class="c_date">March 31st, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_359">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>What with class <code>Net::HTTP</code>?<br>
+It take always <code>#&lt;Encoding:US-ASCII&gt;</code></p></div>
+    <ol>
+      
+        <li id="comment_360">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="360">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">March 31st, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_360">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I believe <code>Net::HTTP</code> leaves it to the programmer to manage the conversions.  Thus, it will likely always return content in something like ASCII-8BIT and leave it to you to call <code>force_encoding()</code> using information you pull out of the headers, documentation for the service, or whatever.</p></div>
+    <ol>
+      
+        <li id="comment_361">
+    <div class="avatar"><img alt="Julio Fernández" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="361">
+      <span class="c_name">Julio Fernández</span>
+      <span class="c_date">March 31st, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_361">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>return  US-ASCII, no <code>force_encoding</code>.</p></div>
+    <ol>
+      
+        <li id="comment_362">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="362">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">March 31st, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_362">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Well, it obviously can't return US-ASCII for all cases.  What does it do if the data contains extended characters, like UTF-8?</p></div>
+    <ol>
+      
+        <li id="comment_363">
+    <div class="avatar"><img alt="Julio Fernández" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="363">
+      <span class="c_name">Julio Fernández</span>
+      <span class="c_date">March 31st, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_363">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>OK<br>
+It returns US-ASCII if all the bytes in the content is &lt; 128<br>
+but return ASCII-8BIT if I put any char &gt;128 in the content.</p></div>
+    <ol>
+      
+        <li id="comment_364">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="364">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">March 31st, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_364">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Right.  At that point, you will need to call <code>force_encoding()</code>, as I was referring to earlier, to set the proper encoding for your data.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_368">
+    <div class="avatar"><img alt="Julio Fernández" height="70" src="http://www.gravatar.com/avatar/18c819281ebf9ca5d9b0db58db8ccc81?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="368">
+      <span class="c_name"><a href="mailto:juliogm@gmail.com">Julio Fernández</a></span>
+      <span class="c_date">April 4th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_368">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Sorry.</p>
+
+<p><code>StringIO.new</code> not seem to have an option to set <code>external_encoding</code> at its constructor; It says <code>StringIO#string.encoding</code> is CP850 in mi pc.</p>
+
+<p>I had to set <code>Encoding.default_external="UTF-8"</code> and now <code>StringIO#string.encoding</code> is UTF-8.</p></div>
+    <ol>
+      
+        <li id="comment_369">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="369">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">April 4th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_369">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I think <code>StringIO</code> was a m17n enhanced a little later in the 1.9 conversion game:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="nb">require</span> <span class="s2">"stringio"</span>
+<span class="o">=&gt;</span> <span class="kp">true</span>
+<span class="o">&gt;&gt;</span> <span class="n">sio</span> <span class="o">=</span> <span class="no">StringIO</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"w:UTF-8"</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;StringIO:0x00000100848ae0&gt;</span>
+<span class="o">&gt;&gt;</span> <span class="n">sio</span> <span class="o">&lt;&lt;</span> <span class="s2">"abc"</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;StringIO:0x00000100848ae0&gt;</span>
+<span class="o">&gt;&gt;</span> <span class="n">sio</span><span class="o">.</span><span class="n">string</span><span class="o">.</span><span class="n">encoding</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;Encoding:UTF-8&gt;</span>
+<span class="o">&gt;&gt;</span> <span class="no">RUBY_VERSION</span>
+<span class="o">=&gt;</span> <span class="s2">"1.9.2"</span>
+</pre></div>
+
+<p>It doesn't seem to support the <code>Hash</code>-style arguments in my version though.</p></div>
+    <ol>
+      
+        <li id="comment_370">
+    <div class="avatar"><img alt="Julio Fernández" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="370">
+      <span class="c_name">Julio Fernández</span>
+      <span class="c_date">April 4th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_370">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks.</p>
+
+<p>Not running in 1.9.1 version.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">001</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="nb">require</span> <span class="s1">'stringio'</span>
+<span class="o">=&gt;</span> <span class="kp">true</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">002</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">sio</span> <span class="o">=</span> <span class="no">StringIO</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"w:UTF-8"</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;StringIO:0x29d4a00&gt;</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">003</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">sio</span> <span class="o">&lt;&lt;</span> <span class="s2">"abc"</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;StringIO:0x29d4a00&gt;</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">004</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">sio</span><span class="o">.</span><span class="n">string</span><span class="o">.</span><span class="n">encoding</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;Encoding:CP850&gt;</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">005</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="no">RUBY_VERSION</span>
+<span class="o">=&gt;</span> <span class="s2">"1.9.1"</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">006</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span>
+</pre></div></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_404">
+    <div class="avatar"><img alt="Daniel" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="404">
+      <span class="c_name"><a href="http://happy-coding.com">Daniel</a></span>
+      <span class="c_date">October 16th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_404">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Hey James,</p>
+
+<p>thanks so much for the 'magic comment' hint.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_410">
+    <div class="avatar"><img alt="raulparolari@gmail.com" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="410">
+      <span class="c_name">raulparolari@gmail.com</span>
+      <span class="c_date">November 21st, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_410">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>James, thanks for this memorable ride across the enigmatic world of Unicode.</p>
+
+<p>I have a couple of observations on the script <code>write_internal.rb</code>:</p>
+
+<p>(1) The sentence <em>note how my data was transcoded before it was written</em> is not clear (it cannot mean "in the block, before it is written to the file", as the printout shows that the data is of course still in Utf-8); we only see it transcoded when we read from the file (or running an <code>od -cx data.txt</code> from the shell), so I lost what that meant.</p>
+
+<p>(2) But the real problem was presented by the <strong>format of the string</strong> read from the file and printed at the end; I could not make sense of it. Finally I realized that while the string content is encoded as UTF-16LE, Ruby assigned to the string encoding UTF-8 (as per the script <em>coding</em> line); thus, the apparent oddity of the string derives from the fact that ruby is representing in UTF-8 an UTF-16LE string.</p>
+
+<p>Only applying <code>force_encode("UTF-16LE")</code> to the string read, the string made sense (the unicode triple dot is shown via its unicode codepoint, and all those zero bytes disappeared in the printout). And then when encoding the previous result to UTF-8, we find the exact string we had at the beginning.</p>
+
+<p>It all makes sense (although I confess that I had thought, even without realizing it, that Ruby would do at least the first step above, i.e. read the encoding from the file and present a string whose encoding matched the content).</p>
+
+<p>If you have a chance, let me know if I am correct in interpreting this, or if miss something. In any case, thanks again for this extremely useful series.</p>
+
+<p>Raul</p></div>
+    <ol>
+      
+        <li id="comment_411">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="411">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">November 21st, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_411">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I did mean, "before it was written to the file."  Just think of in terms of <code>encode()</code> instead of <code>encode!()</code>, with the returned result being written into the file.</p>
+
+<p>As for your other comment, it's not always possible for Ruby to know the encoding from just the data, so it leaves it to us to specify what is intended.</p>
+
+<p>But yeah, it sounds like you have it pretty figured out to me.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_412">
+    <div class="avatar"><img alt="Raul Parolari" height="70" src="http://www.gravatar.com/avatar/1ebbd2ca9df3016f6c4f685bc75fe66d?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="412">
+      <span class="c_name"><a href="mailto:raulparolari@gmail.com">Raul Parolari</a></span>
+      <span class="c_date">November 22nd, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_412">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>A note on the script <code>show_internal.rb</code>; for each line, it prints the correct encoding (UTF-16LE), but then instead of the expected text it prints the internal byte structure (like it did not recognize the encoding).</p>
+
+<p>I got the same result running 1.9.1, but with 1.9.2 the problem does not occur and the text is the expected one. Just in case you can update it (perhaps printing the text and an <code>unpack</code> of the line to show the structure). </p>
+
+<p>Thanks again for this tutorial </p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_422">
+    <div class="avatar"><img alt="Bob Gustafson" height="70" src="http://www.gravatar.com/avatar/c3050802c32066bc092f54760f21b4f6?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="422">
+      <span class="c_name"><a href="mailto:bobgus@rcn.com">Bob Gustafson</a></span>
+      <span class="c_date">January 19th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_422">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I have a collection of input files in several different formats - usascii, iso-8859-1, and utf-8</p>
+
+<p>I need to read them all into a utf-8 encoding for further processing (regex, <code>split</code>, etc).</p>
+
+<p>My solution, which seems to be working at the moment, is:</p>
+
+<pre><code>[user1@hoho6 ~]$ cat james.rb
+# coding: utf-8
+puts `ruby -v`
+
+files =  `ls -1 /home/user1/Accounts/Kto*.sta`
+files &lt;&lt; `ls -1 /home/user1/Accounts/Kto*.scn`
+files &lt;&lt; `ls -1 /home/user1/Accounts/umsMT940*.txt`
+
+pflag = true
+
+files.each_line {|fname|
+  fname.chomp!
+  enc = `file -bi "#{fname}"`.chomp.split('=')[1]
+# puts enc
+  mode = "r"
+  mode &lt;&lt; ":#{enc}:utf-8" if enc != 'utf-8'
+  File.open(fname,mode) {|f|
+    f.each_line {|line|
+      line.chomp!
+      begin
+        fields = line.split(':')
+      rescue ArgumentError =&gt; e
+        puts e.message
+        puts fname
+        puts line
+        exit(1)
+      end
+      # &lt;further processing of fields&gt;
+      if /UEBERZ/.match(line) != nil
+        puts line if pflag
+        pflag = false
+      end
+    }
+  }
+} 
+[user1@hoho6 ~]$ 
+
+[user1@hoho6 ~]$ ruby james.rb
+ruby 1.9.2p136 (2010-12-25 revision 30365) [x86_64-linux]
+:86:809?00UEBERZ.-ZINS?10999116?20ÜBERZIEHUNGSZINSEN?21ZURZEIT       
+[user1@hoho6 ~]$
+</code></pre>
+
+<p>I determine the encoding of each input file prior to opening by using the Unix command <code>file -bi</code></p>
+
+<p><code>mode</code> is used to avoid spurious messages when trying to open using <code>"r:utf-8:utf-8"</code></p>
+
+<p>The <code>split</code> command was my original problem when porting from Ruby 1.8.6 Rails 2.3.5 to Ruby 1.9.2 Rails 3.0.2. Testing each line of each file with a <code>rescue</code> around the <code>split</code> gives me some confidence that I can process these files.</p>
+
+<p>Any suggestions for code simplification would be appreciated. It would be nice if it could be done without the external Unix command.</p></div>
+    <ol>
+      
+        <li id="comment_423">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="423">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">January 19th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_423">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>You could definitely replace shelling out to <code>ls</code> with a call to <code>Dir.glob()</code>, but guessing encodings is a lot trickier.  The <code>rchardet</code> gem can help figure it out, I believe.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_434">
+    <div class="avatar"><img alt="3ануда" height="70" src="http://www.gravatar.com/avatar/8743a16c65938456a5f1506e9a316bd0?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="434">
+      <span class="c_name"><a href="mailto:3aHyga@gmail.com">3ануда</a></span>
+      <span class="c_date">March 21st, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_434">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Hello,</p>
+
+<p>for now, in Ruby 1.9.2p136, the setting <code>LC_CTYPE</code> or <code>LANG</code> method isn't working. Do you know why?</p></div>
+    <ol>
+      
+        <li id="comment_435">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="435">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">March 21st, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_435">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Probably not.  If you are having trouble it's best to discuss on the Ruby Core mailing list where you can get help from several people smarter than me.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_441">
+    <div class="avatar"><img alt="jgpawletko" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="441">
+      <span class="c_name">jgpawletko</span>
+      <span class="c_date">April 9th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_441">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thank you for this great article.</p>
+
+<p>Regarding magic comments:<br>
+my version of GNU Emacs 22.1.1 complained about an "Invalid coding system" when using this version of the magic comment: </p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># -*- coding: UTF-8 -*-</span>
+</pre></div>
+
+<p>However, Emacs was happy with this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># -*- coding: utf-8 -*-</span>
+</pre></div>
+
+<p>Just thought I'd pass along the info.</p>
+
+<p>Thanks again for your post.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_442">
+    <div class="avatar"><img alt="Tobias Cohen" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="442">
+      <span class="c_name"><a href="http://tobiascohen.com/">Tobias Cohen</a></span>
+      <span class="c_date">April 18th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_442">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I guess somebody never heard of convention over configuration.</p>
+
+<p>I mean would it really kill those Japanese gem developers (or the rest of us) to set text editors to UTF8 instead of SJIS (or US-ASCII)? The whole point of Unicode is that it's universal - a unique ID for every symbol of every language on earth. Instead of that, now every Ruby file on earth needs to have an extra line of garbage at the top.</p></div>
+    <ol>
+      
+        <li id="comment_443">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="443">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">April 18th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_443">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Even if all the Japanese switch the UTF-8 today, they will have plenty of legacy data to contend with.  They also have <a href="/character-encodings/the-unicode-character-set-and-encodings/">reasons for the slow adoption</a>.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_444">
+    <div class="avatar"><img alt="skawley" height="70" src="http://www.gravatar.com/avatar/e3a1c52b9fbdf4bbd981ab8fb92b2c83?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="444">
+      <span class="c_name"><a href="mailto:skawley@gmail.com">skawley</a></span>
+      <span class="c_date">May 9th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_444">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Sorry to get in so late on this. </p>
+
+<p>I tried putting <code># encoding: UTF-8</code> to my file but I still get the error "invalid multibyte char (US-ASCII) (SyntaxError)". syntax error, unexpected '|'</p>
+
+<p>It doesn't seem to like "|"(pipe) character. My Ruby version is ruby 1.9.2p180 (2011-02-18) [i386-mingw32]</p></div>
+    <ol>
+      
+        <li id="comment_445">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="445">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">May 9th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_445">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>The encoding line must be the very first line of the file, or the second if you have a shebang line.</p></div>
+    <ol>
+      
+        <li id="comment_446">
+    <div class="avatar"><img alt="skawley" height="70" src="http://www.gravatar.com/avatar/e3a1c52b9fbdf4bbd981ab8fb92b2c83?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="446">
+      <span class="c_name"><a href="mailto:skawley@gmail.com">skawley</a></span>
+      <span class="c_date">May 10th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_446">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks Edward, it worked. I had few comments in there.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_478">
+    <div class="avatar"><img alt="Kaushal Kishore" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="478">
+      <span class="c_name">Kaushal Kishore</span>
+      <span class="c_date">August 3rd, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_478">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Great article, since long I am trying to understand the encoding of <code>IO</code>, gone through multiple articles but not convinced with anyone of them. Finally got my hand on this article. Now things are pretty clear.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_479">
+    <div class="avatar"><img alt="Colin Kelley" height="70" src="http://www.gravatar.com/avatar/0a38a3f16001fa9c426c90ffd94e03d0?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="479">
+      <span class="c_name"><a href="mailto:colindkelley@gmail.com">Colin Kelley</a></span>
+      <span class="c_date">August 4th, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_479">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks for a great series!  Very helpful.</p>
+
+<p>I just noticed a typo:</p>
+
+<blockquote>
+<p>That makes sense, as it's really to late</p>
+</blockquote>
+
+<p>should be</p>
+
+<blockquote>
+<p>That makes sense, as it's really too late</p>
+</blockquote></div>
+    <ol>
+      
+        <li id="comment_480">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="480">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">August 4th, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_480">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Fixed.  Thanks.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_484">
+    <div class="avatar"><img alt="jpgeek" height="70" src="http://www.gravatar.com/avatar/0bbddaa50ab78479b10ff632869e6a6c?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="484">
+      <span class="c_name"><a href="mailto:steve.zergsoft@gmail.com">jpgeek</a></span>
+      <span class="c_date">September 4th, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_484">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks much for this!</p>
+
+<p>using ruby 1.9.3, it does not appear that default_external applies to requiring files:</p>
+
+<pre><code>$ cat test.rb
+
+puts 'internal:'
+puts Encoding.default_internal
+puts 'external:'
+puts Encoding.default_external
+require './test2'
+
+$ cat test2.rb 
+
+def test_str
+  return "a string"
+end
+
+$ ruby -E UTF-8:UTF-8 test.rb 
+internal:
+UTF-8
+external:
+UTF-8
+a string
+US-ASCII
+</code></pre>
+
+<p>However, the <code>-Ku</code> option does seem to work:</p>
+
+<pre><code>$ ruby -E UTF-8:UTF-8 -Ku test.rb 
+internal:
+UTF-8
+external:
+UTF-8
+a string
+UTF-8
+</code></pre>
+
+<p>Any idea if this is by design or a bug?</p></div>
+    <ol>
+      
+        <li id="comment_485">
+    <div class="avatar"><img alt="jpgeek" height="70" src="http://www.gravatar.com/avatar/0bbddaa50ab78479b10ff632869e6a6c?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="485">
+      <span class="c_name"><a href="mailto:steve.zergsoft@gmail.com">jpgeek</a></span>
+      <span class="c_date">September 4th, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_485">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Sorry for the formatting of the previous comment.  The form ate my linefeeds pasted from terminal.</p></div>
+    <ol>
+      
+        <li id="comment_486">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="486">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">September 4th, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_486">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>The line endings where still there, but these comments are int Markdown.  I reformatted your comment to indent the code.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_488">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="488">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">September 4th, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_488">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>The default internal and external encodings apply to <code>IO</code> based communication, not to the encoding of the source code.  That's the third encoding type, separate from the other two.</p>
+
+<p>The source encoding is controlled via the "(en)coding" comments.  Also, as you've noted, <code>-K</code> can change it as well.  That's really just for backwards compatibility though and you should be using the comments.</p>
+
+<p>Hope that helps.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_497">
+    <div class="avatar"><img alt="HerbCSO" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="497">
+      <span class="c_name">HerbCSO</span>
+      <span class="c_date">December 16th, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_497">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Great series of articles, really clarifies the whole encoding mess for me.</p>
+
+<p>The only contribution I can offer at this time is an insignificant typo to note. In point 2. of four things to note in the example,  you start with "Use can use", but I think you meant to write "You can use".</p>
+
+<p>Thanks for putting this all out there so clearly.</p></div>
+    <ol>
+      
+        <li id="comment_498">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="498">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">December 16th, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_498">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Fixed.  Thanks.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_499">
+    <div class="avatar"><img alt="Jonah Burke" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="499">
+      <span class="c_name">Jonah Burke</span>
+      <span class="c_date">December 28th, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/ruby-19s-three-default-encodings#comment_499">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Great article. Thanks very much.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

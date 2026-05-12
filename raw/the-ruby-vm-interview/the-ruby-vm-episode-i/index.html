@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / The Ruby VM Interview / The Ruby VM:  Episode I</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This first interview covers who I&#39;m talking with, what we are talking about, and when we will see the results of their labor.">
+    <meta name="keywords"    content="Ruby VM, YARV, Matz, Koichi, ko1, Community, Performance, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/the-ruby-vm-interview/the-ruby-vm-episode-i/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/the-ruby-vm-interview">The Ruby VM Interview</a></h1>
+            <span>Interviews with Matz and ko1 about the next generation Ruby VM.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>16</h4>
+    <span>
+      FEB<br>
+      2007
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">The Ruby VM:  Episode I</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/the-ruby-vm-interview/the-ruby-vm-serial-interview">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/the-ruby-vm-interview/the-ruby-vm-serial-interview">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/the-ruby-vm-interview/the-ruby-vm-episode-ii">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p><strong>Hello and thank you both for agreeing to answer my questions.  To begin, would you please introduce yourselves and tell us about your role in Ruby's development?</strong></p>
+
+<dl>
+<dt>
+<strong>Matz</strong>:</dt>
+  <dd>
+    <p>
+      I am the designer and the first implementer of the Ruby language.  My
+      real name is Yukihiro Matsumoto, that sounds something like
+      You-Key-Hero Matz-Motor in English.  But it's too long to remember and
+      pronounce, so just call me Matz.
+    </p>
+
+    <p>
+      I have been developing Ruby since 1993.  It is now quite complicated
+      and has performance problem.  I have had vague plan of rewriting the
+      interpreter for long time, but I have never been motivated enough to
+      throw out the current interpreter and start developing new one.
+    </p>
+
+    <p>
+      Then Koichi came in with YARV that seemed to have much brighter future
+      than my vaporware - it runs - so I asked him to take a role of the
+      official implementer of the core.  Although I enjoy both designing and
+      implementation of the language, I don't think I am gifted for language
+      implementation.  So I thought that it might be the time to focus on
+      designing when I saw YARV.
+    </p>
+  <dd>
+      
+  </dd>
+</dd>
+<dt>
+<strong>ko1</strong>:</dt>
+  <dd>
+    <p>
+      Thank you for your interest in YARV and me.  BTW, I'm thinking what "YARV"
+      stand for.  Because it is not Yet Another.  Someone proposed that "YARV
+      ain't RubyVM".  If YARV means "YARV ain't RubyVM", what is YARV?
+    </p>
+
+    <p>
+      I'm Koichi Sasada.  Koichi is given name, and "ichi" means "one" in
+      Japanese.  So I use "ko1" as my nick.  I'm an assistant at Department
+      (...snip...) of Tokyo.  My research interest is systems software,
+      especially operating system, programming language, parallel systems, and
+      so on.  And I'm a member of Nihon Ruby no Kai (Ruby Association in Japan).
+      I plan(ed) some Ruby events like
+      <a href="http://jp.rubyist.net/RubyKaigi2007/english.html">RubyKaigi</a>
+      and am an editor of
+      <a href="http://jp.rubyist.net/magazine">Rubyist Magazine</a>.  I also
+      develop(ed) <a href="http://www.atdot.net/nadoka/">Nadoka</a>,
+      <a href="http://www.namikilab.tuat.ac.jp/~sasada/prog/rava2.html">Rava</a>,
+      <a href="http://www.namikilab.tuat.ac.jp/~sasada/prog/rucheme.html">Rucheme</a>,
+      and some projects.  Say, I'm a developer of YARV: Yet Another RubyVM.
+    </p>
+
+    <p>
+      My role in Ruby's development?  To steal VM hacking pleasure from Matz?
+    </p>
+  <dd>
+</dd>
+</dd>
+</dl><p><strong>The point of this interview is to talk about the future of Ruby's interpreter.  To start that, can you please explain what YARV/Rite is?  How is it different in design from the old Ruby interpreter?</strong></p>
+
+<dl>
+<dt>
+<strong>Matz</strong>:</dt>
+  <dd>
+    <p>
+      I have always been more interested in designing the language than
+      implementing it.  So Ruby interpreter is always slower than it should
+      be.  I think I pruned all low-hanging fruits, so that it seemed to
+      required to re-implement whole core to achieve performance boost.  I
+      planned a new interpreter code-named 'Rite' in 2001 or so, but I have
+      never motivated enough to start the project.  Maybe I had been too
+      busy, or perhaps too lazy.
+    </p>
+
+    <p>
+      Then, Koichi came in, and showed us his YARV.  Many had tried
+      implementing Ruby interpreter in the past, but no one but Koichi
+      reached that level of implemented feature set (at the time; now we
+      have JRuby and RubyCLR both compatible with Ruby 1.8).  So I asked him
+      to take part in the development of the new core, and he agreed.
+    </p>
+
+    <p>
+      January 1st 2007, he checked in YARV in to the trunk of our
+      repository, so it is now official core of the Ruby 1.9.  I am still
+      working on old implementation in matzruby branch.  Since it is easier
+      for me to experiment new language features on the old interpreter, but
+      I will eventually switch to the new engine.
+    </p>
+
+    <p>
+      For YARV implementation detail, Koichi will explain.
+    </p>
+
+    <p><strong>Does this mean we are leaving the name Rite behind and keeping YARV?  Or will YARV be renamed at some point?</strong></p>
+
+    <p>
+      The name Rite will not be used for this generation of the language,
+      unless Koichi ask me.  I am not sure Koichi is going to keep YARV, or
+      not, since it already 'the VM' for Ruby.
+    </p>
+  <dd>
+      
+  </dd>
+</dd>
+<dt>
+<strong>ko1</strong>:</dt>
+  <dd>
+    <p>
+      YARV is vanished :)
+    </p>
+
+    <p>
+      In fact, I'm removing "yarv" words from structure names, function names,
+      and file names.  YARV is only code name that not made by *Matz*.  Now,
+      YARV is not "Yet Another".  In this article, I use "YARV" words as
+      current Ruby trunk on official repository.
+    </p>
+
+    <p>
+      At first, YARV is simple stack machine which run pseudo sequential
+      instructions.  Old interpreter (matzruby) *traverses* abstract syntax
+      tree (AST) naively.  Obviously it's slow.  YARV compile that AST to YARV
+      bytecode and run it.
+    </p>
+
+    <p>
+      Secondly, YARV uses native thread (that supported by OS or so) to
+      implement Ruby thread.  It means that you can run *blocking* task in
+      extension libraries.  <em>(On Ruby's spec, blocking task should be
+      interrupted by <code>Thread#raise</code>. To know details, see
+      <a href="http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/10252">[ruby-core:10252]</a>.)</em>
+      Because thread creation is slower than matzruby (green thread), you
+      shouldn't make many threads at a time. Supporting native thread *does not*
+      means that you can run Ruby scripts in *parallel* on parallel machine such
+      as Multi-Core CPUs.  Current implementation uses Giant VM Lock to avoid
+      synchronization problems.  <em>(Many extension libraries doesn't care
+      thread safety.  See <code>array.c</code>, <code>string.c</code>,
+      etc.)</em>
+    </p>
+
+    <p>
+      Thirdly, I made many optimization like specialized instructions, etc.
+      These features are my purpose of developing YARV.  Toy benchmarks run
+      fast because of these optimization techniques.
+    </p>
+
+    <p>
+      YARV doesn't change parser/syntax/specs (matz'
+      <span style="text-decoration: line-through">hobby</span>task), GC
+      (memory/object management), and extension libraries like
+      <code>String</code>/<code>Array</code>/<code>Hash</code>/<code>Regexp</code>/etc.
+      Therefore your script doesn't run fast on YARV if bottleneck is string
+      processing, or so.
+    </p>
+  <dd>
+</dd>
+</dd>
+</dl><p><strong>Congratulations to you both for completing Ruby/YARV merger recently. That must have been a lot of work, but I know it has the whole Ruby world very excited. Now that the merger has taken place, how do you see this changing the way Ruby is developed?</strong></p>
+
+<dl>
+<dt>
+<strong>Matz</strong>:</dt>
+  <dd>
+    <p>
+      Congrats should go to Koichi who has done a lot of work.  I am moving
+      my developing from matzruby (a branch for my old interpreter) to
+      trunk (the yarv).  Recently I have implemented some new features on
+      the trunk, for example, class local instance variables and new local
+      variable scope.  The transition will complete pretty soon.
+    </p>
+
+    <p>
+      Since the trunk is originally Koichi's work, I need more help from
+      others especially from Koichi than before.  I know everything about
+      the previous interpreter (well, most of them), but there are still
+      mysteries in the new one.  I am well satisfied with new one.  It's
+      clearer, well-formed, and faster.
+    </p>
+  <dd>
+      
+  </dd>
+</dd>
+<dt>
+<strong>ko1</strong>:</dt>
+  <dd>
+    <p>
+      Thank you.  I'm a newbie of Ruby developer (in fact, I didn't have CVS
+      account to commit any ruby codes).  So I can't say how change on ruby
+      development :)
+    </p>
+  <dd>
+</dd>
+</dd>
+</dl><p><strong>When will the first production release of Ruby running on YARV by available for all Rubyists to play with?</strong></p>
+
+<dl>
+<dt>
+<strong>Matz</strong>:</dt>
+  <dd>
+    <p>
+      Short answer: now.
+    </p>
+
+    <p>
+      Longer answer: the YARV is already publicly avaiblabe via our
+      Subversion repository.  You can fetch and play with it now.  But the
+      first public "release" from us will be Christmas 2007, if we are as
+      diligent as we should be.  Knowing how lazy I am, I will try not to be
+      a stumbling block for the release. ;-)
+    </p>
+  <dd>
+</dd>
+</dd>
+</dl>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/the-ruby-vm-interview/the-ruby-vm-serial-interview">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/the-ruby-vm-interview/the-ruby-vm-serial-interview">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/the-ruby-vm-interview/the-ruby-vm-episode-ii">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="the-ruby-vm-interview/the-ruby-vm-episode-i">
+  In: <a href="/the-ruby-vm-interview">The Ruby VM Interview</a>
+  <span>|</span>
+  Tags: <a href="/tags/Community">Community</a> &amp; <a href="/tags/Performance">Performance</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-ruby-vm-interview/the-ruby-vm-episode-i#comments">6 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (6)</span></h5>
+
+    <ol>
+        <li id="comment_98">
+    <div class="avatar"><img alt="usa" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="98">
+      <span class="c_name">usa</span>
+      <span class="c_date">February 16th, 2007</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/the-ruby-vm-interview/the-ruby-vm-episode-i#comment_98">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><blockquote>
+<p>Congrats should go to Koichi who has done a lot of work. I am moving my developing from matzruby (a branch for my old interpreter) from trunk (the yarv).</p>
+</blockquote>
+
+<p>"from matzruby <em>to</em> trunk", isn't it?</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/the-ruby-vm-interview/the-ruby-vm-episode-i/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="0mrRXGja8HT4JPvlhAPEduLeY3yUQI5PGT9reJZUwgs=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="98" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-ruby-vm-interview%2Fthe-ruby-vm-episode-i" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-ruby-vm-interview%2Fthe-ruby-vm-episode-i" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_98" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_100">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="100">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">February 16th, 2007</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/the-ruby-vm-interview/the-ruby-vm-episode-i#comment_100">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks usa.  That line was a little confusing.  I have fixed it.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/the-ruby-vm-interview/the-ruby-vm-episode-i/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="0mrRXGja8HT4JPvlhAPEduLeY3yUQI5PGT9reJZUwgs=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="100" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-ruby-vm-interview%2Fthe-ruby-vm-episode-i" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-ruby-vm-interview%2Fthe-ruby-vm-episode-i" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_100" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_99">
+    <div class="avatar"><img alt="hornbeck" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="99">
+      <span class="c_name"><a href="http://42squared.com">hornbeck</a></span>
+      <span class="c_date">February 16th, 2007</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/the-ruby-vm-interview/the-ruby-vm-episode-i#comment_99">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks James/Matz/Koichi.  I have really been enjoying all of the interviews from the different sites lately.  Makes me very happy to be part of the Ruby community.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/the-ruby-vm-interview/the-ruby-vm-episode-i/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="0mrRXGja8HT4JPvlhAPEduLeY3yUQI5PGT9reJZUwgs=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="99" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-ruby-vm-interview%2Fthe-ruby-vm-episode-i" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-ruby-vm-interview%2Fthe-ruby-vm-episode-i" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_99" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_101">
+    <div class="avatar"><img alt="Tan" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="101">
+      <span class="c_name">Tan</span>
+      <span class="c_date">February 16th, 2007</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/the-ruby-vm-interview/the-ruby-vm-episode-i#comment_101">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I suggest YARV is now the acronym for Yes! Agile Ruby Vm!</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/the-ruby-vm-interview/the-ruby-vm-episode-i/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="0mrRXGja8HT4JPvlhAPEduLeY3yUQI5PGT9reJZUwgs=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="101" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-ruby-vm-interview%2Fthe-ruby-vm-episode-i" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-ruby-vm-interview%2Fthe-ruby-vm-episode-i" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_101" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_103">
+    <div class="avatar"><img alt="jeem" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="103">
+      <span class="c_name">jeem</span>
+      <span class="c_date">February 17th, 2007</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/the-ruby-vm-interview/the-ruby-vm-episode-i#comment_103">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Rocks.  Thanks James!  Looking forward to more episodes.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/the-ruby-vm-interview/the-ruby-vm-episode-i/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="0mrRXGja8HT4JPvlhAPEduLeY3yUQI5PGT9reJZUwgs=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="103" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-ruby-vm-interview%2Fthe-ruby-vm-episode-i" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-ruby-vm-interview%2Fthe-ruby-vm-episode-i" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_103" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_104">
+    <div class="avatar"><img alt="Gregory Brown" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="104">
+      <span class="c_name">Gregory Brown</span>
+      <span class="c_date">February 17th, 2007</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/the-ruby-vm-interview/the-ruby-vm-episode-i#comment_104">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Matz/Koichi/James:</p>
+
+<p>Interview is a great read so far, looking forward to hearing more!</p>
+
+<p>I recently grabbed 1.9 from SVN and am playing around with it :)</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/the-ruby-vm-interview/the-ruby-vm-episode-i/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="0mrRXGja8HT4JPvlhAPEduLeY3yUQI5PGT9reJZUwgs=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="104" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-ruby-vm-interview%2Fthe-ruby-vm-episode-i" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-ruby-vm-interview%2Fthe-ruby-vm-episode-i" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_104" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/the-ruby-vm-interview/the-ruby-vm-episode-i/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="0mrRXGja8HT4JPvlhAPEduLeY3yUQI5PGT9reJZUwgs=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-ruby-vm-interview%2Fthe-ruby-vm-episode-i" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-ruby-vm-interview%2Fthe-ruby-vm-episode-i" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

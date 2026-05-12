@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / The Gateway / mail_to_news.rb</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Here&#39;s a breakdown for half of the Ruby Talk Gateway code.  This script pushes mail messages up to our Usenet host.">
+    <meta name="keywords"    content="email, Usenet, Community, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/the-gateway/mail-to-newsrb/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/the-gateway">The Gateway</a></h1>
+            <span>A information about a key piece of software for the early days of the Ruby community.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>5</h4>
+    <span>
+      DEC<br>
+      2006
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">mail_to_news.rb</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/the-gateway/hacking-the-gateway/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/the-gateway/news-to-mailrb/">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p><em>[<strong>Note</strong>:  You need to know <a href="/the-gateway/what-is-the-ruby-talk-gateway/">what the Gateway is</a> before reading this article.]</em></p>
+
+<p>There are two halves to the Ruby Gateway.  One half runs as a qmail filter for an email address on the Ruby Talk mailing list.  Every message sent to that address is piped through this filter with a shell script like:</p>
+
+<pre><code>ruby /path/to/gateway/bin/mail_to_news.rb /path/to/mail_to_news.log
+</code></pre>
+
+<p>The email is piped to the filter via the standard input and the code is expected to handle the message by posting it to comp.lang.ruby or choosing to ignore it.  If the filter exits normally, qmail considers the matter handled.  A non-zero exit code will cause the filter to be called with that same message again later.</p>
+
+<h4>The Code</h4>
+
+<p>Let's dive right into the source of this half of the Gateway:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">GATEWAY_DIR</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">),</span> <span class="s2">".."</span><span class="p">)</span><span class="o">.</span><span class="n">freeze</span>
+
+<span class="vg">$LOAD_PATH</span> <span class="o">&lt;&lt;</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">GATEWAY_DIR</span><span class="p">,</span> <span class="s2">"config"</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">GATEWAY_DIR</span><span class="p">,</span> <span class="s2">"lib"</span><span class="p">)</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>The code above just sets things up so this script can <code>require</code> some other files in the project normally.  Here are those <code>require</code>s:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="nb">require</span> <span class="s2">"servers_config"</span>
+<span class="nb">require</span> <span class="s2">"nntp"</span>
+
+<span class="nb">require</span> <span class="s2">"net/smtp"</span>
+<span class="nb">require</span> <span class="s2">"logger"</span>
+<span class="nb">require</span> <span class="s2">"timeout"</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>The last three requires are standard Ruby libraries.  The first two are not.</p>
+
+<p>The <code>servers_config.rb</code> file sets up a <code>ServerConfig</code> <code>Module</code> with information needed to connect to our email and Usenet hosts.  I will not show this file, but the references should be obvious when see them.</p>
+
+<p>The <code>nntp.rb</code> is pretty much a vendored copy of the <a href="http://rubygems.org/gems/ruby-net-nntp">net-nntp library</a>.  I've made some minor changes for debugging output purposes, but the library functions the same.</p>
+
+<p>We're now ready to initiate logging.  Here's the code that starts that process:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># prepare log</span>
+<span class="n">log</span> <span class="o">=</span> <span class="no">Logger</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">ARGV</span><span class="o">.</span><span class="n">shift</span> <span class="o">||</span> <span class="vg">$stdout</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">datetime_format</span> <span class="o">=</span> <span class="s2">"%Y-%m-%d %H:%M "</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>That just builds a <code>Logger</code> object and cleans up the default date and time formatting.</p>
+
+<p>Now it's time to start setting variables in preparation for the coming email parse:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># only allow certain headers through</span>
+<span class="no">VALID_HEADERS</span>    <span class="o">=</span> <span class="sx">%w[ From Subject References In-Reply-To Message-Id Content-Type</span>
+<span class="sx">                       Content-Transfer-Encoding Date X-ML-Name X-Mail-Count</span>
+<span class="sx">                       X-X-Sender ]</span>
+<span class="n">valid_headers_re</span> <span class="o">=</span> <span class="sr">/^(?:</span><span class="si">#{</span><span class="no">VALID_HEADERS</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">"|"</span><span class="p">)</span><span class="si">}</span><span class="sr">):/i</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>The Gateway passes through only a subset of the email headers for the Usenet post.  The above is the list of those headers and the <code>Regexp</code> that will locate them.</p>
+
+<p>Now, there are two types of messages we do not wish to forward:  spam and a message sent to Ruby Talk by the other half of the Gateway (causing an infinite loop of sending).  The following code prepares flags for these conditions:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># message flags</span>
+<span class="n">spam</span>     <span class="o">=</span> <span class="kp">false</span>
+<span class="n">mirrored</span> <span class="o">=</span> <span class="kp">false</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>The following code allocates variables to hold key header information parsed from the message:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># header data</span>
+<span class="n">msg_id</span>   <span class="o">=</span> <span class="s2">"unknown"</span>
+<span class="n">subject</span>  <span class="o">=</span> <span class="s2">"unknown"</span>
+<span class="n">from</span>     <span class="o">=</span> <span class="s2">"unknown"</span>
+<span class="n">reply_to</span> <span class="o">=</span> <span class="s2">"unknown"</span>
+<span class="n">ref</span>      <span class="o">=</span> <span class="s2">"unknown"</span>
+<span class="n">head</span>     <span class="o">=</span> <span class="o">&lt;&lt;</span><span class="no">END_RECEIVED</span>  <span class="c1"># build received header, including loop flag</span>
+<span class="sh">Newsgroups: #{ServersConfig::NEWSGROUP}</span>
+<span class="sh">X-received-from: This message has been automatically forwarded from the</span>
+<span class="sh">   ruby-talk mailing list by a gateway at #{ServersConfig::NEWSGROUP}. If it is</span>
+<span class="sh">   SPAM, it did not originate at #{ServersConfig::NEWSGROUP}. Please report the</span>
+<span class="sh">   original sender, and not us. Thanks!</span>
+<span class="sh">   Please see http://hypermetrics.com/rubyhacker/clrFAQ.html#tag24 too.</span>
+<span class="sh">X-rubymirror: yes</span>
+<span class="no">END_RECEIVED</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>Note that we get the headers started with an <code>X-received-from</code> explaining our service and add the <code>X-rubymirror</code> flag the other half of the Gateway will use to detect that this half of the Gateway sent this new post we are creating.</p>
+
+<p>Now we need to parse the email headers:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># process message headers</span>
+<span class="n">valid_header</span> <span class="o">=</span> <span class="kp">false</span>
+<span class="vg">$stdin</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">line</span><span class="o">|</span>
+  <span class="k">case</span> <span class="n">line</span>
+  <span class="k">when</span> <span class="sr">/^X-Spam-Status: Yes/</span>      <span class="c1"># flag message as spam</span>
+    <span class="n">spam</span> <span class="o">=</span> <span class="kp">true</span>
+  <span class="k">when</span> <span class="sr">/^X-rubymirror: yes/</span>       <span class="c1"># flag messages from news_to_mail</span>
+    <span class="n">mirrored</span> <span class="o">=</span> <span class="kp">true</span>
+  <span class="k">when</span> <span class="sr">/^\s*$/</span>                    <span class="c1"># end of headers</span>
+    <span class="k">break</span>
+  <span class="k">when</span> <span class="sr">/^\s/</span>                      <span class="c1"># continuation line</span>
+    <span class="n">head</span> <span class="o">&lt;&lt;</span> <span class="n">line</span> <span class="k">if</span> <span class="n">valid_header</span>  <span class="c1"># only allow after valid headers</span>
+  <span class="k">when</span> <span class="n">valid_headers_re</span>           <span class="c1"># valid header</span>
+    <span class="n">valid_header</span> <span class="o">=</span> <span class="kp">true</span>
+
+    <span class="c1"># parse header data</span>
+    <span class="k">case</span> <span class="n">line</span>
+    <span class="k">when</span> <span class="sr">/Message-Id:\s+(.*)/i</span>
+      <span class="n">msg_id</span> <span class="o">=</span> <span class="vg">$1</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sr">/\.+&gt;$/</span><span class="p">,</span> <span class="s2">"&gt;"</span><span class="p">)</span>
+    <span class="k">when</span> <span class="sr">/In-Reply-To:\s*(.*)/i</span>
+      <span class="n">reply_to</span> <span class="o">=</span> <span class="vg">$1</span>
+    <span class="k">when</span> <span class="sr">/References:\s*(.*)/i</span>
+      <span class="n">ref</span> <span class="o">=</span> <span class="vg">$1</span>
+    <span class="k">when</span> <span class="sr">/^Subject:\s*(.*)/i</span>
+      <span class="n">subject</span> <span class="o">=</span> <span class="vg">$1</span>
+    <span class="k">when</span> <span class="sr">/^From:\s*(.*)/i</span>
+      <span class="n">from</span> <span class="o">=</span> <span class="vg">$1</span>
+    <span class="k">end</span>
+
+    <span class="n">head</span> <span class="o">&lt;&lt;</span> <span class="n">line</span>
+  <span class="k">else</span>                            <span class="c1"># invalid header, discard</span>
+    <span class="n">valid_header</span> <span class="o">=</span> <span class="kp">false</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>There's nothing too tricky in the above code.  We match headers with simple expressions, pulling the information we need into variables.  We also set flags as appropriate and add to the headers we have started for the newsgroup post.  This code stops reading at the blank line signaling the end of the email headers.</p>
+
+<p>The code above didn't address flagged messages immediately, because we wanted to be able to log the key details about them.  We now have those details, so it's time to address the flags:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># skip any flagged messages</span>
+<span class="k">if</span> <span class="n">mirrored</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span> <span class="s2">"Skipping message #</span><span class="si">#{</span><span class="n">msg_id</span><span class="si">}</span><span class="s2">, sent by news_to_mail"</span>
+  <span class="nb">exit</span>
+<span class="k">elsif</span> <span class="n">spam</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span> <span class="s2">"Ignoring Spam #</span><span class="si">#{</span><span class="n">msg_id</span><span class="si">}</span><span class="s2">:  </span><span class="si">#{</span><span class="n">subject</span><span class="si">}</span><span class="s2"> -- </span><span class="si">#{</span><span class="n">from</span><span class="si">}</span><span class="s2">"</span>
+  <span class="nb">exit</span>
+<span class="k">end</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>As you can see, flagged messages are noted in the log and we exit cleanly without further processing.</p>
+
+<p>The Gateway does some final header doctoring in an attempt to set a reasonable References header and also includes the Ruby Talk message id for reader reference:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># doctor headers for Ruby Talk</span>
+<span class="k">if</span> <span class="n">ref</span><span class="o">.</span><span class="n">nil?</span>
+    <span class="k">if</span> <span class="n">reply_to</span><span class="o">.</span><span class="n">nil?</span>
+        <span class="k">if</span> <span class="n">subject</span> <span class="o">=~</span> <span class="sr">/^Re:/</span>
+            <span class="n">head</span> <span class="o">&lt;&lt;</span> <span class="s2">"In-Reply-To: &lt;this_is_a_dummy_message-id@rubygate&gt;</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="n">head</span> <span class="o">&lt;&lt;</span> <span class="s2">"References: &lt;this_is_a_dummy_message-id@rubygate&gt;</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="k">end</span>
+    <span class="k">else</span>
+        <span class="n">head</span> <span class="o">&lt;&lt;</span> <span class="s2">"References: </span><span class="si">#{</span><span class="n">reply_to</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+    <span class="k">end</span>
+<span class="k">end</span>
+<span class="n">head</span> <span class="o">&lt;&lt;</span> <span class="s2">"X-ruby-talk: </span><span class="si">#{</span><span class="n">msg_id</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>We are finally ready to construct a complete Usenet post:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># construct final message</span>
+<span class="n">body</span> <span class="o">=</span> <span class="vg">$stdin</span><span class="o">.</span><span class="n">read</span>
+<span class="n">msg</span>  <span class="o">=</span> <span class="n">head</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="n">body</span>
+<span class="n">msg</span><span class="o">.</span><span class="n">gsub!</span><span class="p">(</span><span class="sr">/\r?\n/</span><span class="p">,</span> <span class="s2">"</span><span class="se">\r\n</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span> <span class="s2">"Sending message #</span><span class="si">#{</span><span class="n">msg_id</span><span class="si">}</span><span class="s2">:  </span><span class="si">#{</span><span class="n">subject</span><span class="si">}</span><span class="s2"> -- </span><span class="si">#{</span><span class="n">from</span><span class="si">}</span><span class="s2">..."</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span> <span class="s2">"Message looks like: </span><span class="si">#{</span><span class="n">msg</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>The above code just joins the headers and existing message body, cleans up the newlines and logs our progress.</p>
+
+<p>Actually sending the message is a two-step process.  First we connect to our Usenet host:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># connect to NNTP host</span>
+<span class="k">begin</span>
+  <span class="n">nntp</span> <span class="o">=</span> <span class="kp">nil</span>
+  <span class="no">Timeout</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">nntp</span> <span class="o">=</span> <span class="no">Net</span><span class="o">::</span><span class="no">NNTP</span><span class="o">.</span><span class="n">new</span><span class="p">(</span> <span class="no">ServersConfig</span><span class="o">::</span><span class="no">NEWS_SERVER</span><span class="p">,</span>
+                          <span class="no">Net</span><span class="o">::</span><span class="no">NNTP</span><span class="o">::</span><span class="no">NNTP_PORT</span><span class="p">,</span>
+                          <span class="no">ServersConfig</span><span class="o">::</span><span class="no">NEWS_USER</span><span class="p">,</span>
+                          <span class="no">ServersConfig</span><span class="o">::</span><span class="no">NEWS_PASS</span> <span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">rescue</span> <span class="no">Timeout</span><span class="o">::</span><span class="no">Error</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">error</span> <span class="s2">"The NNTP connection timed out."</span>
+    <span class="nb">exit</span> <span class="o">-</span><span class="mi">1</span>
+<span class="k">rescue</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">fatal</span> <span class="s2">"Unable to establish connection to NNTP host:  </span><span class="si">#{</span><span class="vg">$!</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span>
+    <span class="nb">exit</span> <span class="o">-</span><span class="mi">1</span>
+<span class="k">end</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>Above you can see several references to the <code>ServerConfig</code> <code>Module</code> I spoke of earlier.  These constants contain exactly what their names indicate.</p>
+
+<p>Note that we exit with an error code if anything goes wrong here, assuming the problem is temporary and allowing qmail to try again later.</p>
+
+<p>The final step is to send the message:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># attempt to send newsgroup post</span>
+<span class="k">unless</span> <span class="vg">$DEBUG</span>
+  <span class="k">begin</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="kp">nil</span>
+    <span class="no">Timeout</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span> <span class="p">{</span> <span class="n">result</span> <span class="o">=</span> <span class="n">nntp</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="p">}</span>
+  <span class="k">rescue</span> <span class="no">Timeout</span><span class="o">::</span><span class="no">Error</span>
+      <span class="n">log</span><span class="o">.</span><span class="n">error</span> <span class="s2">"The NNTP post timed out."</span>
+      <span class="nb">exit</span> <span class="o">-</span><span class="mi">1</span>
+  <span class="k">rescue</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">fatal</span> <span class="s2">"Unable to post to NNTP host:  </span><span class="si">#{</span><span class="vg">$!</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span>
+    <span class="nb">exit</span> <span class="o">-</span><span class="mi">1</span>
+  <span class="k">end</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span> <span class="s2">"...  Sent.  nntp.post() result = </span><span class="si">#{</span><span class="n">result</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The above code makes the post and logs what we have accomplished.  Again we exit with error codes if something goes wrong, to signal retries.  The <code>$DEBUG</code> check allows me to test Gateway operation with everything but the actual post send when needed.</p>
+
+<h4>Possible Improvements</h4>
+
+<p>Usenet and email are two different worlds with opposing rules.  Our Usenet host, like many, does not allow the posting of multipart/alternative messages (used to send HTML email).  Some have expressed a desire for the Gateway to <em>convert</em> these messages into a Usenet safe format.  This could possibly be done by using the text/plain variant of content, when provided, and stripping the HTML when it is not.  This change is of low importance to me, since I don't believe posters should be sending HTML email to Ruby Talk.</p>
+
+<p>In a similar vein, some Usenet hosts reject certain types of multipart/mixed messages (used to send email attachments), generally those that have Base 64 encoded portions to avoid allowing binary content through.  Our host allows such posts, but they may not be well circulated on Usenet for these reasons.  Again we might be able to inline the content for these files, but this could get pretty tricky for some attachments.  For example, imagine a post with a zip archive of files.  This problem interests me more than HTML email.</p>
+
+<p>The first step to either off these changes is probably to switch to a real email parsing library.  I imagine the original code didn't use one because the choices weren't convenient when the Gateway was designed.  I just cleaned up the code in my rewrite and don't have enough experience with such libraries to select the proper replacement.  Odds are this could simplify a fair portion of the Gateway code though, if we find the right one.  We are looking for a library that:</p>
+
+<ul>
+<li>Makes it easy to read email headers.</li>
+<li>Allow us to set new headers, for things like the no-mirror flag.</li>
+<li>Allows us to remove unwanted headers.  Alternately I guess we could build a new message object and copy over the headers we wish to keep.</li>
+<li>Supports easy manipulation of multipart/alternative and multipart/mixed content.</li>
+</ul><p>If you have experience with such a library, please leave a comment below showing how this could be used to simplify the code above.</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/the-gateway/hacking-the-gateway/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/the-gateway/news-to-mailrb/">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="the-gateway/mail-to-newsrb">
+  In: <a href="/the-gateway/">The Gateway</a>
+  <span>|</span>
+  Tags: <a href="/tags/Community/">Community</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-gateway/mail-to-newsrb#comments">2 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (2)</span></h5>
+
+    <ol>
+        <li id="comment_87">
+    <div class="avatar"><img alt="Matt M." height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="87">
+      <span class="c_name">Matt M.</span>
+      <span class="c_date">December 5th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/the-gateway/mail-to-newsrb#comment_87">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks for writing this up. </p>
+
+<p>I've been messing around with my own email list to blog gateway. For that I've found <a href="http://i.loveruby.net/en/projects/tmail/">TMail</a> to work pretty well for parsing email messages. I believe it supports all your criteria. </p>
+
+<p>I have a brain-dead technique for trying to extract text from multipart emails:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">get_text</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">msg</span><span class="o">.</span><span class="n">multipart?</span>
+    <span class="n">msg</span><span class="o">.</span><span class="n">parts</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">part</span><span class="o">|</span>
+      <span class="k">if</span> <span class="n">part</span><span class="o">.</span><span class="n">content_type</span> <span class="o">==</span> <span class="s1">'text/plain'</span>
+        <span class="k">return</span> <span class="n">part</span><span class="o">.</span><span class="n">body</span>
+      <span class="k">elsif</span> <span class="n">part</span><span class="o">.</span><span class="n">multipart?</span>
+        <span class="k">return</span> <span class="n">get_text</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+      <span class="k">end</span>
+      <span class="k">if</span> <span class="n">part</span><span class="o">.</span><span class="n">multipart?</span>
+        <span class="n">get_text</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">return</span> <span class="s2">""</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">get_message_body</span>
+  <span class="k">if</span> <span class="vi">@msg</span><span class="o">.</span><span class="n">multipart?</span>
+    <span class="k">return</span> <span class="n">get_text</span><span class="p">(</span><span class="vi">@msg</span><span class="p">)</span>
+  <span class="k">else</span>
+    <span class="k">return</span> <span class="vi">@msg</span><span class="o">.</span><span class="n">body</span>
+  <span class="k">end</span>    
+<span class="k">end</span>
+</pre></div>
+
+<p>This doesn't always work great, emails that have been cut and paste from Word into Outlook are particularly painful, but it works most of the time.</p>
+
+<p>Have you considered trying to implement <code>References</code> or <code>In-Reply-To</code> header support for threading messages? I've worked on that but only to one level deep since in my gateway a new email is a post and a response becomes a comment to that post. The problem I've found in email is that some people respond to messages but start entirely new threads, and some people compose an entirely new email but are actually responding. Some even put an <code>Re:</code> subject line to make it look like they hit reply instead of compose. </p>
+
+<p>I've found that using <code>In-Reply-To</code>, <code>References</code> and <code>Thread-Index</code> (Microsoft clients send this) with a dash of Subject line comparisons I get fairly accurate representations of the threads regardless of whether they hit reply or compose. I haven't tried implementing JWZ's <a href="http://www.jwz.org/doc/threading.html">threading algorithm</a>.<br>
+v</p></div>
+    <ol>
+      
+        <li id="comment_88">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="88">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">December 5th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/the-gateway/mail-to-newsrb#comment_88">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks for the tips.  I will definitely play with TMail and see if I can use that to make this process easier.</p>
+
+<p>Just FYI, your code checked <code>part.multipart?</code> twice, once in the <code>elsif</code> condition and again in the following <code>if</code> condition.</p>
+
+<p>I did show the code that handled <code>References</code> in my write-up.  It's very basic.  Improving this might be another possible area of improvement.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

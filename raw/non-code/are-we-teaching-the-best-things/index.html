@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Non-code / Are We Teaching the Best Things?</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="These are my thoughts on what really matters when we teach programming.">
+    <meta name="keywords"    content="habits, Syntax, Teaching, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/non-code/are-we-teaching-the-best-things/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/non-code">Non-code</a></h1>
+            <span>The rare things I say that don&#39;t directly relate to code.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>28</h4>
+    <span>
+      MAY<br>
+      2014
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Are We Teaching the Best Things?</h3>
+        
+        <p>I'm in Denver right now, mostly to see family. Being the geek that I am though, you know I snuck a little time for the local Rubyists. One of those Rubyists that I was lucky enough chat with is Katrina Owen. </p>
+
+<p>I always love getting a chance to talk with Katrina. She's so thoughtful that she raises the level of discourse and makes me feel smarter. Plus, it turns out that Katrina and I have been thinking about similar things lately. </p>
+
+<p>For my part, I've been thinking about the various students that I've taught to program over the years. I have taught many and because they all learned from me, they learned roughly the same way. What's interesting to me is how different the results have been from that technique. In some cases my students were all set after our lessons and they just began coding up a storm. Other students didn't seem to feel they were ready yet though. They had more of a "Now what do I do?" attitude at this stage. </p>
+
+<p>Katrina raised a similar point from her time teaching in a developer school. When they would get to teaching language basics, they would show several constructs and how they are used. This is similar to how I teach. Just as I have observed, this works for some students. They can just take what they know and run from here. But they also found other students felt a little lost at this point. </p>
+
+<p>The best news is that this isn't the end of the story. Katrina's team does not just give up on these not-quite-there-yet students. Instead, they switch tactics. </p>
+
+<p>This is the key insight, that I feel both Katrina and I have separately arrived at:  these students can still be taught program. There's nothing wrong with them. It seems much more likely that our instruction is somehow failing them. Katrina observes that using different teaching methods (which they have incorporated into the initial lessons, of course), they can reach a significantly higher number of students. </p>
+
+<p>What's the huge secret to reaching these other students?  I'm not going to promise that I have this 100% figured out, but I feel I've reached a point where I can make educated guesses based on what we are seeing. </p>
+
+<p>I have written in the past about how I feel the Ruby language is a combination several useful programming paradigms. Well, I think a good programming education also needs to pull from multiple areas. </p>
+
+<p>When I have taught programming in the past, I've focused heavily on the language and how it works. Looking back, this seems silly to me. Programming languages are, generally speaking, pretty simple things. Ruby has around 60-some keywords, if I recall correctly. The operators you use at early stages are generally pretty common sense, like simple math operations, or easy to understand needs for what what you are trying to accomplish, "How do I jam these two strings together?"  Sure, it'll take some time to learn all of the functions/methods in the core of a language, but you can make decent progress with a small subset and you probably don't need a teacher's help to pick up most of the rest when you're ready. I do realize that languages have plenty of rabbit holes you can get lost in, but I think most of those can, and should be as much as possible, avoided at the earlier levels.  In summary, these language concerns obviously play a role, but this may not be the most significant piece of the learning to program puzzle. </p>
+
+<p>I would say there are two more significant challenges to picking up our particular craft. First, you have to spend quite an effort to learn how think like a computer. Let's face it, computers are really dumb. When I was in school we had to do the exercise of writing down a set of instructions for making a peanut butter and jelly sandwich, which our teacher would then execute as literally as possibly. If you wrote, "spread jelly on bread," the teacher might grab the still-closed jar of jelly and roll it back and forth over a bread slice. Experienced programmers know that teaching machines is exactly like that. They don't make any intuitive leaps and they always do precisely what we told them to. Learning to program is, in part, a process of learning how to specify all steps algorithmically at a ridiculous level of detail. This is the only thing machines understand. I suspect this is the major reason long-time programmers can pick up new languages so quickly. Once you've dumbed yourself down to the level of the computers, putting a communication layer on top of that process is fairly easy. </p>
+
+<p>There's another element that I suspect contributes heavily to the differences we see in students. It's common to hear claims that programming involves a lot of math. This use to bother me because I felt it gave the impression that you would need to be pretty sharp with trigonometry or calculus to build a Web application. This is just not the case. However, there is a very important concept that math and programming do share:  how to solve problems. This is a big deal. Knowing how to break down a challenge into manageable chunks, knowing how to select a good starting point for your efforts, knowing how to work your way from where things currently are to where you need then to be, and knowing how to validate results are key to what we do. This is the beating heart of programming and I rarely see it taught with our languages. Some students come to us already familiar with how to do this stuff from other training so it doesn't hurt them as much when we gloss over it, but it's still a shame because we probably miss good opportunities to put programming specific twists on this process. </p>
+
+<p>There are almost surely other key skills tied to programming that I haven't listed above. These are just some I feel pretty confident that we need and that may not be receiving enough instructional focus. I believe one thing is pretty certain at this point:  programming isn't just about learning a language. I highly doubt that's even the most interesting part of learning to program. Our lesson plans should reflect this.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="non-code/are-we-teaching-the-best-things">
+  In: <a href="/non-code">Non-code</a>
+  <span>|</span>
+  Tags: <a href="/tags/Syntax">Syntax</a> &amp; <a href="/tags/Teaching">Teaching</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/non-code/are-we-teaching-the-best-things#comments">2 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (2)</span></h5>
+
+    <ol>
+        <li id="comment_541">
+    <div class="avatar"><img alt="David Acevedo" height="70" src="https://avatars.githubusercontent.com/u/839013?" width="70" /></div>
+    <div class="comment-info" data-comment-id="541">
+      <span class="c_name"><a href="https://github.com/rebelwarrior">David Acevedo</a></span>
+      <span class="c_date">June 5th, 2014</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/non-code/are-we-teaching-the-best-things#comment_541">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I think these learning paradigms are called learning modalities. Like for example I'm pretty good at geometry, I have a good understanding of it. So you can imagine how disappointed I was when I learned object oriented programming didn't involve any actual objects with geometry as I was expecting... More seriously, from my experience as a teacher and helping others learn Ruby at study groups, figuring out what modality the student is using is key. When I taught English I had to focus on auditory cues with some, with visual ones with others and with body language with some. With programming a lot of it seems to be what key concept the mind is not grasping. I was helping a front-end programmer (self-taught) with Ruby and it was not going anywhere until I got that she didn't understand classical inheritance and how it was different from prototypal. The minute she got that lots of things fell in place. </p>
+
+<p>I learned to program rather recently, after getting injured in a car accident and seeing a youtube video with some awesome programmer in a wheel chair. I forget who it was.... and for me it was clear that one of the things that makes programming hard to learn is that you have to learn two things at once: programming and a programming language. The two are rather distinct. And one doesn't grant you the other. That's why I only learned to program once _why's poignant guide to ruby landed in my hands so many years after HS computer class taught me BASIC. That book teaches both things at the same time. Rather than all the other programming books I'd see (up to that point) that only taught the language features.  </p>
+
+<p>So really I owe a lot to some teachers I haven't met: _why and that guy in that youtube video. </p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/non-code/are-we-teaching-the-best-things/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="ZgffHv7EvL0l/nwEfJioDHTVrxrh7FMPuAqZawVwJrQ=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="541" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fnon-code%2Fare-we-teaching-the-best-things" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fnon-code%2Fare-we-teaching-the-best-things" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_541" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_542">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="https://avatars.githubusercontent.com/u/5639?v=4" width="70" /></div>
+    <div class="comment-info" data-comment-id="542">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">June 5th, 2014</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/non-code/are-we-teaching-the-best-things#comment_542">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Please correct me if I'm wrong, but I thought learning modalities were more about <em>how</em> you learn a subject.  I was more trying to describe which concepts actually make up the subject in question, in which I think language plays a pretty minor roll as you noted.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/non-code/are-we-teaching-the-best-things/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="ZgffHv7EvL0l/nwEfJioDHTVrxrh7FMPuAqZawVwJrQ=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="542" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fnon-code%2Fare-we-teaching-the-best-things" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fnon-code%2Fare-we-teaching-the-best-things" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_542" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/non-code/are-we-teaching-the-best-things/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="ZgffHv7EvL0l/nwEfJioDHTVrxrh7FMPuAqZawVwJrQ=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fnon-code%2Fare-we-teaching-the-best-things" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fnon-code%2Fare-we-teaching-the-best-things" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

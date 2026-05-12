@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / Single Method Classes</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="In this article I discuss one of my pet peeves and show how you can avoid it by understanding what Ruby&#39;s modules are really for.">
+    <meta name="keywords"    content="thinking about code, software design, Mix-ins, Object Orientation, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/single-method-classes/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      MAY<br>
+      2012
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Single Method Classes</h3>
+        
+        <p><em>[<strong>Update</strong>:  I've changed my mind about some of the following due to <a href="http://blog.codeclimate.com/blog/2012/11/14/why-ruby-class-methods-resist-refactoring/">this excellent counter argument</a>.]</em></p>
+
+<p>In the words of Dennis Miller, "I don't want to get off on a rant here, but…"</p>
+
+<p>There's something that drives me crazy and I see it in so much Ruby code.  I see it in the documentation for our key projects; I see Rubyists of all skill levels doing it; it's just everywhere.</p>
+
+<p>Let's talk about when the use of a <code>Class</code> is and is not appropriate.</p>
+
+<h4>The Chained new()</h4>
+
+<p>Here's an example of one form of code that bugs me:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Adder</span>
+  <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="mi">40</span> <span class="o">+</span> <span class="n">n</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="nb">p</span> <span class="no">Adder</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+
+<p>The problem here is that a <code>Class</code> has been used, probably because as Rubyists that's always our default choice, but it's the wrong fit for this code.  A <code>Class</code> is for state and behavior.  The example above is just using behavior.  No state is maintained.</p>
+
+<p>A handy tip for sniffing out this problem is watching for a call to <code>new()</code> in the middle of method chaining as we have here.  If you always use a <code>Class</code> like that, it's not really a <code>Class</code>.  Put another way, if an instance never gets assigned to a variable, something has likely gone wrong with the design.</p>
+
+<p>Here's a slightly trickier version:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Adder</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="vi">@n</span> <span class="o">=</span> <span class="n">n</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="vi">@n</span> <span class="o">+</span> <span class="n">n</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Does this code have the same problem?  It depends on how it gets used.  If it's always used with a chained <code>new()</code> then it's the same thing we looked at above:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">p</span> <span class="no">Adder</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">40</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+
+<p>State isn't really being tracked here.  It's just an illusion.</p>
+
+<p>However, it may be fine if the <code>Adder</code> is sometimes used like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">forty</span> <span class="o">=</span> <span class="no">Adder</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">40</span><span class="p">)</span>
+<span class="nb">puts</span> <span class="s2">"40 + 1 = </span><span class="si">#{</span><span class="n">forty</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">puts</span> <span class="s2">"40 + 2 = </span><span class="si">#{</span><span class="n">forty</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">puts</span> <span class="s2">"40 + 3 = </span><span class="si">#{</span><span class="n">forty</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+</pre></div>
+
+<p>Note the variable assignment.  As I said before, this is our hint that things are on the up and up.  In this case, some value is locked-in so we can then run some experiments on it.  That initial value is state, so this is a fine use for a <code>Class</code>.</p>
+
+<p>This isn't the only form of the problem we need to watch out for though.</p>
+
+<h5>The Unused new()</h5>
+
+<p>Some programmers see my first example and think, "No problem.  Let's remove the <code>new()</code>."  They will often change the code to be something like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Adder</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">add</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="mi">40</span> <span class="o">+</span> <span class="n">n</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="nb">p</span> <span class="no">Adder</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+
+<p>This isn't any better.  Yes, the chained call to <code>new()</code> is gone.  However, now we have a new problem.  What does this mean?</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">what_am_i</span> <span class="o">=</span> <span class="no">Adder</span><span class="o">.</span><span class="n">new</span>
+</pre></div>
+
+<p>A <code>Class</code> is a factory for manufacturing instances of some type.  With this code, I am still allowed to make those instances, but they are completely pointless.  There's no meaningful state or behavior for my new instance.</p>
+
+<p>We could used some Ruby tricks to make <code>new()</code> uncallable, but that's not really better.  Introspection would still tell us that <code>Adder</code> is a <code>Class</code>.  That's a lie.  It's not for manufacturing instances.</p>
+
+<p>That's why this problem bugs me when I see it in code, by the way.  Remember, the primary purpose of code is to communicate with the reader.  Always.  Period. Code that uses <code>Class</code>es in this way does not do that well.  When I see a <code>Class</code>, I am thinking about the instances it will be used to manufacture.  If that's not its purpose, I have been lead astray.  We want our code to communicate better.</p>
+
+<h4>The One Word Fix</h4>
+
+<p>We have multiple choices for how to improve code like this, when we see it.  The easiest is to make a one word change to my last example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Adder</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">add</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="mi">40</span> <span class="o">+</span> <span class="n">n</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="nb">p</span> <span class="no">Adder</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+
+<p>Now we are working with a <code>Module</code> instead of a <code>Class</code>.  The rules have changed.  A <code>Module</code> is not used to manufacture instances.  It can't do that.  It's not really for maintaining state (though I admit that there are minor exceptions to this).</p>
+
+<p>The important point is that I won't be thinking about instances when I read this code.  It communicates better.</p>
+
+<p>Is it the best we can do though?</p>
+
+<h5>Dual Natured</h5>
+
+<p>While a <code>Module</code> is not an instance factory, it does fill multiple roles in Ruby.  This isn't your fault.  A <code>Module</code> is a bit of an overloaded concept in the language.</p>
+
+<p>First, a <code>Module</code> is often used as a namespace in Ruby.  It can group together related constants and methods.  We are fine with that meaning here.  It just says that the <code>add()</code> method is part of the <code>Adder</code> namespace.  No problem.</p>
+
+<p>A <code>Module</code> is also a place to hang methods that don't belong on a <code>Class</code>, typically because they don't maintain any state.  Conversion methods are a great example of this.  Think of <code>ERB::Util.h()</code>.  Again, this meaning is fine.  We actually switched to a <code>Module</code> for exactly this reason.</p>
+
+<p>Finally, a <code>Module</code> can be used as a mix-in in Ruby.  This essentially allows plugging it into any other scope.  It will add its methods and constants to that scope.  This last meaning is a bit of a problem for our "fixed" code.  The reason is that it's possible to write this code using our last example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">SomeMathyThing</span>
+  <span class="kp">include</span> <span class="no">Adder</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This is similar to our unused <code>new()</code> problem.  While we can mix this <code>Module</code> in (because you can do that with any Ruby <code>Module</code>), it has no meaning.  Only instance-level methods and constants matter when mixing a <code>Module</code> in and we didn't define either of those.</p>
+
+<p>I want to stress that this isn't your fault.  This is a quirk of how Ruby is designed.  Switching to a <code>Module</code> is still an acceptable fix.</p>
+
+<p>The question is, could we do even better?  Could we bring our code in line with all three meanings of Ruby's <code>Module</code>.  If we can, it might just communicate even better.  That's a noble goal, so let's try it.</p>
+
+<p>It turns out that Ruby includes a not-too-well-known tool just for this reason.  A <code>Module</code> that uses this tool can be used both as a bag of methods and a mix-in.  For example, take a look at the built-in <code>Math</code> <code>Module</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">SomeMathyThing</span>
+  <span class="kp">extend</span> <span class="no">Math</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">do_math</span>
+    <span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="nb">p</span> <span class="no">Math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="nb">p</span> <span class="no">SomeMathyThing</span><span class="o">.</span><span class="n">do_math</span>
+</pre></div>
+
+<p>As you can see we can call methods on <code>Math</code> directly and we can also add <code>Math</code> to other scopes when it makes sense.  It fits all three definitions of a <code>Module</code> in Ruby.</p>
+
+<p>The <code>Kernel</code> <code>Module</code> also behaves this way.  If you were in some context that defined a <code>p()</code> method, you could still get to the one in <code>Kernel</code> if you needed it.  The code for that would be <code>::Kernel.p()</code>.  The leading <code>::</code> forces the constant lookup to happen from the top level, where <code>Kernel</code> lives.  That ensures you will get the right <code>Kernel</code>, even if another constant with the same name is available in your current scope.  Then we just call <code>p()</code> on the <code>Module</code> normally.</p>
+
+<p>This is done with the help of <code>module_function()</code> and we can use it ourselves:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Adder</span>
+  <span class="kp">module_function</span>
+
+  <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="mi">40</span> <span class="o">+</span> <span class="n">n</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">module</span> <span class="nn">SomeMathyThing</span>
+  <span class="kp">extend</span> <span class="no">Adder</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">do_add</span>
+    <span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="nb">p</span> <span class="no">Adder</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="nb">p</span> <span class="no">SomeMathyThing</span><span class="o">.</span><span class="n">do_add</span>
+</pre></div>
+
+<p>Notice that I just defined normal instance-level methods after calling <code>module_function()</code>.  <code>module_function()</code> is like Ruby's <code>public()</code> and <code>private()</code> in that it will affect methods that follow, when used without an argument.  (It does support passing arguments to affect specific methods as well.)</p>
+
+<h5>Controlling Access</h5>
+
+<p>Transforming a method with <code>module_function()</code> does a couple of things.  First, the instance level methods are copied up to the <code>Module</code> level.  This is what allows for the dual interface.</p>
+
+<p>Another effect of <code>module_function()</code> is that the instance level methods are made <code>private()</code>.  This prevents them from adding to any external interface when they are used as a mix-in.  This is also why things like <code>Kernel</code>'s <code>p()</code> cannot be called with a receiver, except in the <code>Module</code> level access case I showed earlier.  In other words, this code will throw a "private method called" error even with our last example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">Object</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">Adder</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+
+<p>This is usually desirable, but if you have a case where you would prefer to control access for the methods you define, you're probably going to lock horns with <code>module_function()</code>.</p>
+
+<p>There's a trick you can use to get around even that.  Checkout this example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">AccessControlled</span>
+  <span class="kp">extend</span> <span class="nb">self</span>
+
+  <span class="k">def</span> <span class="nf">share_me</span>
+    <span class="n">hide_me</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">"private"</span><span class="p">,</span> <span class="s2">"public"</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="kp">private</span>
+
+  <span class="k">def</span> <span class="nf">hide_me</span>
+    <span class="s2">"I am a private interface."</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="nb">p</span> <span class="no">AccessControlled</span><span class="o">.</span><span class="n">share_me</span>
+<span class="nb">p</span> <span class="no">Object</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">AccessControlled</span><span class="p">)</span><span class="o">.</span><span class="n">share_me</span>
+</pre></div>
+
+<p>The magic line is <code>extend self</code> which mixes the <code>Module</code> into itself at the <code>Module</code> level.  This gives the same kind of dual interface we had before, but it also respects the access control we have setup for the methods.  You can see that <code>share_me()</code> does add to the public interface of objects it is mixed into.  Also, both of the following lines are errors, assuming the code above:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">AccessControlled</span><span class="o">.</span><span class="n">hide_me</span>
+<span class="no">Object</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">AccessControlled</span><span class="p">)</span><span class="o">.</span><span class="n">hide_me</span>
+</pre></div>
+
+<p>I tend to reach for <code>module_function()</code> first, preferring to keep as much <code>private()</code> as I can get away with.  If I find myself in a situation where I need more control over visibility though, I'll switch to <code>extend self</code>.</p>
+
+<h4>The One True Interface</h4>
+
+<p>I want to cover one last semi-related point.</p>
+
+<p>A lot of API's ask us to pass an object that responds to a certain method.  If you are expecting just one method, make it <code>call()</code>.</p>
+
+<p>I think the downside to this approach is that programmer's worry it's not as expressive.  While that's the right concern to have, I don't think it's as bad we think.  It basically comes to this code <code>validater.valid?(whatever)</code> verses <code>validater.call(whatever)</code>.  While the former does clearly express what is happening, the second still comes out pretty OK in plain English, "Mr. Validater I am now calling upon you to do your job."</p>
+
+<p>Plus there's just too much gain for going with <code>call()</code>.  It's already been decided:  <code>call()</code> is the preferred one method interface in Ruby.  This makes you compatible with <code>Proc</code> (and <code>lambda()</code>) and <code>Rack</code>, just to give some key examples.  That allows me to skip defining a <code>Class</code>/<code>Module</code> altogether if my needs are simple or possibly to serve whatever I am defining in a Web application.  That's just because you chose to go with <code>call()</code>.  Standard interfaces are handy.</p>
+
+<p>If I haven't swayed you, at least support both, with some code like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">if</span> <span class="n">validater</span><span class="o">.</span><span class="n">respond_to?</span><span class="p">(</span><span class="ss">:valid?</span><span class="p">)</span>
+  <span class="n">validater</span><span class="o">.</span><span class="n">valid?</span><span class="p">(</span><span class="n">whatever</span><span class="p">)</span>
+<span class="k">else</span>
+  <span class="n">validater</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">whatever</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+<h4>Help Me End This Bad Habit</h4>
+
+<p>You now know that every time I see these single method stateless <code>Class</code>es in the wild I die a little inside.  Have pity on my aging heart!  Here's what you can do to help:</p>
+
+<ul>
+<li>Check your code.  I know you were reading this whole article thinking, "I don't do that."  However, you probably do.  Find code like this and improve it.</li>
+<li>Ignore bad documentation.  Whenever a Ruby project's documentation tells you to define these silly <code>Class</code>es, try it my way first.  It pretty much always works just fine.</li>
+<li>Fix the code and documentation of others.  Start sending patches.  Share a link to this article when you do.  Let's make this less common.  I'll live longer.</li>
+</ul>
+        
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/single-method-classes">
+  In: <a href="/rubies-in-the-rough/">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Mix-ins/">Mix-ins</a> &amp; <a href="/tags/Object%20Orientation/">Object Orientation</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/single-method-classes#comments">3 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (3)</span></h5>
+
+    <ol>
+        <li id="comment_517">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="517">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">May 2nd, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/single-method-classes#comment_517">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p><a href="https://gist.github.com/2580717">This example</a> was brought to my attention, but the top version doesn't bother me here.  I view this as a <a href="http://c2.com/cgi/wiki?MethodObject">Method Object</a> and see part of the state being managed here the process itself.  Because of that, I think the object is fine.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_518">
+    <div class="avatar"><img alt="Iain Hecker" height="70" src="http://www.gravatar.com/avatar/42ec9fd08c179b547dcb60d977e29941?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="518">
+      <span class="c_name"><a href="https://github.com/iain">Iain Hecker</a></span>
+      <span class="c_date">May 2nd, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/single-method-classes#comment_518">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>You could formalize this pattern (just like singleton), like this: <a href="https://gist.github.com/2581027">https://gist.github.com/2581027</a></p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_520">
+    <div class="avatar"><img alt="Gregory Brown" height="70" src="http://www.gravatar.com/avatar/31e038e4e9330f6c75ccfd1fca8010ee?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="520">
+      <span class="c_name"><a href="https://github.com/sandal">Gregory Brown</a></span>
+      <span class="c_date">May 16th, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/single-method-classes#comment_520">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>James and I have been discussing related concepts to this article over on Practicing Ruby, and we've found there is a lot of overlap (and a fair bit of disagreement!) between our two perspectives on things.</p>
+
+<p>I agree that the chained <code>new()</code> and unused <code>new()</code> are bad, but disagree with the use of modules as a suitable replacement, in particular the use of <code>module_function</code>. Unfortunately, Ruby has no great solution to this problem, so it's more of a game of "what's least ugly in this scenario?", which is dependent on context.</p>
+
+<p>See <a href="https://practicingruby.com/articles/ruby-and-the-singleton-pattern-dont-get-along">this Practicing Ruby article</a> for my take on things. The comments there are available to subscribers only, but I'd be happy to continue discussing the topic here with anyone interested :)</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

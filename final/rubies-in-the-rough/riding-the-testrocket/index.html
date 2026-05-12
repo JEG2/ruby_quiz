@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / Riding the Testrocket</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="In this article I dissect Peter Cooper&#39;s Testrocket library and show that those 18 lines of code can teach us a lot about Ruby.">
+    <meta name="keywords"    content="thinking about code, software design, Code Reading, Syntax, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/riding-the-testrocket/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>11</h4>
+    <span>
+      APR<br>
+      2012
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Riding the Testrocket</h3>
+        
+        <p>I say it a lot, but programming is about ideas.  More specifically, it's about not running out of ideas.</p>
+
+<p>Along these lines, I read the results of an interesting study recently.  It was a study about how we think and solve problems.  When I was in school, the belief was that we needed to cram our brain full of facts.  We were pushed to memorize, memorize, memorize.</p>
+
+<p>The more modern view of learning is that facts don't matter as much.  Nowadays we just try to teach children how to think.  The assumption is that they can find the facts they need, because information is so universally available, and their thinking skills will allow them to work their way to other bits of knowledge.</p>
+
+<p>The study looked at people taught using both of these techniques and found some surprising results:  us memorizers can often out think the thinkers.  A leading theory about why that's the case is that the memorizers have more of a foundation to build their ideas off of.  Thinkers may be starting closer to scratch each time.  If so, they have further to go to get to the needed solution.  Memorizers, on the other hand, may already have a lot of knowledge that puts them closer to the solution before they even need to start thinking.</p>
+
+<p>I think a lot of our habits in programming are about this phenomenon.  We read lots of books, priming the pump with language details and sample code.  We listen to conference talks about techniques other programmers have used.  We program in pairs, to double our knowledge foundation before we even try anything.</p>
+
+<p>You should also be reading code.  That's important because it let's you see the ideas of others, introducing external data points you might not divine on your own.  It's also different from books and conference talks, which tend to stick to best practices.  Some code is wild and the value of it may be hard to judge.  Still, it can give you ideas and that's what counts.</p>
+
+<p>Today, I want to read some fun code together.</p>
+
+<h4>The Results of a Brawl</h4>
+
+<p>It's well known that I like code challenges, another great source of before-I-really-need-them ideas.  That's why I ran the <a href="http://www.rubyquiz.com/">Ruby Quiz</a> for years.</p>
+
+<p>A more recent source of such contests is the <a href="http://codebrawl.com/">Codebrawl</a> site.  They throw up a topic and programmers "fight" it out to come up with the best solution.  One of the early brawls centered around <a href="http://codebrawl.com/contests/ruby-testing-libraries">testing libraries</a>.  Peter Cooper won that fight by inventing a neat little library called <a href="https://github.com/peterc/testrocket">Testrocket</a>.</p>
+
+<p>The primary source of Testrocket is 18 lines of code, but there's a surprising amount of features packed in there.  It also uses Ruby in some fairly surprising ways.  Even the interface it achieves can be surprising.  Let's pull back the curtain and see how it's done.</p>
+
+<h5>Rockets Away</h5>
+
+<p>The Testrocket library allows us to write tests for our code.  It's named for the syntax used in those tests.  In Ruby, we call the <code>Hash</code> pairing operator <code>=&gt;</code> the "Hashrocket."  This library creates some pseudo-operators for testing, like <code>+-&gt;</code> and <code>--&gt;</code>.  Those are the "Testrockets."</p>
+
+<p>Here's what a simple set of tests looks like:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"testrocket"</span>
+
+<span class="o">!-&gt;</span> <span class="p">{</span> <span class="s2">"Basic Math Tests"</span> <span class="p">}</span>
+
+<span class="o">+-&gt;</span> <span class="p">{</span> <span class="mi">40</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">42</span>          <span class="p">}</span>
+<span class="o">--&gt;</span> <span class="p">{</span> <span class="mi">4</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span>            <span class="p">}</span>
+<span class="o">--&gt;</span> <span class="p">{</span> <span class="mi">5</span> <span class="o">/</span> <span class="mi">0</span>                 <span class="p">}</span>
+<span class="o">~-&gt;</span> <span class="p">{</span> <span class="s2">"test multiplication"</span> <span class="p">}</span>
+
+<span class="o">!-&gt;</span> <span class="p">{</span> <span class="s2">"A Failing Test"</span> <span class="p">}</span>
+
+<span class="o">+-&gt;</span> <span class="p">{</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">5</span> <span class="p">}</span>
+</pre></div>
+
+<p>Running that code gives this output:</p>
+
+<pre><code>   FIRE 'Basic Math Tests'!
+     OK
+     OK
+     OK
+PENDING 'test multiplication' @ math_test.rb:8
+   FIRE 'A Failing Test'!
+   FAIL @ math_test.rb:12
+</code></pre>
+
+<p>This is obviously very simple, but it's interesting to look at just how this syntax is accomplished.  Before we dive straight into the code though, let's discuss some parts of the Ruby language that will help us understand it.</p>
+
+<h5>The Arrow-to-the-Knee Operator</h5>
+
+<p>A new operator was added to Ruby 1.9 and it has a pretty interesting history.  Rubyists have long complained that we wanted block arguments to be more like full method arguments.  We wanted to be able to set defaults and such, but, most importantly, we wanted blocks that could take blocks.</p>
+
+<p>Metaprogramming was the main motivator here.  It's common to dynamically define methods with tools like <code>define_method()</code>, which essentially turns a block into a method.  If we wanted that newly created method to be able to take a block, blocks had to be able to take blocks.</p>
+
+<p>It was thought that it would be too hard to modify Ruby's parser to work this way, so a compromise was made.  A new syntax for <code>lambda()</code> was introduced that could accept a normal range of arguments.  You could convert that to a block, using the <code>&amp;</code> prefix, when needed.  Plus it could serve in other areas.</p>
+
+<p>In it's simplest form, the new operator looks like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="o">-&gt;</span> <span class="p">{</span> <span class="p">}</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;Proc:0x000001010da6b8@(pry):1 (lambda)&gt;</span>
+</pre></div>
+
+<p>Matz says the arrow was chosen because it kind of looks like a lambda (λ) if you lay it on it's side… and squint.  Most people have taken to calling it the "stabby lambda," but it also looks like it could be someone taking an arrow to the knee, if you ask me.</p>
+
+<p>Of course, the new operator can take various arguments.  That was the whole point:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="o">-&gt;</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="p">{</span> <span class="n">n</span> <span class="o">*</span> <span class="mi">2</span> <span class="p">}</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="mi">21</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="mi">42</span>
+<span class="o">&gt;&gt;</span> <span class="o">-&gt;</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span> <span class="n">n</span> <span class="o">+</span> <span class="n">offset</span> <span class="p">}</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="mi">40</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="mi">42</span>
+<span class="o">&gt;&gt;</span> <span class="o">-&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="n">block</span><span class="p">)</span> <span class="p">{</span> <span class="n">block</span><span class="o">[</span><span class="mi">20</span><span class="o">]</span> <span class="o">+</span> <span class="n">block</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="p">}</span><span class="o">.</span><span class="n">call</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="n">n</span> <span class="o">*</span> <span class="mi">2</span> <span class="p">}</span>
+<span class="o">=&gt;</span> <span class="mi">42</span>
+</pre></div>
+
+<p>This feature wasn't well liked by the community.  Many people thought it looked more like messy Perl (which the idea was borrowed from) and less like beautiful Ruby.  The community begged for a different solution and many ideas were offered up.</p>
+
+<p>One Rubyist even worked out a wickedly complex patch that enabled method style arguments for normal blocks.  Aside from some rare edge cases, it all just worked as expected.  There was a lot of debate over that patch, but it was  eventually accepted.  It too made it into Ruby 1.9:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="k">def</span> <span class="nf">m</span><span class="p">(</span><span class="o">&amp;</span><span class="n">b</span><span class="p">)</span> <span class="n">b</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="n">n</span> <span class="o">*</span> <span class="mi">2</span> <span class="p">}</span> <span class="k">end</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">m</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">bib</span><span class="o">|</span> <span class="n">bib</span><span class="o">[</span><span class="n">n</span><span class="o">]</span> <span class="o">+</span> <span class="n">bib</span><span class="o">[</span><span class="n">offset</span><span class="o">]</span> <span class="p">}</span>
+<span class="o">=&gt;</span> <span class="mi">42</span>
+</pre></div>
+
+<p>With the block problem properly solved, a lynch mob formed and went after stabby lambda's head.  It was too late though.  Matz was in love and the new syntax stayed.</p>
+
+<p>Given this history, I don't see the stabby lambda used in the wild much.  But it was there for Peter Cooper to abuse in his testing library.</p>
+
+<p>Like it or not, I do think it holds some interesting possibilities for methods that need to take multiple blocks (especially when combined with the new <code>Hash</code> syntax).  For example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">UserAgent</span><span class="o">.</span><span class="n">get</span> <span class="n">url</span><span class="p">,</span> <span class="ss">success</span><span class="p">:</span> <span class="o">-&gt;</span><span class="p">(</span><span class="n">response</span><span class="p">)</span> <span class="p">{</span> <span class="n">handle_response</span><span class="p">(</span><span class="n">response</span><span class="p">)</span> <span class="p">},</span>
+                   <span class="ss">failure</span><span class="p">:</span> <span class="o">-&gt;</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>    <span class="p">{</span> <span class="nb">fail</span> <span class="n">error</span><span class="o">.</span><span class="n">message</span>        <span class="p">}</span>
+</pre></div>
+
+<h5>Plus the Other Half of the Puzzle</h5>
+
+<p>Stabby lambda is half of the story of how Peter created the Testrocket syntax.  Remember that the library uses sequences like <code>+-&gt;</code> and <code>--&gt;</code>.  The last two characters in those are the start of a stabby lambda, but the leading <code>+</code>/<code>-</code> isn't.</p>
+
+<p>Most Ruby operators are just syntactic sugar for calling certain methods on objects.  Ruby allows us to define those methods to support the operators.  For example, <code>Fixnum</code> has an unary minus method.  It negates the following number.  This is typically used to created negative numbers in our code:</p>
+
+<pre><code>$ ruby -e 'n = 13; p -n'
+-13
+</code></pre>
+
+<p>But it doesn't have to function like that.  We could be evil and make it double numbers instead:</p>
+
+<pre><code>$ ruby -e 'class Fixnum; def -@; self * 2 end end; n = 13; p -n'
+26
+</code></pre>
+
+<p>Note that I overrode the <code>-@</code> method there.  That's the unary minus, whereas the <code>-</code> method is the binary operator that normally performs subtraction.</p>
+
+<p>Now a <code>Proc</code>, the object created by the stabby lambda, doesn't normally respond to the math operators.  We can't add lambdas, for example:</p>
+
+<pre><code>$ ruby -e '-&gt; { } + -&gt; { }'
+-e:1:in `&lt;main&gt;': undefined method `+' for #&lt;Proc:…&gt; (NoMethodError)
+</code></pre>
+
+<p>However, if we could think up a reasonable meaning for adding two <code>Proc</code> objects together, we could make it work:</p>
+
+<pre><code>$ ruby -e 'class Proc; def +(o) self.class.new { call; o.call } end end;
+           (-&gt; { puts 1 } + -&gt; { puts 2 }).call'
+1
+2
+</code></pre>
+
+<p>Peter chose to define the unary plus and minus on <code>Proc</code>, plus other methods.  This gave them new capabilities and turned them into his Testrockets.</p>
+
+<p>If you're still with me, you are finally ready to see Peter's code:</p>
+
+<h5>A Tiny Library</h5>
+
+<p>Here's all 18 lines of Peter's code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">TestRocket</span>
+  <span class="kp">extend</span> <span class="no">Module</span><span class="o">.</span><span class="n">new</span> <span class="p">{</span> <span class="kp">attr_accessor</span> <span class="ss">:out</span> <span class="p">}</span>
+
+  <span class="k">def</span> <span class="nf">_test</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span> <span class="nb">send</span><span class="p">((</span><span class="n">call</span> <span class="k">rescue</span><span class="p">())</span> <span class="p">?</span> <span class="n">a</span> <span class="p">:</span> <span class="n">b</span><span class="p">);</span> <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">+@</span><span class="p">;</span> <span class="n">_show</span> <span class="n">_test</span> <span class="ss">:_pass</span><span class="p">,</span> <span class="ss">:_fail</span> <span class="k">end</span>
+  <span class="k">def</span> <span class="nf">-@</span><span class="p">;</span> <span class="n">_show</span> <span class="n">_test</span> <span class="ss">:_fail</span><span class="p">,</span> <span class="ss">:_pass</span> <span class="k">end</span>
+  <span class="k">def</span> <span class="nf">~</span><span class="err">@</span><span class="p">;</span> <span class="n">_show</span> <span class="n">_pend</span><span class="p">;</span>               <span class="k">end</span>
+  <span class="k">def</span> <span class="o">!</span><span class="err">@</span><span class="p">;</span> <span class="n">_show</span> <span class="n">_desc</span><span class="p">;</span>               <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">_show</span><span class="p">(</span><span class="n">r</span><span class="p">);</span> <span class="p">(</span><span class="no">TestRocket</span><span class="o">.</span><span class="n">out</span> <span class="o">||</span> <span class="vg">$&gt;</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="n">r</span><span class="p">;</span> <span class="n">r</span> <span class="k">end</span>
+  <span class="k">def</span> <span class="nf">_pass</span><span class="p">;</span> <span class="s2">"     OK</span><span class="se">\n</span><span class="s2">"</span><span class="p">;</span> <span class="k">end</span>
+  <span class="k">def</span> <span class="nf">_fail</span><span class="p">;</span> <span class="s2">"   FAIL @ </span><span class="si">#{</span><span class="n">source_location</span> <span class="o">*</span> <span class="s1">':'</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">;</span> <span class="k">end</span>
+  <span class="k">def</span> <span class="nf">_pend</span><span class="p">;</span> <span class="s2">"PENDING '</span><span class="si">#{</span><span class="n">call</span><span class="si">}</span><span class="s2">' @ </span><span class="si">#{</span><span class="n">source_location</span> <span class="o">*</span> <span class="s1">':'</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">;</span> <span class="k">end</span>
+  <span class="k">def</span> <span class="nf">_desc</span><span class="p">;</span> <span class="s2">"   FIRE '</span><span class="si">#{</span><span class="n">call</span><span class="si">}</span><span class="s2">'!</span><span class="se">\n</span><span class="s2">"</span><span class="p">;</span> <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="no">Proc</span><span class="o">.</span><span class="n">send</span> <span class="ss">:include</span><span class="p">,</span> <span class="no">TestRocket</span>
+</pre></div>
+
+<p>OK, so this code defines a <code>Module</code> called <code>Testrocket</code> (the first line) that is mixed into all <code>Proc</code> objects (the last line).  In other words, it adds some methods to <code>Proc</code>.</p>
+
+<p>In the middle chunk of code, you'll see definitions for <code>+@</code>, <code>-@</code>, and other operators.  That's how you get the Testrocket interface that we've been discussing.  These methods hand their work off to various helper methods, but essentially they do some combination of <code>call()</code> to run the code in the block and printing some results.</p>
+
+<p>Those helper methods are the rest of the method definitions above and below the operators we just looked at.  Peter prefixed them all with underscores as a convention to say that they are just for internal use.  This should keep them from conflicting with normal methods defined on <code>Proc</code>.</p>
+
+<p>The <code>_test()</code> method is where the main action happens.  It runs the block and then calls a different method based on whether or not the code returned a <code>true</code> value.  It also turns any <code>StandardError</code> raised into a normal failure.</p>
+
+<p>Skip over <code>_show()</code> for now and the rest of the helpers are pretty simple stuff.  They just construct the various messages that get printed to tell the tester what happened with the code.  There is an interesting trick used by <code>_fail()</code> and <code>_pend()</code>.  They call the <code>source_location()</code> method on <code>Proc</code> to find out where the code is.  That method usually returns a two element <code>Array</code> containing the file name and line number.  Peter then uses an operator alias for <code>join()</code> (<code>*</code>) to convert them to a single <code>String</code>.  Here's the process spelled out:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="o">-&gt;</span> <span class="p">{</span> <span class="p">}</span><span class="o">.</span><span class="n">source_location</span>
+<span class="o">=&gt;</span> <span class="o">[</span><span class="s2">"(pry)"</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span>
+<span class="o">&gt;&gt;</span> <span class="n">_</span> <span class="o">*</span> <span class="s2">":"</span>
+<span class="o">=&gt;</span> <span class="s2">"(pry):1"</span>
+</pre></div>
+
+<p>The <code>extend()</code> line is the hardest thing in the whole piece to figure out, if you ask me.  It's obvious that the methods <code>out()</code> and <code>out=()</code> are being defined.  It took me a while to figure out where though, since this is a pretty tricky way to define them.</p>
+
+<p>When you get stuck like that, try to see where the method gets used.  That will usually give you the needed hint.  Peeking inside <code>_show()</code> taught me that it's just a fancy way to define a getter and setter on a <code>Module</code> or <code>Class</code>.  Normally the <code>attr_accessor()</code> helper affects the instance level, not the <code>Module</code> level.  So, Peter dynamically defined a mix-in using <code>Module.new()</code> and a block to define it, stuck the <code>attr_accessor()</code> in there, then mixed that in at the <code>Module</code> level with <code>extend()</code>.</p>
+
+<p>It's worth thinking about that a little more, because it has advantages.  Normally, programmers will cheat the <code>attr_accessor()</code> level with code like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="o">&lt;&lt;</span> <span class="nb">self</span>
+  <span class="kp">attr_accessor</span> <span class="ss">:out</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>But there's a difference between these two approaches.  The latter technique puts the methods in the singleton class directly.  Peter's technique puts the methods in a <code>Module</code> mixed into the singleton class.  This means that Peter's methods are easier to override:  you can just mix-in another module, or define the override in the singleton class.</p>
+
+<p>Hopefully that's enough explanation to help you make sense of the code.  I recommend you keep fiddling with it until you fully understand how it works.  It's worth the investment of time.  It will level-up your brain.</p>
+
+<h4>Further Reading</h4>
+
+<p>Here are some other places you might want to look, if you enjoyed this exercise:</p>
+
+<ul>
+<li>I suspect most Rubyists have read <a href="http://pragprog.com/book/ruby3/programming-ruby-1-9">the Pickaxe</a>.  But did you actually read the reference section?  You might be surprised by how helpful that is.  It actually goes through most of the methods present in Ruby, explaining them and showing example usage.  That's a heck of a foundation for your later thinking.</li>
+<li>Looking through other Codebrawl competitions can expose you to some interesting new ideas.  I ran one for <a href="http://codebrawl.com/contests/methods-taking-multiple-blocks">Methods Taking Multiple Blocks</a> that turned out well.  There are some very interesting approaches in the submissions, including some Peter Cooper style <code>Proc</code> hacks.</li>
+<li>If you want to try another code reading exercise along these lines, checkout this oldie-but-goodie:  <a href="https://github.com/ahoward/tagz">tagz.rb</a>.  This is an HTML/XML generation library by Ara T. Howard.  It's not too long, though a little more of a challenge than Peter's code, and you'll learn some crafty Ruby tricks if you figure out how it works.  Watch for the tag method and "document" interplay, plus the neat use of methods like <code>globally()</code> and <code>privately()</code> to make self-evident code.</li>
+</ul>
+        
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/riding-the-testrocket">
+  In: <a href="/rubies-in-the-rough/">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Code%20Reading/">Code Reading</a> &amp; <a href="/tags/Syntax/">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/riding-the-testrocket#comments">0 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (0)</span></h5>
+
+    <ol>
+      
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Ruby Voodoo</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Deep dives into random corners of my favorite programming language.">
+    <meta name="keywords"    content="tips and tricks, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/ruby-voodoo/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/ruby-voodoo">Ruby Voodoo</a></h1>
+            <span>Deep dives into random corners of my favorite programming language.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+            <ul class="blog-list">
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>23</h4>
+    <span>
+      MAY<br>
+      2015
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/ruby-voodoo/rich-methods"><h3 class="blog-title">Rich Methods</h3></a>
+          <p>Some APIs provide collections of dirt simple methods that just do one little thing.</p>
+
+<p>This approach in less common in Ruby though, especially in the core and standard library of the language itself.  Ruby often gives us rich methods with lots of switches we can toggle and half hidden behaviors.</p>
+
+<p>Let's look at some examples of what I am talking about.</p>
+
+<h4>Get a <em>Line</em> at a Time</h4>
+
+<p>I suspect most Rubyists have used <code>gets()</code> to read lines of input from some kind of <code>IO</code>.  Here's the basic usage:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="nb">require</span> <span class="s2">"stringio"</span>
+<span class="o">=&gt;</span> <span class="kp">true</span>
+<span class="o">&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="no">StringIO</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="o">&lt;&lt;</span><span class="no">END_STR</span><span class="p">)</span>
+<span class="sh">&lt;xml&gt;</span>
+<span class="sh">  &lt;tags&gt;Content&lt;/tags&gt;</span>
+<span class="sh">&lt;/xml&gt;</span>
+<span class="no">END_STR</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;StringIO:0x007fd5a264fa08&gt;</span>
+<span class="o">&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">gets</span>
+<span class="o">=&gt;</span> <span class="s2">"&lt;xml&gt;</span><span class="se">\n</span><span class="s2">"</span>
+<span class="o">&gt;&gt;</span> <span class="n">f</span><span class="o">.</span><span class="n">gets</span>
+<span class="o">=&gt;</span> <span class="s2">"  &lt;tags&gt;Content&lt;/tags&gt;</span><span class="se">\n</span><span class="s2">"</span>
+</pre></div>
+
+<p>I didn't want to mess with external files for these trivial examples, so I just loaded <code>StringIO</code> from the standard library.  It allows us to wrap a simple <code>String</code> (defined in this example using <a href="http://graysoftinc.com/ruby-voodoo/working-with-multiline-strings">the <em>heredoc</em> syntax</a>) in the <code>IO</code> interface.  In other words, I'm calling <code>gets()</code> here for a <code>String</code> just as I could with a <code>File</code> or <code>$stdin</code>.</p><p><a href="/ruby-voodoo/rich-methods">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="ruby-voodoo/rich-methods">
+  In: <a href="/ruby-voodoo">Ruby Voodoo</a>
+  <span>|</span>
+  Tags: <a href="/tags/Hidden%20Features">Hidden Features</a> &amp; <a href="/tags/Parsing">Parsing</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-voodoo/rich-methods#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>24</h4>
+    <span>
+      OCT<br>
+      2014
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/ruby-voodoo/the-three-tick-sort"><h3 class="blog-title">The Three Tick Sort</h3></a>
+          <p>Yesterday I showed a newer programmer some code like <code>scores.sort_by(&amp;:reverse)</code>.  This provoked a comment about how they where going to look up <code>sort_by()</code> later to figure out what magic is involved here.  It made me sad to realize how many cool tricks they weren't going to see in that bit of documentation.</p>
+
+<p>Allow me to enumerate those tricks for you, but first let's flesh out an example.  Consider this code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">scores</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="ss">fifteen</span><span class="p">:</span>         <span class="mi">2</span><span class="p">,</span>
+  <span class="n">five_card_run</span><span class="p">:</span>   <span class="mi">5</span><span class="p">,</span>
+  <span class="n">five_card_flush</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+  <span class="n">four_card_run</span><span class="p">:</span>   <span class="mi">4</span><span class="p">,</span>
+  <span class="n">four_card_flush</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+  <span class="n">his_nobs</span><span class="p">:</span>        <span class="mi">1</span><span class="p">,</span>
+  <span class="ss">pair</span><span class="p">:</span>            <span class="mi">2</span><span class="p">,</span>
+  <span class="n">three_card_run</span><span class="p">:</span>  <span class="mi">3</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">scores</span><span class="o">.</span><span class="n">sort_by</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:reverse</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="nb">name</span><span class="p">,</span> <span class="n">score</span><span class="o">|</span>
+  <span class="nb">puts</span> <span class="s2">"Score </span><span class="si">#{</span><span class="n">score</span><span class="si">}</span><span class="s2"> for </span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">."</span>
+<span class="k">end</span>
+<span class="c1"># &gt;&gt; Score 1 for his_nobs.</span>
+<span class="c1"># &gt;&gt; Score 2 for fifteen.</span>
+<span class="c1"># &gt;&gt; Score 2 for pair.</span>
+<span class="c1"># &gt;&gt; Score 3 for three_card_run.</span>
+<span class="c1"># &gt;&gt; Score 4 for four_card_flush.</span>
+<span class="c1"># &gt;&gt; Score 4 for four_card_run.</span>
+<span class="c1"># &gt;&gt; Score 5 for five_card_flush.</span>
+<span class="c1"># &gt;&gt; Score 5 for five_card_run.</span>
+</pre></div>
+
+<p>In this case, the magic method call (<code>scores.sort_by(&amp;:reverse)</code>) has reordered a list of Cribbage hands first by point value and then alphabetically ("ASCIIabetically" in truth).  How this happens is a pretty interesting journey though.</p><p><a href="/ruby-voodoo/the-three-tick-sort">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="ruby-voodoo/the-three-tick-sort">
+  In: <a href="/ruby-voodoo">Ruby Voodoo</a>
+  <span>|</span>
+  Tags: <a href="/tags/Hidden%20Features">Hidden Features</a> &amp; <a href="/tags/Iterators">Iterators</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-voodoo/the-three-tick-sort#comments">2 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>10</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/ruby-voodoo/all-about-struct"><h3 class="blog-title">All About Struct</h3></a>
+          <p>I build small little data classes all the time and there's a reason for that:  Ruby makes it trivial to do so.  That's a big win because we all know that what is a trivial data class today will be tomorrow's super object, right?  If I start out using a simple <code>Array</code> or <code>Hash</code>, I'll probably end up redoing most of the logic at both ends eventually.  Or I can start with the trivial class and grow it naturally.</p>
+
+<p>The key to all this though is that I don't write those classes myself!  That's what Ruby is for.  More specifically, you need to learn to love <code>Struct</code>.  Allow me to show you what I mean.</p>
+
+<p>Imagine I need a basic class to represent a <code>Contact</code>.  Ruby gives us so many shortcuts that the class could be very small even without <code>Struct</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Contact</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">email</span><span class="p">)</span>
+    <span class="vi">@first</span> <span class="o">=</span> <span class="n">first</span>
+    <span class="vi">@last</span>  <span class="o">=</span> <span class="n">last</span>
+    <span class="vi">@email</span> <span class="o">=</span> <span class="n">email</span>
+  <span class="k">end</span>
+
+  <span class="kp">attr_accessor</span> <span class="ss">:first</span><span class="p">,</span> <span class="ss">:last</span><span class="p">,</span> <span class="ss">:email</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>You could shorten that up more with some multiple assignment if you like, but that's the basics.  Now using <code>Struct</code> is even easier:</p><p><a href="/ruby-voodoo/all-about-struct">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="ruby-voodoo/all-about-struct">
+  In: <a href="/ruby-voodoo">Ruby Voodoo</a>
+  <span>|</span>
+  Tags: <a href="/tags/Data%20Objects">Data Objects</a> &amp; <a href="/tags/Hidden%20Features">Hidden Features</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-voodoo/all-about-struct#comments">8 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>9</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/ruby-voodoo/dual-interface-modules"><h3 class="blog-title">Dual Interface Modules</h3></a>
+          <p>I'm guessing we've all seen Ruby's <code>Math</code> <code>Module</code>.  I'm sure you know that you can call methods in it as "module (or class) methods:"</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">Math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>  <span class="c1"># =&gt; 2.0</span>
+</pre></div>
+
+<p>That's just one way to use the <code>Math</code> <code>Module</code> though.  Another is to treat it as a mixin and call the same methods as instance methods:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">MyMathyThing</span>
+  <span class="kp">extend</span> <span class="no">Math</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">my_sqrt</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">sqrt</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="no">MyMathyThing</span><span class="o">.</span><span class="n">my_sqrt</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>  <span class="c1"># =&gt; 2.0</span>
+</pre></div>
+
+<p>Ruby ships with a few <code>Module</code>s that work like this, including the mighty <code>Kernel</code>.</p>
+
+<p>How is this dual interface accomplished?  With the seldom seen <code>module_function()</code> method.  You use this much like you would <code>private()</code>, to affect all following method definitions:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Greeter</span>
+  <span class="kp">module_function</span>
+
+  <span class="k">def</span> <span class="nf">hello</span>
+    <span class="s2">"Hello!"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">module</span> <span class="nn">MyGreeter</span>
+  <span class="kp">extend</span> <span class="no">Greeter</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">my_hello</span>
+    <span class="n">hello</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="no">Greeter</span><span class="o">.</span><span class="n">hello</span>       <span class="c1"># =&gt; "Hello!"</span>
+<span class="no">MyGreeter</span><span class="o">.</span><span class="n">my_hello</span>  <span class="c1"># =&gt; "Hello!"</span>
+</pre></div>
+
+<p>As you can see, it magically gives us the dual interface for the methods beneath it.  You can also affect specific methods by name, just as you could with <code>private()</code>.  This is equivalent to my definition above:</p><p><a href="/ruby-voodoo/dual-interface-modules">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="ruby-voodoo/dual-interface-modules">
+  In: <a href="/ruby-voodoo">Ruby Voodoo</a>
+  <span>|</span>
+  Tags: <a href="/tags/APIs">APIs</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-voodoo/dual-interface-modules#comments">2 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>8</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/ruby-voodoo/readable-booleans"><h3 class="blog-title">Readable Booleans</h3></a>
+          <p>There's a great little trick you can do to improve the readability of your code.  A common problem is dealing with methods that have a boolean flag arguments.  Here's an example I ran into just today in a Rails application:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">rating_stars</span><span class="p">(</span><span class="o">.</span><span class="n">.</span><span class="o">.</span><span class="n">,</span> <span class="n">clickable</span> <span class="o">=</span> <span class="kp">false</span><span class="p">)</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The problem with this is that you typically see calls like this scattered around the application:</p>
+
+<div class="highlight highlight-erb"><pre><span class="cp">&lt;%=</span> <span class="n">rating_stars</span><span class="p">(</span><span class="o">.</span><span class="n">.</span><span class="o">.</span><span class="n">,</span> <span class="kp">true</span><span class="p">)</span> <span class="cp">%&gt;</span><span class="x"></span>
+</pre></div>
+
+<p>Would you know what <code>true</code> did there if I hadn't shown you the name of the variable first?  I didn't.  I had to go hunting for that method definition.</p>
+
+<p>Ironically the opposite problem, a magical dangling <code>false</code>, is much more rare in my experience.  That's typically the default for these kind of arguments and it just makes more sense and reads better to leave it out.</p>
+
+<p>Anyway, the point is that we can typically improve the ease of understanding the common case.  Remember that in Ruby <code>false</code> and <code>nil</code> are false while everything else is true.  That means that truth is very loosely defined and we can pass a lot of things for our boolean flag value.  For example, after looking up the method and understanding what was needed, I chose to call it like this:</p><p><a href="/ruby-voodoo/readable-booleans">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="ruby-voodoo/readable-booleans">
+  In: <a href="/ruby-voodoo">Ruby Voodoo</a>
+  <span>|</span>
+  Tags: <a href="/tags/APIs">APIs</a> &amp; <a href="/tags/Style">Style</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-voodoo/readable-booleans#comments">2 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>7</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/ruby-voodoo/dsl-block-styles"><h3 class="blog-title">DSL Block Styles</h3></a>
+          <p>There's an argument that rages in the Ruby camps:  to <code>instance_eval()</code> or not to <code>instance_eval()</code>.  Most often this argument is triggered by DSL discussions where we tend to want code like:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">configurable</span><span class="o">.</span><span class="n">config</span> <span class="k">do</span>
+  <span class="n">width</span> <span class="mi">100</span>
+  <span class="n">mode</span>  <span class="ss">:wrap</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>You can accomplish something like this by passing the block to <code>instance_eval()</code> and changing <code>self</code> to an object that defines the <code>width()</code> and <code>mode()</code> methods.  Of course changing <code>self</code> is always dangerous.  We may have already been inside an object and planning to use methods from that namespace:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">MyObject</span>
+  <span class="kp">include</span> <span class="no">Configurable</span>       <span class="c1"># to get the config() method shown above</span>
+
+  <span class="k">def</span> <span class="nf">initialize</span>
+    <span class="n">config</span> <span class="k">do</span>
+      <span class="n">width</span> <span class="n">calculate_width</span>  <span class="c1"># a problem:  may not work with instance_eval()</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="kp">private</span>
+
+  <span class="k">def</span> <span class="nf">calculate_width</span>        <span class="c1"># the method we want to use</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>In this example, if <code>width()</code> comes from a different configuration object, we're in trouble.  The <code>instance_eval()</code> will shift the focus away from our <code>MyObject</code> instance and we will get a <code>NoMethodError</code> when we try to call <code>calculate_width()</code>.  This may prevent us from being able to use <code>Configurable</code> in our code.</p><p><a href="/ruby-voodoo/dsl-block-styles">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="ruby-voodoo/dsl-block-styles">
+  In: <a href="/ruby-voodoo">Ruby Voodoo</a>
+  <span>|</span>
+  Tags: <a href="/tags/DSLs">DSLs</a> &amp; <a href="/tags/Style">Style</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-voodoo/dsl-block-styles#comments">7 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>6</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/ruby-voodoo/conversion-methods"><h3 class="blog-title">Conversion Methods</h3></a>
+          <p>I want to take a step back from all the syntax I've been covering lately and just talk about some simple methods in Ruby's core.  Ruby ships with so many great helpers, it's often hard to keep track of what everything can do.  Specifically, let's talk about the type conversion methods.</p>
+
+<p>I assume we all make calls to <code>to_s()</code> and <code>to_i()</code> regularly:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="mi">255</span><span class="o">.</span><span class="n">to_s</span>    <span class="c1"># =&gt; "255"</span>
+<span class="s2">"255"</span><span class="o">.</span><span class="n">to_i</span>  <span class="c1"># =&gt; 255</span>
+</pre></div>
+
+<p>There shouldn't be any surprises there.  Even these two simple methods can do more though.  They make it possible to convert to and from various numeric bases.  For example, here are the same conversions into and out of base 16 (hexadecimal):</p>
+
+<div class="highlight highlight-ruby"><pre><span class="mi">255</span><span class="o">.</span><span class="n">to_s</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>   <span class="c1"># =&gt; "ff"</span>
+<span class="s2">"ff"</span><span class="o">.</span><span class="n">to_i</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>  <span class="c1"># =&gt; 255</span>
+</pre></div>
+
+<p>Ruby has other ways to do these same conversions.  Here are two unusual methods (beginning with capital letters) that are similar:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">String</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>     <span class="c1"># =&gt; "255"</span>
+<span class="nb">Integer</span><span class="p">(</span><span class="s2">"255"</span><span class="p">)</span>  <span class="c1"># =&gt; 255</span>
+</pre></div>
+
+<p>I'll be honest and tell you that I don't really find <code>String()</code> useful as it just calls <code>to_s()</code> for you, but <code>Integer()</code> is a different story.  First of all, <code>to_i()</code> is very lenient about what it converts while <code>Integer()</code> is more strict:</p><p><a href="/ruby-voodoo/conversion-methods">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="ruby-voodoo/conversion-methods">
+  In: <a href="/ruby-voodoo">Ruby Voodoo</a>
+  <span>|</span>
+  Tags: <a href="/tags/APIs">APIs</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-voodoo/conversion-methods#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>3</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/ruby-voodoo/im-addicted-to-the-word-array"><h3 class="blog-title">I&#39;m Addicted to the Word Array</h3></a>
+          <p>Continuing with my recent trend of showing of fun uses of Ruby syntax, I have a confession to make:  I'm addicted to Ruby's "word <code>Array</code>."  I really am.</p>
+
+<p>I suspect most of you know this, but the word <code>Array</code> is a shortcut that can lessen the quote-comma-quote syndrome of simple a simple <code>Array</code> like:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">[</span><span class="s2">"a"</span><span class="p">,</span> <span class="s2">"wordy"</span><span class="p">,</span> <span class="s2">"Array"</span><span class="o">]</span>
+</pre></div>
+
+<p>You can create the same <code>Array</code> with the word <code>Array</code> syntax:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="sx">%w[a wordy Array]</span>
+</pre></div>
+
+<p>That's essentially just a <code>String</code> that will automatically be <code>split()</code> on whitespace to build an <code>Array</code>.  You can use any amount of space any place you like, so you can layout the data in whatever way makes the most sense for you:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"pp"</span>
+<span class="n">pp</span> <span class="sx">%w[ one   two   three</span>
+<span class="sx">       four  five  six</span>
+<span class="sx">       seven eight nine</span>
+<span class="sx">             zero        ]</span>
+<span class="c1"># &gt;&gt; ["one",</span>
+<span class="c1"># &gt;&gt;  "two",</span>
+<span class="c1"># &gt;&gt;  "three",</span>
+<span class="c1"># &gt;&gt;  "four",</span>
+<span class="c1"># &gt;&gt;  "five",</span>
+<span class="c1"># &gt;&gt;  "six",</span>
+<span class="c1"># &gt;&gt;  "seven",</span>
+<span class="c1"># &gt;&gt;  "eight",</span>
+<span class="c1"># &gt;&gt;  "nine",</span>
+<span class="c1"># &gt;&gt;  "zero"]</span>
+</pre></div>
+
+<p>Note that you can chose the punctuation characters used at either ends of the <code>Array</code>, some of which are paired while others just repeat:</p><p><a href="/ruby-voodoo/im-addicted-to-the-word-array">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="ruby-voodoo/im-addicted-to-the-word-array">
+  In: <a href="/ruby-voodoo">Ruby Voodoo</a>
+  <span>|</span>
+  Tags: <a href="/tags/Syntax">Syntax</a> &amp; <a href="/tags/Hidden%20Features">Hidden Features</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-voodoo/im-addicted-to-the-word-array#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>2</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/ruby-voodoo/interpolation-and-statements"><h3 class="blog-title">Interpolation and Statements</h3></a>
+          <p>I still cringe anytime I see code like:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="s2">"1 + 2 = "</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">to_s</span>  <span class="c1"># =&gt; "1 + 2 = 3"</span>
+</pre></div>
+
+<p>Some books even advocate the above, which is a real shame for Ruby.</p>
+
+<p>I imagine most of you know that you can rewrite the above to use <code>String</code> interpolation:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="s2">"1 + 2 = </span><span class="si">#{</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span><span class="si">}</span><span class="s2">"</span>  <span class="c1"># =&gt; "1 + 2 = 3"</span>
+</pre></div>
+
+<p>Let's think about that simple code a little bit more than we usually do though.  What's really going on here?  Obviously <code>#{ … }</code> inserts the result of the embedded code in the <code>String</code>, but it's important to realize that it also calls <code>to_s()</code> on that result to make it fit in the <code>String</code>.</p>
+
+<p>We can really make use of that knowledge if we try.  Here's an example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">Name</span> <span class="o">=</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:first</span><span class="p">,</span> <span class="ss">:last</span><span class="p">)</span> <span class="k">do</span>
+  <span class="k">def</span> <span class="nf">full</span>
+    <span class="s2">"</span><span class="si">#{</span><span class="n">first</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">last</span><span class="si">}</span><span class="s2">"</span><span class="o">.</span><span class="n">strip</span>  <span class="c1"># trick 1</span>
+  <span class="k">end</span>
+  <span class="n">alias_method</span> <span class="ss">:to_s</span><span class="p">,</span> <span class="ss">:full</span>   <span class="c1"># trick 2</span>
+<span class="k">end</span>
+
+<span class="no">Name</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"James"</span><span class="p">)</span><span class="o">.</span><span class="n">full</span>                     <span class="c1"># =&gt; "James"</span>
+<span class="no">Name</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:James</span><span class="p">,</span> <span class="ss">:Gray</span><span class="p">)</span><span class="o">.</span><span class="n">full</span>               <span class="c1"># =&gt; "James Gray"</span>
+<span class="s2">"My name is </span><span class="si">#{</span><span class="no">Name</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">'James'</span><span class="p">,</span> <span class="s1">'Gray'</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span> <span class="c1"># =&gt; "My name is James Gray."</span>
+</pre></div>
+
+<p>I've built a trivial data class for managing names here.  In that, I've tried to make use of interpolation to the fullest.</p><p><a href="/ruby-voodoo/interpolation-and-statements">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="ruby-voodoo/interpolation-and-statements">
+  In: <a href="/ruby-voodoo">Ruby Voodoo</a>
+  <span>|</span>
+  Tags: <a href="/tags/Syntax">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-voodoo/interpolation-and-statements#comments">7 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>2</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/ruby-voodoo/working-with-multiline-strings"><h3 class="blog-title">Working With Multiline Strings</h3></a>
+          <p>I imagine most Rubyists are aware that Ruby has "heredocs," but do you really know all they can do?  Let's find out.</p>
+
+<p>A "here document" is a literal syntax for a multiline <code>String</code>.  In the most basic form, they look like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">p</span> <span class="o">&lt;&lt;</span><span class="no">END_HEREDOC</span>
+<span class="sh">This is a</span>
+<span class="sh">  multiline,</span>
+<span class="sh">as is String!</span>
+<span class="no">END_HEREDOC</span>
+<span class="c1"># &gt;&gt; "This is a\n  multiline,\nas is String!\n"</span>
+</pre></div>
+
+<p>The <code>&lt;&lt;NAME</code> syntax introduces the heredoc, but it actually begins at the start of the following line.  It continues until <code>NAME</code> occurs again, at the beginning of a line.  Note the trailing newline in the example above.  All of the data between start and finish is packaged up into a <code>String</code> and dropped in where the original <code>&lt;&lt;NAME</code> designator appeared.</p>
+
+<p>There are some important details in that description, namely that the <code>String</code> begins on the next line and that it's inserted where the heredoc was started.  This means that the rest of the line where the heredoc is started can have normal Ruby code (though your editor may syntax highlight it badly):</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">p</span> <span class="o">&lt;&lt;</span><span class="no">END_SQL</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="sr">/\s+/</span><span class="p">,</span> <span class="s2">" "</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span>
+<span class="sh">SELECT * FROM     users</span>
+<span class="sh">         ORDER BY users.id DESC</span>
+<span class="no">END_SQL</span>
+<span class="c1"># &gt;&gt; "SELECT * FROM users ORDER BY users.id DESC"</span>
+</pre></div><p><a href="/ruby-voodoo/working-with-multiline-strings">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="ruby-voodoo/working-with-multiline-strings">
+  In: <a href="/ruby-voodoo">Ruby Voodoo</a>
+  <span>|</span>
+  Tags: <a href="/tags/Heredocs">Heredocs</a>, <a href="/tags/Hidden%20Features">Hidden Features</a> &amp; <a href="/tags/Syntax">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-voodoo/working-with-multiline-strings#comments">5 Comments</a>
+</div>
+
+      </li>
+</ul>
+
+<div class="pagination text-center"><ul><li class="previous_page disabled"><a class="previous_page disabled">&#8592; Previous</a></li> <li class="active"><a class="active">1</a></li> <li><a rel="next" href="/ruby-voodoo?page=2">2</a></li> <li class="next"><a class="next" rel="next" href="/ruby-voodoo?page=2">Next &#8594;</a></li></ul></div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

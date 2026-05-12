@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rusting / Asking Better Questions</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="I often forget that I can get better help when I take the time to ask smarter questions.">
+    <meta name="keywords"    content="Rust, Community, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rusting/asking-better-questions/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rusting">Rusting</a></h1>
+            <span>The section where I examine what I am learning when compiling Rust code.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      AUG<br>
+      2014
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Asking Better Questions</h3>
+        
+        <p>I've been playing with some Rust lately and learning a bunch of new concepts.</p>
+
+<p>As part of my experimentation, I built <a href="https://gist.github.com/JEG2/f57212afa30bd7a48d7c">an RPN calculator in the language</a>, just as an exercise that would require a moderate amount of code to be worked out.  Honestly, I don't fully understand everything that I had to do to get this code working yet.  Maybe 20% of it came about as me following instructions from what seem to be very helpful compiler errors.</p>
+
+<p>I wanted to start attacking these concepts that I didn't understand to increase my knowledge.  Of course, I was impatient.  I had some working code and I knew what I was missing, so I jumped into <a href="http://chat.mibbit.com/?server=irc.mozilla.org&amp;channel=%23rust">IRC</a>, pointed at the code, and asked some not-at-all complete questions.  All I got was crickets.</p>
+
+<p>This isn't a failing of the Rust community.  It's a lesson I have to relearn every now and then.  You have to take the time to present a good enough question that answering it is easy enough and worth it.  It's hard work to get your head around 100 lines of code and, even if you do, you'll still be missing plenty of context if the question isn't really well formed.  Given that, most people just ignore the question.  That's probably for the better too, because any answers provided likely would have missed the points I really needed help with.</p>
+
+<p>What it did do was remind me that I needed to ask better questions.  Today I took the time to build a small example that addressed one of my key confusions with Rust so far:  Lifetimes (plus Ownership, Borrowing, and References it turns out).  Here's the code I whipped up:</p>
+
+<div class="highlight highlight-rust"><pre><span class="c1">// I'm trying to make sure I have my head around "lifetimes"</span>
+<span class="c1">// after a few readings of the guide:</span>
+<span class="c1">// http://doc.rust-lang.org/guide-lifetimes.html.  The following is</span>
+<span class="c1">// a simple example of what I think I now know that I'll try to explain</span>
+<span class="c1">// in this comment.</span>
+<span class="c1">//</span>
+<span class="c1">// Because the letters are "borrowed references," (Do I have my terms right?)</span>
+<span class="c1">// they could potentially be freed before the Lists struct that contains them.</span>
+<span class="c1">// Since this possibility exists, Rust requires the explicit lifetime 'a which</span>
+<span class="c1">// indicates that the lifetime of a created Lists instance is tied to whatever</span>
+<span class="c1">// references were passed into the letters slot.</span>
+
+<span class="cp">#[deriving(Show)]</span>
+<span class="k">struct</span> <span class="n">Lists</span><span class="o">&lt;</span><span class="err">'</span><span class="n">a</span><span class="o">&gt;</span> <span class="p">{</span>
+    <span class="n">numbers</span><span class="o">:</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="k">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="n">letters</span><span class="o">:</span> <span class="n">Vec</span><span class="o">&lt;&amp;</span><span class="err">'</span><span class="n">a</span> <span class="k">str</span><span class="o">&gt;</span>
+<span class="p">}</span>
+
+<span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="n">lists</span> <span class="o">=</span> <span class="n">Lists</span><span class="p">{</span><span class="n">numbers</span><span class="o">:</span> <span class="n">vec</span><span class="o">!</span><span class="p">[</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">],</span> <span class="n">letters</span><span class="o">:</span> <span class="n">vec</span><span class="o">!</span><span class="p">[</span><span class="s">"A"</span><span class="p">,</span> <span class="s">"B"</span><span class="p">,</span> <span class="s">"C"</span><span class="p">]};</span>
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"{}"</span><span class="p">,</span> <span class="n">lists</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>I made <a href="https://gist.github.com/JEG2/ae7746544cef14be1606">a Gist</a> out of that and then went back to IRC to ask people how correct my current understanding was.  The effort really paid off.  I got some great clarifications:</p>
+
+<pre><code>JEG2
+  Can anyone tell me if my understanding of the explicit lifetime
+  in this example, as explained by my comment, feels correct?
+  https://gist.github.com/JEG2/ae7746544cef14be1606
+…
+kimundi
+  JEG2: That sounds right
+…
+steveklabnik
+  JEG2: oh hey!!!!
+  JEG2: good to see you here :)
+  &lt;3
+Sharp
+  JEG2: It's very close to being right (I *think*). Lists and letters
+  must have the same lifetime, period. It's not that Lists acquires
+  the lifetime of letters when it's created.
+kimundi
+  JEG2: Not that in this example you are using string literals,
+  which have 'static lifetime and thus the references are always valid
+JEG2
+  steveklabnik: Hey steve. Thanks.
+steveklabnik
+  JEG2: the lifetime guide is _terrible_ btw, and as soon as my guide
+  is wrapped up, which should be this week, it's next on the re-write train
+…
+kimundi
+  Sharp: Eh, that doesn't sound right
+…
+JEG2
+  steveklabnik: Good to know. Thanks.
+…
+Sharp
+  kimundi: Well, actually I think Lists is bound to live at most
+  as long as any one of its lifetime parameters. So yeah, you're right.
+  I am clearly still confused about lifetimes :P
+kimundi
+  yeah, that sounds more correct :)
+  No, wait
+…
+kimundi
+  Eh, nevermind, its correct. List can not live longer as the 'a lifetime
+  because else it would not be able to be created.
+…
+Dr-Emann
+  JEG2: minor thing: everything has a lifetime, whether it
+  contains references or not. Rust doesn't just create one
+  when there's a possibility of premature frees. It only
+  makes you be explicit with them in those cases though.
+…
+JEG2
+  Sharp and Dr-Emann: Good clarifications on lifetimes. Thank you.
+Sharp
+  You're welcome, glad you could get something out of my confusion :)
+…
+steveklabnik
+  JEG2: i left a comment on your gist too
+Dr-Emann
+  JEG2: of note is that even though the lifetime of the references
+  is defined as the same as the lifetime of the containing struct,
+  you can store any reference which lives _at least_ as long as the struct.
+steveklabnik
+  JEG2: make that two comments
+…
+JEG2
+  Dr-Emann: Ah, I did not know that. So it's legal for my reference
+  to outlive the struct?
+…
+Dr-Emann
+  JEG2: they do, in your case, even. You pass literal strings,
+  which are references into read only memory in the executable itself.
+  They live for the entirety of the program.
+…
+JEG2
+  Dr-Emann: Gotcha.
+Dr-Emann
+  JEG2: they have the special lifetime 'static. But you can also
+  make a string on the stack and include references into it,
+  as long as your struct doesn't outlive the String.
+JEG2
+  steveklabnik: Thanks for the comments. I'm getting a more complete picture.
+…
+steveklabnik
+  JEG2: awesome. I -really really- want to make sure we explain this well,
+  but we're not quite there yet.
+</code></pre>
+
+<p>As Steve Klabnik said, <a href="https://gist.github.com/JEG2/ae7746544cef14be1606#comment-1286037">he also posted some very helpful comments on my Gist</a>.<br><br>
+In other words, I got quite a bit of help.  That help is also on public IRC logs and Gists, so it might even be of use to others.</p>
+
+<p>It really pays to spend some time developing your question asking skills and then working on remembering to put those skills to use.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="rusting/asking-better-questions">
+  In: <a href="/rusting">Rusting</a>
+  <span>|</span>
+  Tags: <a href="/tags/Community">Community</a> &amp; <a href="/tags/Rust">Rust</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rusting/asking-better-questions#comments">0 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (0)</span></h5>
+
+    <ol>
+      
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/rusting/asking-better-questions/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="HLjQPnZTKqnuI+79FmOnEGDcBNY52pYJcuOTtloj1KQ=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frusting%2Fasking-better-questions" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frusting%2Fasking-better-questions" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

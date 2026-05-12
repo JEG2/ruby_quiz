@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="The Ruby programming blog of James Edward Gray II (JEG2).  Any content of interest to Rubyists specifically, or developers in general, is fair game.">
+    <meta name="keywords"    content="Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1>Gray Soft</h1>
+            <span>The Ruby programming blog of James Edward Gray II (JEG2).</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+            <ul class="blog-list">
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>17</h4>
+    <span>
+      FEB<br>
+      2007
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/non-code/i-believe-in-ruby"><h3 class="blog-title">I believe in Ruby</h3></a>
+          <p><em>For <a href="http://on-ruby.blogspot.com/2007/01/blogging-contest-february-challenge.html">the contest</a> and all you Bull Durham fans…</em></p>
+
+<p>Well, I believe in blocks, iterators, closures, that everything should be an object, the power of reflection, garbage collection, exception handling, that multiple inheritance causes more problems than it solves. I believe interpreters should be totally free. I believe there ought to be a constitutional amendment outlawing pointers and verbose syntax. I believe in a strong standard library, green threads, that a language should trust the programmer rather than restrict his efforts and I believe in sheer fun of coding that truly is possible to achieve.</p>
+        </div>
+        <div class="meta-info" data-slug="non-code/i-believe-in-ruby">
+  In: <a href="/non-code">Non-code</a>
+  <span>|</span>
+  Tags: <a href="/tags/For%20Fun">For Fun</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/non-code/i-believe-in-ruby#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>16</h4>
+    <span>
+      FEB<br>
+      2007
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/the-ruby-vm-interview/the-ruby-vm-episode-i"><h3 class="blog-title">The Ruby VM:  Episode I</h3></a>
+          <p><strong>Hello and thank you both for agreeing to answer my questions.  To begin, would you please introduce yourselves and tell us about your role in Ruby's development?</strong></p>
+
+<dl>
+<dt>
+<strong>Matz</strong>:</dt>
+  <dd>
+    <p>
+      I am the designer and the first implementer of the Ruby language.  My
+      real name is Yukihiro Matsumoto, that sounds something like
+      You-Key-Hero Matz-Motor in English.  But it's too long to remember and
+      pronounce, so just call me Matz.
+    </p>
+
+    <p>
+      I have been developing Ruby since 1993.  It is now quite complicated
+      and has performance problem.  I have had vague plan of rewriting the
+      interpreter for long time, but I have never been motivated enough to
+      throw out the current interpreter and start developing new one.
+    </p>
+
+    <p>
+      Then Koichi came in with YARV that seemed to have much brighter future
+      than my vaporware - it runs - so I asked him to take a role of the
+      official implementer of the core.  Although I enjoy both designing and
+      implementation of the language, I don't think I am gifted for language
+      implementation.  So I thought that it might be the time to focus on
+      designing when I saw YARV.
+    </p>
+  <dd>
+      
+  </dd>
+</dd>
+<dt>
+<strong>ko1</strong>:</dt>
+  <dd>
+    <p>
+      Thank you for your interest in YARV and me.  BTW, I'm thinking what "YARV"
+      stand for.  Because it is not Yet Another.  Someone proposed that "YARV
+      ain't RubyVM".  If YARV means "YARV ain't RubyVM", what is YARV?
+    </p>
+
+    <p>
+      I'm Koichi Sasada.  Koichi is given name, and "ichi" means "one" in
+      Japanese.  So I use "ko1" as my nick.  I'm an assistant at Department
+      (...snip...) of Tokyo.  My research interest is systems software,
+      especially operating system, programming language, parallel systems, and
+      so on.  And I'm a member of Nihon Ruby no Kai (Ruby Association in Japan).
+      I plan(ed) some Ruby events like
+      <a href="http://jp.rubyist.net/RubyKaigi2007/english.html">RubyKaigi</a>
+      and am an editor of
+      <a href="http://jp.rubyist.net/magazine">Rubyist Magazine</a>.  I also
+      develop(ed) <a href="http://www.atdot.net/nadoka/">Nadoka</a>,
+      <a href="http://www.namikilab.tuat.ac.jp/~sasada/prog/rava2.html">Rava</a>,
+      <a href="http://www.namikilab.tuat.ac.jp/~sasada/prog/rucheme.html">Rucheme</a>,
+      and some projects.  Say, I'm a developer of YARV: Yet Another RubyVM.
+    </p>
+
+    <p>
+      My role in Ruby's development?  To steal VM hacking pleasure from Matz?
+    </p>
+  <dd>
+</dd>
+</dd>
+</dl><p><a href="/the-ruby-vm-interview/the-ruby-vm-episode-i">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="the-ruby-vm-interview/the-ruby-vm-episode-i">
+  In: <a href="/the-ruby-vm-interview">The Ruby VM Interview</a>
+  <span>|</span>
+  Tags: <a href="/tags/Community">Community</a> &amp; <a href="/tags/Performance">Performance</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-ruby-vm-interview/the-ruby-vm-episode-i#comments">6 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>16</h4>
+    <span>
+      FEB<br>
+      2007
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/the-ruby-vm-interview/the-ruby-vm-serial-interview"><h3 class="blog-title">The Ruby VM Serial Interview</h3></a>
+          <p>I have really enjoyed reading Pat Eyler's <a href="http://on-ruby.blogspot.com/search/label/rubinius">Rubinius Serial Interview</a> and Nick Sieger's spun-off <a href="http://blog.nicksieger.com/articles/tag/jrubyserialinterview">JRuby Serial Interview</a>.  It's very educational to read what the developers have to say about their projects and ideas.</p>
+
+<p>The more I read though, the more I wanted the equivalent content for the official Ruby VM.  I asked Matz and Koichi if they would be willing to answer questions from me and they agreed to do so.  We are now ready to share their responses with the community.</p>
+
+<p>This will be a <em>serial interview</em> as Pat Eyler calls them.  We will deliver regular episodes until I run out of good questions or Matz and Koichi get sick of me bothering them, whichever comes first.  I will ask the questions in the interview, but feel free to make suggestions in the comments to this article.</p>
+
+<p>One last note:  we are not promising any kind of schedule for the episodes.  Matz and Koichi are heroically providing their answers in English.  We want to respect how much work that is and give them all the time they need to do that.  Personally, I cannot thank them enough.</p><p><a href="/the-ruby-vm-interview/the-ruby-vm-serial-interview">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="the-ruby-vm-interview/the-ruby-vm-serial-interview">
+  In: <a href="/the-ruby-vm-interview">The Ruby VM Interview</a>
+  <span>|</span>
+  Tags: <a href="/tags/Alternative%20Implementations">Alternative Implementations</a> &amp; <a href="/tags/Community">Community</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-ruby-vm-interview/the-ruby-vm-serial-interview#comments">3 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>12</h4>
+    <span>
+      DEC<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/the-gateway/news-to-mailrb"><h3 class="blog-title">news_to_mail.rb</h3></a>
+          <p><em>[<strong>Note</strong>:  You need to know <a href="/the-gateway/what-is-the-ruby-talk-gateway">what the Gateway is</a> before reading this article.]</em></p>
+
+<p>The second half of the Ruby Gateway runs as a cron job every five minutes and is expected to move all new newsgroup messages from the NNTP host to the Ruby Talk mailing list.  The cron invocation is simply:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">ruby</span> <span class="sr">/path/</span><span class="n">to</span><span class="o">/</span><span class="n">gateway</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">news_to_mail</span><span class="o">.</span><span class="n">rb</span> <span class="sr">/path/</span><span class="n">to</span><span class="o">/</span><span class="n">news_to_mail</span><span class="o">.</span><span class="n">log</span>
+</pre></div>
+
+<p>This side of the Gateway is not piped any messages and exit codes from it are not monitored.  It needs to tend its own affairs.</p>
+
+<h4>The Code</h4>
+
+<p>Here's the source:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">GATEWAY_DIR</span>  <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">),</span> <span class="s2">".."</span><span class="p">)</span><span class="o">.</span><span class="n">freeze</span>
+<span class="no">DATA_DIR</span>     <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">GATEWAY_DIR</span><span class="p">,</span> <span class="s2">"data"</span><span class="p">)</span><span class="o">.</span><span class="n">freeze</span>
+<span class="no">LAST_ID_FILE</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">DATA_DIR</span><span class="p">,</span> <span class="s2">"last_news_id.txt"</span><span class="p">)</span><span class="o">.</span><span class="n">freeze</span>
+<span class="no">PID_FILE</span>     <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">DATA_DIR</span><span class="p">,</span> <span class="s2">"pid.txt"</span><span class="p">)</span><span class="o">.</span><span class="n">freeze</span>
+
+<span class="vg">$LOAD_PATH</span> <span class="o">&lt;&lt;</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">GATEWAY_DIR</span><span class="p">,</span> <span class="s2">"config"</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">GATEWAY_DIR</span><span class="p">,</span> <span class="s2">"lib"</span><span class="p">)</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>The script begins by locating the root directory of the Gateway source and the data sub directory, building constants for two external files it will interact with, and adjusting the <code>$LOAD_PATH</code> so that it can <code>require</code> needed resources.</p><p><a href="/the-gateway/news-to-mailrb">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="the-gateway/news-to-mailrb">
+  In: <a href="/the-gateway">The Gateway</a>
+  <span>|</span>
+  Tags: <a href="/tags/Community">Community</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-gateway/news-to-mailrb#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>5</h4>
+    <span>
+      DEC<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/the-gateway/mail-to-newsrb"><h3 class="blog-title">mail_to_news.rb</h3></a>
+          <p><em>[<strong>Note</strong>:  You need to know <a href="/the-gateway/what-is-the-ruby-talk-gateway">what the Gateway is</a> before reading this article.]</em></p>
+
+<p>There are two halves to the Ruby Gateway.  One half runs as a qmail filter for an email address on the Ruby Talk mailing list.  Every message sent to that address is piped through this filter with a shell script like:</p>
+
+<pre><code>ruby /path/to/gateway/bin/mail_to_news.rb /path/to/mail_to_news.log
+</code></pre>
+
+<p>The email is piped to the filter via the standard input and the code is expected to handle the message by posting it to comp.lang.ruby or choosing to ignore it.  If the filter exits normally, qmail considers the matter handled.  A non-zero exit code will cause the filter to be called with that same message again later.</p>
+
+<h4>The Code</h4>
+
+<p>Let's dive right into the source of this half of the Gateway:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">GATEWAY_DIR</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">),</span> <span class="s2">".."</span><span class="p">)</span><span class="o">.</span><span class="n">freeze</span>
+
+<span class="vg">$LOAD_PATH</span> <span class="o">&lt;&lt;</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">GATEWAY_DIR</span><span class="p">,</span> <span class="s2">"config"</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">GATEWAY_DIR</span><span class="p">,</span> <span class="s2">"lib"</span><span class="p">)</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>The code above just sets things up so this script can <code>require</code> some other files in the project normally.  Here are those <code>require</code>s:</p><p><a href="/the-gateway/mail-to-newsrb">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="the-gateway/mail-to-newsrb">
+  In: <a href="/the-gateway">The Gateway</a>
+  <span>|</span>
+  Tags: <a href="/tags/Community">Community</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-gateway/mail-to-newsrb#comments">2 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>4</h4>
+    <span>
+      DEC<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/the-gateway/hacking-the-gateway"><h3 class="blog-title">Hacking the Gateway</h3></a>
+          <p><em>[<strong>Update</strong>:  The Ruby Gateway was retired in June of 2011.  Our community simply grew past the point were we needed to combine the various groups, in my opinion.]</em></p>
+
+<p>Though I rewrote the current Gateway and I handle the maintenance, it really belongs to the Ruby community.  Because of that, I'm going to release the two primary source files on this blog for all to view and critique.  This may have value to those who want to know how the Gateway works, those who would like to implement similar technologies, and those who would like to purpose changes to the Gateway code.</p>
+
+<p>I do welcome purposed changes to the Gateway, but let's set some ground rules for the right way to make suggestions:</p>
+
+<ul>
+<li>I will show the important elements of the Gateway code and do my best to explain it as I go.  In return, please take the time to read what I write about the code and try to understand how it works.  Poorly developed change requests increase my maintenance time with the Gateway, which all comes out of my free time, so please be considerate.</li>
+<li>You purpose changes to the Gateway by commenting on the code articles.  This is intended to be a public discussion with all of us working together.  Don't email me or Ruby Talk ideas, I'm monitoring the comments here.</li>
+<li>Show code in your requests.  I don't want to throw the Gateway in a publicly accessible Subversion repository and start taking patches for several reasons.  If you want a change, convince me to implement it.  The best way to do that is to throw around some code showing me how we would build your request and how it would make the Gateway better.</li>
+<li>I am thinking about some elements of the Gateway you are not, like the fact that I run this code on a server provided by my work where security is a consideration and the level of maintenance a change will inflict on me.  I ask only that you keep this in mind as we debate changes.  In return, I will be as open minded to improvements as possible.</li>
+<li>Gateway changes will not happen overnight.  (See note about free time above.)  Please be patient.</li>
+</ul>
+        </div>
+        <div class="meta-info" data-slug="the-gateway/hacking-the-gateway">
+  In: <a href="/the-gateway">The Gateway</a>
+  <span>|</span>
+  Tags: <a href="/tags/Community">Community</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-gateway/hacking-the-gateway#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      DEC<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/the-gateway/what-is-the-ruby-talk-gateway"><h3 class="blog-title">What is the Ruby Talk Gateway?</h3></a>
+          <p><em>[<strong>Update</strong>:  The Ruby Gateway was retired in June of 2011.  Our community simply grew past the point were we needed to combine the various groups, in my opinion.]</em></p>
+
+<p>The Ruby community makes use of both email and Usenet communication, in addition to other resources.  The primary mailing list is <a href="http://www.ruby-lang.org/en/community/mailing-lists/">Ruby Talk</a> and the primary Usenet group is <a href="http://groups-beta.google.com/group/comp.lang.ruby/topics">comp.lang.ruby</a>.  These two services are joined by the Ruby Gateway.</p>
+
+<p>In 2001 <a href="http://www.pragmaticprogrammer.com/">The Pragmatic Programmers</a> wrote the initial version of the Ruby Gateway to ferry messages back and forth between these two resources.  Emails sent to Ruby Talk are posted as Usenet messages and Usenet posts are forwarded to Ruby Talk by the Gateway.  The Gateway has had a few guardians and code changes since then, but the functionality remains the same.</p>
+
+<p>I'm am the current caretaker of the Ruby Gateway.  Highgroove Studios generously provides hosting for it and I monitor the system for problems.  I also wrote the current version of the Gateway.</p>
+
+<p>You are free to <a href="mailto:james@graysoftinc.com?subject=Ruby%20Gateway%20Issue">report Gateway problems</a> for me to look into.  Before you do though, please read the following notes:</p><p><a href="/the-gateway/what-is-the-ruby-talk-gateway">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="the-gateway/what-is-the-ruby-talk-gateway">
+  In: <a href="/the-gateway">The Gateway</a>
+  <span>|</span>
+  Tags: <a href="/tags/Community">Community</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-gateway/what-is-the-ruby-talk-gateway#comments">4 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>7</h4>
+    <span>
+      NOV<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/non-code/doing-it-all"><h3 class="blog-title">Doing It All!</h3></a>
+          <p>I'm not really in the habit of putting non-code content on this blog, but more than one person asked me the same question at RubyConf.  If people really want to know, I'll try to answer.  Paraphrasing, the question was:</p>
+
+<blockquote>
+<p>How do you keep up with so many Ruby projects?</p>
+</blockquote>
+
+<p>First, this question surprised me.  Do I really do that much?  If you just said yes to that, I would like to introduce you to <a href="http://www.zenspider.com/">Ryan Davis</a>.  He easily doubles my output and his projects are wicked complex compared to mine.</p>
+
+<p>That doesn't answer the question though.</p>
+
+<p>In short, I do as much as I possibly can with the time I have.  The truth is that I would like to do a lot more.  I turn down at least as many damn cool Ruby projects as I accept because I'm a wimp and not willing to give up my sleep.  There are so many crazy cool Ruby projects out there that I would love to be a part of.  There just aren't enough hours in the day.</p>
+
+<p>I guess I still didn't answer the question.</p>
+
+<p>The question was "How…" and the answer to that is actually trivial.  Masayoshi Takahashi summed it up with a single slide in his presentation at RubyConf:</p><p><a href="/non-code/doing-it-all">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="non-code/doing-it-all">
+  In: <a href="/non-code">Non-code</a>
+  <span>|</span>
+  Tags: <a href="/tags/Process">Process</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/non-code/doing-it-all#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      OCT<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/my-projects/i-just-want-one-character"><h3 class="blog-title">I Just Want One Character!</h3></a>
+          <p>Every so often a person asks the question on Ruby Talk, "How can I get just one character from the keyboard (without needing the user to hit return)?"  Everyone is always quick to post solutions, but sadly there are some issues with almost every one of them.</p>
+
+<p>The general consensus is that this is a tough problem to solve correctly.  I say that's the exact reason to let <a href="https://github.com/JEG2/highline">HighLine</a> handle this for you:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"highline/system_extensions"</span>
+<span class="kp">include</span> <span class="no">HighLine</span><span class="o">::</span><span class="no">SystemExtensions</span>
+
+<span class="nb">print</span> <span class="s2">"Enter one character:  "</span>
+<span class="n">char</span> <span class="o">=</span> <span class="n">get_character</span>
+<span class="nb">puts</span> <span class="n">char</span><span class="o">.</span><span class="n">chr</span>
+</pre></div>
+
+<p>That doesn't look too tough, does it?</p>
+
+<p>What's terrific about this solution is that under-the-hood <code>HighLine</code> will check your platform and libraries and then try to use the solution that makes the most sense for your environment.  The code is really pretty robust too, because people a lot smarter than me have been sending in patches for over a year, slowly eliminating all of those tricky edge cases.</p>
+
+<p>As you can see, I've split this functionality of <code>HighLine</code> into a separate module so you don't even need to load the full <code>HighLine</code> system.  This was done just because this is such a real and common problem.  This section of <code>HighLine</code> is <a href="https://github.com/JEG2/highline/blob/master/lib/highline/system_extensions.rb">one pure Ruby file</a>, so feel free to vendor it if the external dependency is an issue.</p><p><a href="/my-projects/i-just-want-one-character">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="my-projects/i-just-want-one-character">
+  In: <a href="/my-projects">My Projects</a>
+  <span>|</span>
+  Tags: <a href="/tags/Hidden%20Features">Hidden Features</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/my-projects/i-just-want-one-character#comments">8 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>2</h4>
+    <span>
+      AUG<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/early-steps/regexpchallenge"><h3 class="blog-title">RegexpChallenge</h3></a>
+          <p>Just recently I have been working with two different people to improve their regular expression skills.  To help me in this endeavor, I built a trivial little script we have been using in IRb.  To get started, you construct a new challenge object and add a couple of challenges:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">reg_chal</span> <span class="o">=</span> <span class="no">RegexpChallenge</span><span class="o">.</span><span class="n">new</span>
+<span class="no">No</span> <span class="n">challenges</span><span class="o">.</span>
+<span class="o">=&gt;</span> 
+<span class="o">&gt;&gt;</span> <span class="n">reg_chal</span><span class="o">.</span><span class="n">challenge</span><span class="p">(</span><span class="s2">"Gray, James"</span><span class="p">,</span> <span class="s2">"James"</span><span class="p">,</span> <span class="s2">"The names can vary."</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">reg_chal</span><span class="o">.</span><span class="n">challenge</span><span class="p">(</span><span class="s2">"abbbbbbbc bc"</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">reg_chal</span><span class="o">.</span><span class="n">challenge</span><span class="p">(</span> <span class="s2">"    </span><span class="se">\n\t</span><span class="s2">  "</span><span class="p">,</span> <span class="kp">nil</span><span class="p">,</span>
+<span class="sc">?&gt;</span>                     <span class="s2">"We want to test for non-space data."</span> <span class="p">)</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">reg_chal</span><span class="o">.</span><span class="n">challenge</span><span class="p">(</span> <span class="s2">"cogs 9, widgets 12, ..."</span><span class="p">,</span> <span class="s2">"12"</span><span class="p">,</span>
+<span class="sc">?&gt;</span>                     <span class="s2">"The numbers can vary."</span> <span class="p">)</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">reg_chal</span><span class="o">.</span><span class="n">challenge</span><span class="p">(</span> <span class="s2">"I'm a simple sentence, with words."</span><span class="p">,</span>
+<span class="sc">?&gt;</span>                     <span class="sx">%w[I'm a simple sentence with words]</span> <span class="p">)</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+</pre></div>
+
+<p>You can ask for challenges to see what you would like to solve:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">reg_chal</span><span class="o">.</span><span class="n">challenges</span>
+<span class="no">Challenge</span> <span class="c1">#0:</span>
+   <span class="ss">Input</span><span class="p">:</span>  <span class="s2">"Gray, James"</span>
+  <span class="ss">Output</span><span class="p">:</span>  <span class="s2">"James"</span>
+    <span class="ss">Note</span><span class="p">:</span>  <span class="s2">"The names can vary."</span>
+<span class="no">Challenge</span> <span class="c1">#1:</span>
+   <span class="ss">Input</span><span class="p">:</span>  <span class="s2">"abbbbbbbc bc"</span>
+  <span class="ss">Output</span><span class="p">:</span>  <span class="mi">10</span>
+<span class="no">Challenge</span> <span class="c1">#2:</span>
+   <span class="ss">Input</span><span class="p">:</span>  <span class="s2">"    </span><span class="se">\n\t</span><span class="s2">  "</span>
+  <span class="ss">Output</span><span class="p">:</span>  <span class="kp">nil</span>
+    <span class="ss">Note</span><span class="p">:</span>  <span class="s2">"We want to test for non-space data."</span>
+<span class="no">Challenge</span> <span class="c1">#3:</span>
+   <span class="ss">Input</span><span class="p">:</span>  <span class="s2">"cogs 9, widgets 12, ..."</span>
+  <span class="ss">Output</span><span class="p">:</span>  <span class="s2">"12"</span>
+    <span class="ss">Note</span><span class="p">:</span>  <span class="s2">"The numbers can vary."</span>
+<span class="no">Challenge</span> <span class="c1">#4:</span>
+   <span class="ss">Input</span><span class="p">:</span>  <span class="s2">"I'm a simple sentence, with words."</span>
+  <span class="ss">Output</span><span class="p">:</span>  <span class="o">[</span><span class="s2">"I'm"</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">,</span> <span class="s2">"simple"</span><span class="p">,</span> <span class="s2">"sentence"</span><span class="p">,</span> <span class="s2">"with"</span><span class="p">,</span> <span class="s2">"words"</span><span class="o">]</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+</pre></div><p><a href="/early-steps/regexpchallenge">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="early-steps/regexpchallenge">
+  In: <a href="/early-steps">Early Steps</a>
+  <span>|</span>
+  Tags: <a href="/tags/Regular%20Expression">Regular Expression</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/early-steps/regexpchallenge#comments">5 Comments</a>
+</div>
+
+      </li>
+</ul>
+
+<div class="pagination text-center"><ul><li class="previous_page"><a class="previous_page" rel="prev" href="/?page=11">&#8592; Previous</a></li> <li><a rel="start" href="/?page=1">1</a></li> <li><a href="/?page=2">2</a></li> <li class="disabled"><a>&hellip;</a></li> <li><a href="/?page=6">6</a></li> <li><a href="/?page=7">7</a></li> <li><a href="/?page=8">8</a></li> <li><a href="/?page=9">9</a></li> <li><a href="/?page=10">10</a></li> <li><a rel="prev" href="/?page=11">11</a></li> <li class="active"><a class="active">12</a></li> <li><a rel="next" href="/?page=13">13</a></li> <li><a href="/?page=14">14</a></li> <li class="next"><a class="next" rel="next" href="/?page=13">Next &#8594;</a></li></ul></div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

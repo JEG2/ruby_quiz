@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Character Encodings / What Ruby 1.9 Gives Us</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="A look at some new possibilities we have thanks to the character encoding savvy nature of Ruby 1.9.">
+    <meta name="keywords"    content="encodings, m17n, Multilingualization, Unicode, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/character-encodings/what-ruby-19-gives-us/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/character-encodings">Character Encodings</a></h1>
+            <span>My extensive coverage of a complex topic all programmers should study a little.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>18</h4>
+    <span>
+      JUN<br>
+      2009
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">What Ruby 1.9 Gives Us</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/character-encodings/miscellaneous-m17n-details/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/character-encodings/understanding-m17n-multilingualization/">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      &nbsp;
+  </div>
+</div>
+
+        <p>In this final post of the series, I want to revisit our earlier discussion on encoding strategies.  Ruby 1.9 adds a lot of power to the handling of character encodings as you have now seen.  We should talk a little about how that can change the game.</p>
+
+<h4>UTF-8 is Still King</h4>
+
+<p>The most important thing to take note of is what hasn't changed with Ruby 1.9.  I said a good while back that <a href="/character-encodings/general-encoding-strategies/">the best <code>Encoding</code> for general use is UTF-8</a>.  That's still very true.</p>
+
+<p>I still strongly recommend that we favor UTF-8 as the one-size-almost-fits-all <code>Encoding</code>.  I really believe that we can and should use it exclusively inside our code, transcode data to it on the way in, and transcode output when we absolutely must.  The more of us that do this, the better things will get.</p>
+
+<p>As we've discussed earlier in the series, Ruby 1.9 does add some new features that help our UTF-8 only strategies.  For example, you could use things like the <code>Encoding</code> command-line switches (<code>-E</code> and <code>-U</code>) to setup auto translation for all input you read.  These shortcuts are great for simple scripting, but I'm going to recommend you just be explicit about your <code>Encoding</code>s in any serious code.</p>
+
+<h4>New Rules</h4>
+
+<p>Ruby 1.9 literally gives us a whole new world of power to work with data as we see fit.  As is usually the case though, our new powers come with new responsibilities.  Start building your good Ruby 1.9 habits today:</p>
+
+<ul>
+<li>Add <a href="/character-encodings/ruby-19s-three-default-encodings/">the magic comment</a> to the top of all source files</li>
+<li>Explicitly <a href="/character-encodings/ruby-19s-three-default-encodings/">declare the <code>Encoding</code>s for an <code>IO</code> object</a> when you <code>open()</code> them</li>
+</ul><p>Yes, this adds a little extra work, but the effort is worth it.  Be disciplined in your awareness of <code>Encoding</code>s and help Ruby know the right way to treat your data.</p>
+
+<h4>New Strategies</h4>
+
+<p>While UTF-8 is a great single choice, Ruby 1.9 gives us some exciting new options for character handling.  I'll give just one example here, to get you thinking in the right direction, but the sky's the limit now and I'm sure we'll see some neat uses of the new system in the coming years.</p>
+
+<p>When I converted the <code>FasterCSV</code> code to be the standard <code>CSV</code> library in Ruby 1.9, I really sat down and thought out how m17n should be handled.  Here are some thoughts that led to my final plan:</p>
+
+<ul>
+<li>We tend to throw pretty big data at CSV parsers.  We often use them for database dumps, for example.</li>
+<li>I expected to pay a performance penalty for constantly transcoding all incoming data to UTF-8.  I'm not sure how big it would have been, but it's certainly more work than Ruby 1.8 does just reading some bytes.  Naturally, I wanted the library to stay as quick as possible.</li>
+<li>Since the parser has always been able to read directly from any <code>IO</code> object, those who wanted UTF-8 transcoding already had a way to get it.</li>
+<li>CSV is a super simple format to parse, requiring only four standard characters that you can count on having in any <code>Encoding</code> Ruby supports.</li>
+<li>Finally, I just wanted to take the m17n features for a spin, of course!</li>
+</ul><p>All of this combined to form my strategy for the <code>CSV</code> library:  don't transcode the data, transcode the parser instead.</p>
+
+<p>If you transcode the data, you pay a penalty at every read.  However, transcoding the parser is just a one-time upfront cost.  The characters will be available in whatever format the data is in and once the parser is transcoded we can just read and parse the data normally.  The fields returned won't have gone through a conversion, unless the user code explicitly sets that up.  This seems to give everyone the choice to have their data the way they want it.</p>
+
+<p>This process isn't too tough to realize, though it does get a bit tedious in places.  The first step is just to figure out what <code>Encoding</code> the data is actually in.  Here's the code from 1.9's <code>CSV</code> library that does that:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="vi">@encoding</span> <span class="o">=</span>   <span class="k">if</span> <span class="vi">@io</span><span class="o">.</span><span class="n">respond_to?</span> <span class="ss">:internal_encoding</span>
+                <span class="vi">@io</span><span class="o">.</span><span class="n">internal_encoding</span> <span class="o">||</span> <span class="vi">@io</span><span class="o">.</span><span class="n">external_encoding</span>
+              <span class="k">elsif</span> <span class="vi">@io</span><span class="o">.</span><span class="n">is_a?</span> <span class="no">StringIO</span>
+                <span class="vi">@io</span><span class="o">.</span><span class="n">string</span><span class="o">.</span><span class="n">encoding</span>
+              <span class="k">end</span>
+<span class="vi">@encoding</span> <span class="o">||=</span> <span class="no">Encoding</span><span class="o">.</span><span class="n">default_internal</span> <span class="o">||</span> <span class="no">Encoding</span><span class="o">.</span><span class="n">default_external</span>
+</pre></div>
+
+<p>That code just makes sure I set <code>@encoding</code> to the <code>Encoding</code> I'm actually going to be working with after all reads.  If an <code>internal_encoding()</code> is set on an <code>IO</code>, it will be transcoded into that and that's what I will be facing.  Otherwise, the <code>external_encoding()</code> is what we will see.  The code can also parse from a <code>String</code> directly by wrapping it in a <code>StringIO</code> object.  When it does that, we can just ask the underlying <code>String</code> what the <code>Encoding</code> for the data is.  If we can't find an <code>Encoding</code>, likely because it hasn't been set, we'll use the defaults because that's what Ruby is going to assume as well.</p>
+
+<p>Once we have the <code>Encoding</code>, we need a couple of helper methods that will build <code>String</code> and <code>Regexp</code> objects in that <code>Encoding</code> for us.  Here are those simple methods:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">encode_str</span><span class="p">(</span><span class="o">*</span><span class="n">chunks</span><span class="p">)</span>
+  <span class="n">chunks</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">chunk</span><span class="o">|</span> <span class="n">chunk</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="vi">@encoding</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="p">}</span><span class="o">.</span><span class="n">join</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">encode_re</span><span class="p">(</span><span class="o">*</span><span class="n">chunks</span><span class="p">)</span>
+  <span class="no">Regexp</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">encode_str</span><span class="p">(</span><span class="o">*</span><span class="n">chunks</span><span class="p">))</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Those should be super straightforward if you've read <a href="/character-encodings/ruby-19s-string/">my earlier discussion of how transcoding works</a>.  You can pass <code>encode_str()</code> one or more <code>String</code> arguments and it will transcode each one, then <code>join()</code> them into a complete whole.  The <code>encode_re()</code> just wraps <code>encode_str()</code> since <code>Regexp.new()</code> will correctly set the <code>Encoding</code> by the <code>Encoding</code> of the passed <code>String</code>.</p>
+
+<p>Now for the tedious step.  You have to completely avoid using bare <code>String</code> or <code>Regexp</code> literals for anything that will eventually interact with the raw data.  For example, here is the code <code>CSV</code> uses to prepare the parser before it begins reading:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># Pre-compiles parsers and stores them by name for access during reads.</span>
+<span class="k">def</span> <span class="nf">init_parsers</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+  <span class="c1"># store the parser behaviors</span>
+  <span class="vi">@skip_blanks</span>      <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="ss">:skip_blanks</span><span class="p">)</span>
+  <span class="vi">@field_size_limit</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="ss">:field_size_limit</span><span class="p">)</span>
+
+  <span class="c1"># prebuild Regexps for faster parsing</span>
+  <span class="n">esc_col_sep</span> <span class="o">=</span> <span class="n">escape_re</span><span class="p">(</span><span class="vi">@col_sep</span><span class="p">)</span>
+  <span class="n">esc_row_sep</span> <span class="o">=</span> <span class="n">escape_re</span><span class="p">(</span><span class="vi">@row_sep</span><span class="p">)</span>
+  <span class="n">esc_quote</span>   <span class="o">=</span> <span class="n">escape_re</span><span class="p">(</span><span class="vi">@quote_char</span><span class="p">)</span>
+  <span class="vi">@parsers</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># for empty leading fields</span>
+    <span class="n">leading_fields</span><span class="p">:</span> <span class="n">encode_re</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">A(?:"</span><span class="p">,</span> <span class="n">esc_col_sep</span><span class="p">,</span> <span class="s2">")+"</span><span class="p">),</span>
+    <span class="c1"># The Primary Parser</span>
+    <span class="n">csv_row</span><span class="p">:</span>        <span class="n">encode_re</span><span class="p">(</span>
+      <span class="s2">"</span><span class="se">\\</span><span class="s2">G(?:</span><span class="se">\\</span><span class="s2">A|"</span><span class="p">,</span> <span class="n">esc_col_sep</span><span class="p">,</span> <span class="s2">")"</span><span class="p">,</span>                <span class="c1"># anchor the match</span>
+      <span class="s2">"(?:"</span><span class="p">,</span> <span class="n">esc_quote</span><span class="p">,</span>                              <span class="c1"># find quoted fields</span>
+             <span class="s2">"((?&gt;[^"</span><span class="p">,</span> <span class="n">esc_quote</span><span class="p">,</span> <span class="s2">"]*)"</span><span class="p">,</span>             <span class="c1"># "unrolling the loop"</span>
+             <span class="s2">"(?&gt;"</span><span class="p">,</span> <span class="n">esc_quote</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>                   <span class="c1"># double for escaping</span>
+             <span class="s2">"[^"</span><span class="p">,</span> <span class="n">esc_quote</span><span class="p">,</span> <span class="s2">"]*)*)"</span><span class="p">,</span>
+             <span class="n">esc_quote</span><span class="p">,</span>
+             <span class="s2">"|"</span><span class="p">,</span>                                    <span class="c1"># ... or ...</span>
+             <span class="s2">"([^"</span><span class="p">,</span> <span class="n">esc_quote</span><span class="p">,</span> <span class="n">esc_col_sep</span><span class="p">,</span> <span class="s2">"]*))"</span><span class="p">,</span>  <span class="c1"># unquoted fields</span>
+      <span class="s2">"(?="</span><span class="p">,</span> <span class="n">esc_col_sep</span><span class="p">,</span> <span class="s2">"|</span><span class="se">\\</span><span class="s2">z)"</span>                    <span class="c1"># ensure field is ended</span>
+    <span class="p">),</span>
+    <span class="c1"># a test for unescaped quotes</span>
+    <span class="n">bad_field</span><span class="p">:</span>      <span class="n">encode_re</span><span class="p">(</span>
+      <span class="s2">"</span><span class="se">\\</span><span class="s2">A"</span><span class="p">,</span> <span class="n">esc_col_sep</span><span class="p">,</span> <span class="s2">"?"</span><span class="p">,</span>                   <span class="c1"># an optional comma</span>
+      <span class="s2">"(?:"</span><span class="p">,</span> <span class="n">esc_quote</span><span class="p">,</span>                          <span class="c1"># a quoted field</span>
+             <span class="s2">"(?&gt;[^"</span><span class="p">,</span> <span class="n">esc_quote</span><span class="p">,</span> <span class="s2">"]*)"</span><span class="p">,</span>          <span class="c1"># "unrolling the loop"</span>
+             <span class="s2">"(?&gt;"</span><span class="p">,</span> <span class="n">esc_quote</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>               <span class="c1"># double for escaping</span>
+             <span class="s2">"[^"</span><span class="p">,</span> <span class="n">esc_quote</span><span class="p">,</span> <span class="s2">"]*)*"</span><span class="p">,</span>
+             <span class="n">esc_quote</span><span class="p">,</span>                          <span class="c1"># the closing quote</span>
+             <span class="s2">"[^"</span><span class="p">,</span> <span class="n">esc_quote</span><span class="p">,</span> <span class="s2">"]"</span><span class="p">,</span>               <span class="c1"># an extra character</span>
+             <span class="s2">"|"</span><span class="p">,</span>                                <span class="c1"># ... or ...</span>
+             <span class="s2">"[^"</span><span class="p">,</span> <span class="n">esc_quote</span><span class="p">,</span> <span class="n">esc_col_sep</span><span class="p">,</span> <span class="s2">"]+"</span><span class="p">,</span> <span class="c1"># an unquoted field</span>
+             <span class="n">esc_quote</span><span class="p">,</span> <span class="s2">")"</span>                      <span class="c1"># an extra quote</span>
+    <span class="p">),</span>
+    <span class="c1"># safer than chomp!()</span>
+    <span class="n">line_end</span><span class="p">:</span>       <span class="n">encode_re</span><span class="p">(</span><span class="n">esc_row_sep</span><span class="p">,</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">z"</span><span class="p">),</span>
+    <span class="c1"># illegal unquoted characters</span>
+    <span class="n">return_newline</span><span class="p">:</span> <span class="n">encode_str</span><span class="p">(</span><span class="s2">"</span><span class="se">\r\n</span><span class="s2">"</span><span class="p">)</span>
+  <span class="p">}</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Don't worry about breaking down those heavily optimized regular expressions.  The point here is just to notice how everything is eventually passed through <code>encode_str()</code> or <code>encode_re()</code>.</p>
+
+<p>Those were the major changes needed inside the <code>CSV</code> code to get it to parse natively in the <code>Encoding</code> of the data.  I did have to add more code due to some side issues I ran into, but they don't really relate to this strategy too much:</p>
+
+<ul>
+<li>
+<code>Regexp.escape()</code> didn't work correctly on all the <code>Encoding</code>s I tested it with.  It's improved a lot since then, but last I checked there were still some oddball <code>Encoding</code>s it didn't support.  Given that, I had to roll my own.  If you want to see how I did that, <a href="http://svn.ruby-lang.org/cgi-bin/viewvc.cgi/trunk/lib/csv.rb?revision=22788&amp;view=markup">check inside <code>CSV.initialize()</code></a> for how <code>@re_esc</code> and <code>@re_chars</code> get set and then have a <a href="http://svn.ruby-lang.org/cgi-bin/viewvc.cgi/trunk/lib/csv.rb?revision=22788&amp;view=markup">look at <code>CSV.escape_re()</code></a>.</li>
+<li>
+<code>CSV</code>'s line ending detection reads ahead in the data by fixed byte counts.  That's tricky to do safely with encoded data since you could always land in the middle of a character.  <a href="http://svn.ruby-lang.org/cgi-bin/viewvc.cgi/trunk/lib/csv.rb?revision=22788&amp;view=markup">See <code>CSV.read_to_char()</code></a> for how I work around that issue, if you are interested.</li>
+<li>Finally, testing the code with all the <code>Encoding</code>s Ruby supports was a bit tricky, due to the concept of "dummy <code>Encoding</code>s".  <a href="/character-encodings/miscellaneous-m17n-details/">See my discussion on those</a> for details on how to filter them out of the mix.</li>
+</ul><p>Like anything, this strategy had plusses and minuses.  As I've already said, it's a touch tedious to have to avoid normal literals.  The added complexity to the code makes it a little harder to read and maintain.  That's the price you pay.</p>
+
+<p>Still, I think it shows some of the possibilities of what we can accomplish with Ruby's new features.  We can stick to UTF-8 as our one-size-fits-all solution as we've done in the past.  That's still a great idea in most cases.  However, now we have some new options that were impractically hard with an older Ruby.</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/character-encodings/miscellaneous-m17n-details/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/character-encodings/understanding-m17n-multilingualization/">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      &nbsp;
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="character-encodings/what-ruby-19-gives-us">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/what-ruby-19-gives-us#comments">2 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (2)</span></h5>
+
+    <ol>
+        <li id="comment_297">
+    <div class="avatar"><img alt="Sascha Konietzke" height="70" src="http://www.gravatar.com/avatar/acd27f70cf6c98bb865e964a9022c3bb?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="297">
+      <span class="c_name"><a href="mailto:sk@funkfeuer.net">Sascha Konietzke</a></span>
+      <span class="c_date">July 16th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/what-ruby-19-gives-us#comment_297">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks so much for those great articles James! I read them all and now have a much better understanding about <code>String</code>s in Ruby 1.9.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_427">
+    <div class="avatar"><img alt="Vincent" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="427">
+      <span class="c_name"><a href="http://toevolve.org">Vincent</a></span>
+      <span class="c_date">February 20th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/what-ruby-19-gives-us#comment_427">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I totally agree with Sasha. Nice write up! It demystifies the whole encoding thing in ruby...</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

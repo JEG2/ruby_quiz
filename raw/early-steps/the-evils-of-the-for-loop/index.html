@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Early Steps / The Evils of the For Loop</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This is a reminder of the reasons why we should avoid the for loop Ruby provides.">
+    <meta name="keywords"    content="learning to program, guidelines, clean code, Iterators, Syntax, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/early-steps/the-evils-of-the-for-loop/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/early-steps">Early Steps</a></h1>
+            <span>My content targeted at the newer Rubyists among us.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>7</h4>
+    <span>
+      JAN<br>
+      2009
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">The Evils of the For Loop</h3>
+        
+        <p>I've never liked the <code>for…in</code> loop in Ruby.  I cringe every time I see it in examples (Rails seems to put it in views a lot) and I tend to switch it to an <code>each()</code> call.  It really bugs me.</p>
+
+<p>That's mostly just my gut reaction, but if I had to put it into words it's that I fell in love with Ruby's iterators early on and <code>for</code> just doesn't seem to fit in well with them.  I don't think that's just my emotions talking either, it really doesn't fit in.  I'll try to show you why I say that.</p>
+
+<p>First, let's see what I'm talking about.  We are all pretty comfortable with <code>each()</code>, right?</p>
+
+<div class="highlight highlight-ruby"><pre><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span> <span class="nb">p</span> <span class="n">i</span> <span class="p">}</span>
+<span class="c1"># &gt;&gt; 1</span>
+<span class="c1"># &gt;&gt; 2</span>
+<span class="c1"># &gt;&gt; 3</span>
+</pre></div>
+
+<p>I doubt that surprises anyone.  Many of you probably also know that Ruby allows you to write that as:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">3</span>
+  <span class="nb">p</span> <span class="n">i</span>
+<span class="k">end</span>
+<span class="c1"># &gt;&gt; 1</span>
+<span class="c1"># &gt;&gt; 2</span>
+<span class="c1"># &gt;&gt; 3</span>
+</pre></div>
+
+<p>That's <strong>almost</strong> the same thing.  It really does use <code>each()</code> under the hood, for example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">MyEachThing</span>
+  <span class="k">def</span> <span class="nf">each</span>
+    <span class="k">yield</span> <span class="mi">1</span>
+    <span class="k">yield</span> <span class="mi">42</span>
+    <span class="k">yield</span> <span class="mi">2</span>
+    <span class="k">yield</span> <span class="mi">42</span>
+    <span class="k">yield</span> <span class="mi">3</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="no">MyEachThing</span><span class="o">.</span><span class="n">new</span>
+  <span class="nb">p</span> <span class="n">i</span>
+<span class="k">end</span>
+<span class="c1"># &gt;&gt; 1</span>
+<span class="c1"># &gt;&gt; 42</span>
+<span class="c1"># &gt;&gt; 2</span>
+<span class="c1"># &gt;&gt; 42</span>
+<span class="c1"># &gt;&gt; 3</span>
+</pre></div>
+
+<p>However, there's one tiny difference that ends up being pretty critical.  The <code>for</code> version really translates closer to this Ruby 1.8 code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="n">whatever</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+<span class="c1"># translates to:</span>
+<span class="n">i</span> <span class="o">=</span> <span class="kp">nil</span>  <span class="c1"># assuming i didn't already exist</span>
+<span class="n">whatever</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>It turns out that insignificant looking assignment makes all the difference.  For those who aren't familiar with why it matters, have a look at this surprising Ruby 1.8 code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="p">(</span><span class="mi">3</span><span class="o">.</span><span class="n">.</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">a</span><span class="o">|</span>  <span class="p">}</span>
+<span class="nb">p</span> <span class="n">a</span>
+<span class="c1"># &gt;&gt; 5</span>
+</pre></div>
+
+<p>Blocks in Ruby 1.8, like the one used by the <code>each()</code> iterator here, will reuse a local variable if it exists before the block is entered.  You can see the affect of that here in that the value of my variable changed, even though my iterator really didn't do anything.  It just reassigned my variable a few times.</p>
+
+<p>Don't worry if the above behavior seems surprising and/or evil.  It is.  As a result, it was removed in Ruby 1.9.  However, <code>for</code> is unchanged in Ruby 1.9 and still best avoided, in my opinion.</p>
+
+<p>Using this knowledge, we can now see one often harmless side effect of using <code>for</code> over <code>each()</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">3</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+<span class="nb">p</span> <span class="n">i</span>
+<span class="c1"># &gt;&gt; 3</span>
+</pre></div>
+
+<p>Notice that <code>i</code> still exists after the loop.  That's not the case with a simple <code>each()</code> (as long as it didn't exist before the call):</p>
+
+<div class="highlight highlight-ruby"><pre><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>  <span class="p">}</span>
+<span class="nb">p</span> <span class="n">i</span>
+<span class="c1"># ~&gt; -:4: undefined local variable or method `i' for main:Object (NameError)</span>
+</pre></div>
+
+<p>This is important so let me say it one more way.  Calling <code>(1..3).each { |i|  }</code> without an existing <code>i</code> variable works like this:</p>
+
+<ol>
+<li>Create a local <code>i</code> variable</li>
+<li>Assign <code>1</code> to <code>i</code>
+</li>
+<li>Run block</li>
+<li>Create a local <code>i</code> variable</li>
+<li>Assign <code>2</code> to <code>i</code>
+</li>
+<li>Run block</li>
+<li>Create a local <code>i</code> variable</li>
+<li>Assign <code>3</code> to <code>i</code>
+</li>
+<li>Run block</li>
+</ol><p>However, running the same code with an existing <code>i</code> variable, or using <code>for</code>, changes the steps to:</p>
+
+<ol>
+<li>Create an <code>i</code> variable unless it exists (only <code>for</code> does this)</li>
+<li>Assign <code>1</code> to <code>i</code>
+</li>
+<li>Run block</li>
+<li>Assign <code>2</code> to <code>i</code>
+</li>
+<li>Run block</li>
+<li>Assign <code>3</code> to <code>i</code>
+</li>
+<li>Run block</li>
+</ol><p>Notice how we are missing a bunch of variable creation steps there?  That's because there's only one variable now and it's not local to the block.</p>
+
+<p>I bet you are wondering why I've made such a big deal out of this tiny change by now.  Why does this matter?  Let me show you one more set of examples to answer that.  First, this code shouldn't surprise you:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">results</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+<span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
+  <span class="n">results</span> <span class="o">&lt;&lt;</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="n">i</span> <span class="p">}</span>
+<span class="k">end</span>
+<span class="nb">puts</span> <span class="n">results</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">l</span><span class="o">|</span> <span class="n">l</span><span class="o">.</span><span class="n">call</span> <span class="p">}</span>
+<span class="c1"># &gt;&gt; 1</span>
+<span class="c1"># &gt;&gt; 2</span>
+<span class="c1"># &gt;&gt; 3</span>
+</pre></div>
+
+<p>But does the following example surprise you?  It sure surprised me the first time I saw it:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">results</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">3</span>
+  <span class="n">results</span> <span class="o">&lt;&lt;</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="n">i</span> <span class="p">}</span>
+<span class="k">end</span>
+<span class="nb">puts</span> <span class="n">results</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">l</span><span class="o">|</span> <span class="n">l</span><span class="o">.</span><span class="n">call</span> <span class="p">}</span>
+<span class="c1"># &gt;&gt; 3</span>
+<span class="c1"># &gt;&gt; 3</span>
+<span class="c1"># &gt;&gt; 3</span>
+</pre></div>
+
+<p>You should be able to reason it out now though.  Remember, there's only one <code>i</code> variable in this example.  The <code>lambda()</code> blocks all refer to the same variable, because they are closures.  By the time we run any of those blocks, the variable holds its final value.</p>
+
+<p>This example may seem a little contrived, but the truth is that it's not.  I just simplified <a href="http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-talk/324126">an actual bug report</a> down to the core problem so I could explain it.  Because we use blocks so much in Ruby, it's actually pretty easy to run into issues like this.</p>
+
+<p>The moral (in my opinion, of course):  <code>for</code> is evil because it's surprising and hard to think through.  Avoid it.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="early-steps/the-evils-of-the-for-loop">
+  In: <a href="/early-steps">Early Steps</a>
+  <span>|</span>
+  Tags: <a href="/tags/Iterators">Iterators</a> &amp; <a href="/tags/Syntax">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/early-steps/the-evils-of-the-for-loop#comments">11 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (11)</span></h5>
+
+    <ol>
+        <li id="comment_250">
+    <div class="avatar"><img alt="Tim Morgan" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="250">
+      <span class="c_name"><a href="http://timmorgan.org">Tim Morgan</a></span>
+      <span class="c_date">January 7th, 2009</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/the-evils-of-the-for-loop#comment_250">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks for this post! I wonder how many times that bit me and I didn't even know it!!?</p>
+
+<p>I don't use the <code>for..in</code> thinger, but even the fact that each() steps on my existing variables is probably cause for some of my hair-pulling. I'm ready for 1.9.</p>
+
+<p>I notice you waited so very patiently for 1.9 to be right around the corner before you started bad-mouthing 1.8. :-)</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/early-steps/the-evils-of-the-for-loop/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="3OF1ARaBrnYWtuXkfGj+BxIc9nqdYDUoyxO9ynypzCI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="250" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_250" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_251">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="251">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">January 8th, 2009</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/the-evils-of-the-for-loop#comment_251">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><blockquote>
+<p>I don't use the <code>for..in</code> thinger, but even the fact that each() steps on my existing variables is probably cause for some of my hair-pulling. I'm ready for 1.9.</p>
+</blockquote>
+
+<p>You can actually use 1.9 to find these bugs in 1.8 code.  Dave Thomas did exactly that recently while upgrading some code that runs in TextMate to be 1.9 friendly.  He ran our scripts through 1.9, just to make sure they were working there.  Because 1.9 has some new and improved warnings, it found bugs for us as an added bonus:</p>
+
+<pre><code>$ ruby_dev -vwe 'a = 1; (3..5).each { |a| }'
+ruby 1.9.1 (2008-12-30 patchlevel-0 revision 21203) [i386-darwin9.6.0]
+-e:1: warning: shadowing outer local variable - a
+</code></pre>
+
+<blockquote>
+<p>I notice you waited so very patiently for 1.9 to be right around the corner before you started bad-mouthing 1.8.</p>
+</blockquote>
+
+<p>I really didn't mean it to be too negative.  Consider it a sign of good things to come.</p>
+
+<p>I adore Ruby and that includes 1.8, but I hope we all know it's not perfect in everything it does.  ;)</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/early-steps/the-evils-of-the-for-loop/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="3OF1ARaBrnYWtuXkfGj+BxIc9nqdYDUoyxO9ynypzCI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="251" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_251" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_252">
+    <div class="avatar"><img alt="Ryan Bates" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="252">
+      <span class="c_name"><a href="http://railscasts.com">Ryan Bates</a></span>
+      <span class="c_date">January 8th, 2009</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/the-evils-of-the-for-loop#comment_252">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I agree <code>for</code> loops are ugly, I hate to see them in plain Ruby code but have grown used to them in the Rails views.</p>
+
+<p>Out of curiosity, if this problem with <code>for..in</code> stepping on local variables was fixed in 1.9, would you still have issues with using it?</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/early-steps/the-evils-of-the-for-loop/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="3OF1ARaBrnYWtuXkfGj+BxIc9nqdYDUoyxO9ynypzCI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="252" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_252" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_253">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="253">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">January 8th, 2009</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/the-evils-of-the-for-loop#comment_253">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><blockquote>
+<p>Out of curiosity, if this problem with <code>for..in</code> stepping on local variables was fixed in 1.9, would you still have issues with using it?</p>
+</blockquote>
+
+<p>I would still prefer <code>each()</code>.</p>
+
+<p>I feel it is better to stick with the uniform iterator approach throughout.  For example, it's easier to turn <code>each()</code> into <code>each_with_index()</code> than <code>for</code>.  I also feel it's easier for us to just teach the iterator approach to new Rubyists if we don't bother with unneeded exceptions like the <code>for</code> loop.</p>
+
+<p>That's all just one guy's opinion though.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/early-steps/the-evils-of-the-for-loop/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="3OF1ARaBrnYWtuXkfGj+BxIc9nqdYDUoyxO9ynypzCI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="253" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_253" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_254">
+    <div class="avatar"><img alt="Adam Keys" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="254">
+      <span class="c_name"><a href="http://therealadam.com">Adam Keys</a></span>
+      <span class="c_date">January 9th, 2009</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/the-evils-of-the-for-loop#comment_254">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>While my take is nowhere near as nuanced as yours, you can always refer to my version when you're feeling sassy: <a href="http://therealadam.com/archive/2008/01/06/the-barbarism-of-the-for-loop/">http://therealadam.com/archive/2008/01/06/the-barbarism-of-the-for-loop/</a></p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/early-steps/the-evils-of-the-for-loop/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="3OF1ARaBrnYWtuXkfGj+BxIc9nqdYDUoyxO9ynypzCI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="254" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_254" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_273">
+    <div class="avatar"><img alt="texec" height="70" src="http://www.gravatar.com/avatar/14cb1eac5c20a72b5bb89845f7932cfb?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="273">
+      <span class="c_name"><a href="mailto:j.jeising@gmail.com">texec</a></span>
+      <span class="c_date">April 16th, 2009</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/the-evils-of-the-for-loop#comment_273">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I think it's not a bug, it's feature. Consider the same code in other languages like C(++), PHP or Python - it works like the same.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/early-steps/the-evils-of-the-for-loop/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="3OF1ARaBrnYWtuXkfGj+BxIc9nqdYDUoyxO9ynypzCI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="273" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_273" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_276">
+    <div class="avatar"><img alt="Chris Mear" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="276">
+      <span class="c_name"><a href="http://www.feedmechocolate.com/">Chris Mear</a></span>
+      <span class="c_date">April 17th, 2009</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/the-evils-of-the-for-loop#comment_276">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>A recent post by Andrej Bauer about a similar thing in Python:</p>
+
+<p><a href="http://math.andrej.com/2009/04/09/pythons-lambda-is-broken/">http://math.andrej.com/2009/04/09/pythons-lambda-is-broken/</a></p>
+
+<p>The discussion there, and the follow-up post:</p>
+
+<p><a href="http://math.andrej.com/2009/04/11/on-programming-language-design/">http://math.andrej.com/2009/04/11/on-programming-language-design/</a></p>
+
+<p>are interesting from the point of view of comparing how a language does work (from a comprehending-the-current-implementatino perspective) to how a language should work (from a general language design perspective).</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/early-steps/the-evils-of-the-for-loop/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="3OF1ARaBrnYWtuXkfGj+BxIc9nqdYDUoyxO9ynypzCI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="276" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_276" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_277">
+    <div class="avatar"><img alt="Mark Wilden" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="277">
+      <span class="c_name">Mark Wilden</span>
+      <span class="c_date">April 18th, 2009</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/the-evils-of-the-for-loop#comment_277">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p><code>for...in</code> is easier to type and easier to read. You would only have problems with existing variables if your methods are too long.</p>
+
+<p>That said, I use <code>each()</code> because I don't want the cool kids to sneer at me. </p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/early-steps/the-evils-of-the-for-loop/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="3OF1ARaBrnYWtuXkfGj+BxIc9nqdYDUoyxO9ynypzCI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="277" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_277" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_405">
+    <div class="avatar"><img alt="Arlen" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="405">
+      <span class="c_name"><a href="http://sairyx.org">Arlen</a></span>
+      <span class="c_date">November 4th, 2010</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/the-evils-of-the-for-loop#comment_405">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>JavaScript has the same problem!</p>
+
+<div class="highlight highlight-javascript"><pre><span class="kd">var</span> <span class="nx">items</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"apple"</span><span class="p">,</span> <span class="s2">"banana"</span><span class="p">,</span> <span class="s2">"cherry"</span><span class="p">]</span>
+<span class="kd">var</span> <span class="nx">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="k">in</span> <span class="nx">items</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// i is the index, i.e. items[i] will be "apple", ...</span>
+    <span class="nx">results</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">i</span><span class="p">;</span> <span class="p">})</span>
+<span class="p">}</span>
+
+<span class="nx">results</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nb">document</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="nx">i</span><span class="p">()</span> <span class="o">+</span> <span class="s2">" "</span><span class="p">)</span>
+<span class="p">})</span>
+</pre></div>
+
+<p>You get <code>2 2 2</code> instead of <code>0 1 2</code>, as the <code>i</code> in <code>for (var ... in ... )</code> is actually a single variable, rather than instantiated afresh (and thus different in each closure) each time.</p>
+
+<p>(note that I'm ignoring the actual values of items above, just using the array to get indices. In a real life situation, you might be indexing the array with <code>i</code> in the closure, expecting to do something to a different member each time, whereas they'd all be operating on <code>"cherry"</code> here.)</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/early-steps/the-evils-of-the-for-loop/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="3OF1ARaBrnYWtuXkfGj+BxIc9nqdYDUoyxO9ynypzCI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="405" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_405" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_606">
+    <div class="avatar"><img alt="Parabans Belroder" height="70" src="http://www.gravatar.com/avatar/f68641d1d04d73ceb54e85182cb25c8f?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="606">
+      <span class="c_name"><a href="mailto:unga@mailismagic.com">Parabans Belroder</a></span>
+      <span class="c_date">February 11th, 2016</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/the-evils-of-the-for-loop#comment_606">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>nice collection of flash things that are not visible nowadays. update or remove.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/early-steps/the-evils-of-the-for-loop/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="3OF1ARaBrnYWtuXkfGj+BxIc9nqdYDUoyxO9ynypzCI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="606" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_606" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_607">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="https://avatars.githubusercontent.com/u/5639?v=4" width="70" /></div>
+    <div class="comment-info" data-comment-id="607">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">February 11th, 2016</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/the-evils-of-the-for-loop#comment_607">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>It's a fair complaint.  I need to update the site.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/early-steps/the-evils-of-the-for-loop/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="3OF1ARaBrnYWtuXkfGj+BxIc9nqdYDUoyxO9ynypzCI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="607" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_607" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/early-steps/the-evils-of-the-for-loop/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="3OF1ARaBrnYWtuXkfGj+BxIc9nqdYDUoyxO9ynypzCI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fearly-steps%2Fthe-evils-of-the-for-loop" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Key-Value Stores / Using Redis as a Key-Value Store</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This article covers basic Redis usage.  Most key-value stores have these features in common.">
+    <meta name="keywords"    content="key-value stores, NoSQL, Redis, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/key-value-stores/using-redis-as-a-key-value-store/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/key-value-stores">Key-Value Stores</a></h1>
+            <span>Notes from my learning about simple NoSQL storage solutions.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>15</h4>
+    <span>
+      SEP<br>
+      2009
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Using Redis as a Key-Value Store</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/key-value-stores/setting-up-the-redis-server/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/key-value-stores/using-key-value-stores-from-ruby/">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/key-value-stores/lists-and-sets-in-redis/">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p><em>[<strong>Update</strong>:  though all of the techniques I show here still apply, many methods of the Redis gem have changed names to match the actual <a href="http://redis.io/commands">Redis commands</a> they call.]</em></p>
+
+<p>Redis is a first and foremost a server providing key-value storage.  As such, the primary features of any client library are for connecting to the server and manipulating those key-value pairs.</p>
+
+<h4>Connecting to the Server</h4>
+
+<p>Connecting to the Redis server can be as simple as <code>Redis.new</code>, thanks to some defaults in both the server and Ezra's Ruby client library for talking to that server.  I won't pass any options to the constructor calls below, but you can use any of the following as needed:</p>
+
+<ul>
+<li>
+<code>:host</code> if you need to connect to an external host instead of the default 127.0.0.1</li>
+<li>
+<code>:port</code> if you need to use something other than the default port of 6379</li>
+<li>
+<code>:password</code> if you configured Redis to require a password on connection</li>
+<li>
+<code>:db</code> if you want to select one of the multiple configured databases, other than the default of 0 (databases are identified by a zero-based index)</li>
+<li>
+<code>:timeoeut</code> if you want a different timeout for Redis communication than the default of 5 seconds</li>
+<li>
+<code>:logger</code> if you want the library to log activity as it works</li>
+</ul><h4>Getting and Setting Keys</h4>
+
+<p>Once connected to, Redis can be used as an in-memory key-value store, much like memcached.  The client library exposes this key getting and setting functionality just like a Ruby <code>Hash</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+<span class="n">db</span><span class="o">[</span><span class="ss">:my_key</span><span class="o">]</span>  <span class="c1"># =&gt; nil</span>
+<span class="n">db</span><span class="o">[</span><span class="ss">:my_key</span><span class="o">]</span> <span class="o">=</span> <span class="s2">"my_value"</span>
+<span class="n">db</span><span class="o">[</span><span class="ss">:my_key</span><span class="o">]</span>  <span class="c1"># =&gt; "my_value"</span>
+<span class="n">db</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="ss">:my_key</span><span class="p">)</span>
+<span class="n">db</span><span class="o">[</span><span class="ss">:my_key</span><span class="o">]</span>  <span class="c1"># =&gt; nil</span>
+</pre></div>
+
+<p>Notice that we can read, write, and delete key-value pairs just as we could with a <code>Hash</code>, using <code>[]</code>, <code>[]=</code>, and <code>delete()</code> respectively.  If we look for a key that isn't in the database, we get <code>nil</code> just as Ruby would give us for a <code>Hash</code>.</p>
+
+<p>There are two other methods for slightly more advanced setting operations.  First, <code>getset()</code> can be used to update a value while also retrieving its previous value.  There's also a <code>set_unless_exists()</code> method that will not override an existing value.  Here are those operations in action:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="n">db</span>       <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+<span class="n">db</span><span class="o">[</span><span class="ss">:adv</span><span class="o">]</span> <span class="o">=</span> <span class="s2">"old"</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">getset</span><span class="p">(</span><span class="ss">:adv</span><span class="p">,</span> <span class="s2">"new"</span><span class="p">)</span>              <span class="c1"># =&gt; "old"</span>
+<span class="n">db</span><span class="o">[</span><span class="ss">:adv</span><span class="o">]</span>                            <span class="c1"># =&gt; "new"</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_unless_exists</span><span class="p">(</span><span class="ss">:adv</span><span class="p">,</span> <span class="s2">"lost"</span><span class="p">)</span>  <span class="c1"># =&gt; false</span>
+<span class="n">db</span><span class="o">[</span><span class="ss">:adv</span><span class="o">]</span>                            <span class="c1"># =&gt; "new"</span>
+</pre></div>
+
+<p>Other <code>Hash</code>-like operations are supported.  For example, you can check for the existence of a key, count the number of keys in the database, fetch a list of keys matching a pattern, or even get random keys:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="n">db</span>             <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+<span class="n">db</span><span class="o">[</span><span class="ss">:key1</span><span class="o">]</span>      <span class="o">=</span> <span class="mi">1</span>
+<span class="n">db</span><span class="o">[</span><span class="ss">:key2</span><span class="o">]</span>      <span class="o">=</span> <span class="mi">2</span>
+<span class="n">db</span><span class="o">[</span><span class="ss">:key3</span><span class="o">]</span>      <span class="o">=</span> <span class="mi">3</span>
+<span class="n">db</span><span class="o">[</span><span class="ss">:other_key</span><span class="o">]</span> <span class="o">=</span> <span class="s2">"other"</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">key?</span><span class="p">(</span><span class="ss">:key3</span><span class="p">)</span>   <span class="c1"># =&gt; 1</span>
+<span class="n">db</span><span class="o">.</span><span class="n">key?</span><span class="p">(</span><span class="ss">:key4</span><span class="p">)</span>   <span class="c1"># =&gt; false</span>
+<span class="n">db</span><span class="o">.</span><span class="n">dbsize</span>        <span class="c1"># =&gt; 4</span>
+<span class="n">db</span><span class="o">.</span><span class="n">keys</span><span class="p">(</span><span class="s2">"key*"</span><span class="p">)</span>  <span class="c1"># =&gt; ["key2", "key3", "key1"]</span>
+<span class="n">db</span><span class="o">.</span><span class="n">randkey</span>       <span class="c1"># =&gt; "key2"</span>
+<span class="n">db</span><span class="o">.</span><span class="n">randkey</span>       <span class="c1"># =&gt; "other_key"</span>
+</pre></div>
+
+<p>Note that the pattern passed to <code>keys()</code> is similar to a file glob.  You can use a <code>?</code> in the pattern to mean any one character and <code>*</code> to match any run of characters.  You can also use <code>\\</code> to escape these special characters and match them literally.</p>
+
+<p>It's worth noting that all Redis keys and values are pretty much <code>String</code>s:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="n">db</span>             <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+<span class="n">db</span><span class="o">[</span><span class="no">Object</span><span class="o">.</span><span class="n">new</span><span class="o">]</span> <span class="o">=</span> <span class="no">Object</span><span class="o">.</span><span class="n">new</span>
+
+<span class="n">k</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">keys</span><span class="p">(</span><span class="s2">"#*"</span><span class="p">)</span><span class="o">.</span><span class="n">first</span>  <span class="c1"># =&gt; "#&lt;Object:0x301894&gt;"</span>
+<span class="n">db</span><span class="o">[</span><span class="n">k</span><span class="o">]</span>                    <span class="c1"># =&gt; "#&lt;Object:0x301858&gt;"</span>
+</pre></div>
+
+<p>There are some minor exceptions where values can sometimes be treated as numbers.  You can also have collections in values, but the collections hold the typical <code>String</code>s, with sometimes numeric meaning.  I'll talk more about these cases later.</p>
+
+<h4>Key Expiration</h4>
+
+<p>Redis supports setting expiration times on stored keys.  When that time expires, the key will be purged.  This is very useful when using Redis as a cache.  You can set an expiration time by calling the <code>expire()</code> method, or you can just use a different version of the key setting that includes the timeout:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="ss">:cached</span><span class="p">,</span> <span class="s2">"short lived"</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+<span class="mi">4</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+  <span class="nb">sleep</span> <span class="mi">1</span>
+  <span class="nb">puts</span> <span class="s2">"db[:cached] is </span><span class="si">#{</span><span class="n">db</span><span class="o">[</span><span class="ss">:cached</span><span class="o">].</span><span class="n">inspect</span><span class="si">}</span><span class="s2"> at </span><span class="si">#{</span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">end</span>
+<span class="c1"># &gt;&gt; db[:cached] is "short lived" at Sat Sep 05 14:01:07 -0500 2009</span>
+<span class="c1"># &gt;&gt; db[:cached] is "short lived" at Sat Sep 05 14:01:08 -0500 2009</span>
+<span class="c1"># &gt;&gt; db[:cached] is "short lived" at Sat Sep 05 14:01:09 -0500 2009</span>
+<span class="c1"># &gt;&gt; db[:cached] is nil at Sat Sep 05 14:01:10 -0500 2009</span>
+</pre></div>
+
+<p>Note that a write operation against a key with an expiration timeout set, a <em>volatile key</em> in Redis parlance, clears the timeout.  You can use the <code>ttl()</code> method if you need to examine the <em>time to live</em> for a key.  There's also a matching <code>get()</code> method to go with the <code>set()</code> I used above, though it's just an alias for <code>[]</code> and has nothing to do with timeouts.</p>
+
+<h4>Counters</h4>
+
+<p>Redis supports some other interesting operations on simple keys.  For example, you can use the atomic <code>incr()</code> operation to manage globally unique ID's:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="mi">3</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+  <span class="nb">fork</span> <span class="k">do</span>
+    <span class="n">db</span>  <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+    <span class="n">ids</span> <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="p">{</span> <span class="n">db</span><span class="o">.</span><span class="n">incr</span><span class="p">(</span><span class="s2">"global:next_user_id"</span><span class="p">)</span> <span class="p">}</span>
+    <span class="nb">puts</span> <span class="s2">"</span><span class="si">#{</span><span class="no">Process</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">ids</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">', '</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="no">Process</span><span class="o">.</span><span class="n">waitall</span>
+<span class="c1"># &gt;&gt; 1148: 1, 3, 6, 9, 12, 15, 17, 22, 25, 27</span>
+<span class="c1"># &gt;&gt; 1147: 4, 8, 11, 13, 16, 18, 20, 23, 26, 29</span>
+<span class="c1"># &gt;&gt; 1149: 2, 5, 7, 10, 14, 19, 21, 24, 28, 30</span>
+</pre></div>
+
+<p>This is one of the exceptions I mentioned earlier where Redis will try to treat a value as a number.  In this case an <code>Integer</code> is expected and a <code>Float</code> will be truncated.  If it holds non-numeric content, it is set to <code>"0"</code> and then modified as requested.  That's why you can start with a key that doesn't exist, as I did above.</p>
+
+<p>There is a matching <code>decr()</code> operation.  You can also choose to pass an <code>Integer</code> as the second argument to these methods to raise or lower the count by that amount.</p>
+
+<h4>Getting and Setting Multiple Keys at Once</h4>
+
+<p>Another interesting feature is the ability to fetch more than one key at a time:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="n">db</span>                    <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+<span class="n">db</span><span class="o">[</span><span class="s2">"user:1:username"</span><span class="o">]</span> <span class="o">=</span> <span class="s2">"JEG2"</span>
+<span class="n">db</span><span class="o">[</span><span class="s2">"user:1:password"</span><span class="o">]</span> <span class="o">=</span> <span class="s2">"secret"</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">mget</span><span class="p">(</span><span class="s2">"user:1:username"</span><span class="p">,</span> <span class="s2">"user:1:password"</span><span class="p">)</span>  <span class="c1"># =&gt; ["JEG2", "secret"]</span>
+</pre></div>
+
+<p>We can tie the counter and multiple get features together to do some basic object storage inside Redis:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="no">DB</span> <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+
+<span class="k">class</span> <span class="nc">User</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="nb">id</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+    <span class="vi">@id</span>     <span class="o">=</span> <span class="nb">id</span>
+    <span class="vi">@fields</span> <span class="o">=</span> <span class="no">Hash</span><span class="o">.</span><span class="n">new</span>
+    <span class="nb">load</span> <span class="k">if</span> <span class="vi">@id</span>
+  <span class="k">end</span>
+
+  <span class="kp">attr_reader</span> <span class="ss">:id</span>
+
+  <span class="k">def</span> <span class="nf">method_missing</span><span class="p">(</span><span class="n">meth</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">blk</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">meth</span><span class="o">.</span><span class="n">to_s</span> <span class="o">=~</span> <span class="sr">/\A(\w+)=/</span>
+      <span class="vi">@fields</span><span class="o">[</span><span class="vg">$1</span><span class="o">]</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">first</span>
+    <span class="k">else</span>
+      <span class="vi">@fields</span><span class="o">[</span><span class="n">meth</span><span class="o">]</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">load</span>
+    <span class="n">keys</span>    <span class="o">=</span> <span class="no">DB</span><span class="o">.</span><span class="n">keys</span><span class="p">(</span><span class="s2">"user:</span><span class="si">#{</span><span class="vi">@id</span><span class="si">}</span><span class="s2">:*"</span><span class="p">)</span>
+    <span class="n">values</span>  <span class="o">=</span> <span class="no">DB</span><span class="o">.</span><span class="n">mget</span><span class="p">(</span><span class="o">*</span><span class="n">keys</span><span class="p">)</span>
+    <span class="vi">@fields</span> <span class="o">=</span> <span class="no">Hash</span><span class="o">[*</span><span class="n">keys</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">k</span><span class="o">|</span> <span class="n">k</span><span class="o">[</span><span class="sr">/\w+\z/</span><span class="o">]</span> <span class="p">}</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="o">]</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">save</span>
+    <span class="vi">@id</span> <span class="o">||=</span> <span class="no">DB</span><span class="o">.</span><span class="n">incr</span><span class="p">(</span><span class="s2">"global:next_user_id"</span><span class="p">)</span>
+    <span class="no">DB</span><span class="o">.</span><span class="n">pipelined</span> <span class="k">do</span> <span class="o">|</span><span class="n">commands</span><span class="o">|</span>
+      <span class="vi">@fields</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="o">|</span>
+        <span class="n">commands</span><span class="o">[</span><span class="s2">"user:</span><span class="si">#{</span><span class="vi">@id</span><span class="si">}</span><span class="s2">:</span><span class="si">#{</span><span class="n">k</span><span class="si">}</span><span class="s2">"</span><span class="o">]</span> <span class="o">=</span> <span class="n">v</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">inspect</span>
+    <span class="s2">"&lt;#User:</span><span class="si">#{</span><span class="vi">@id</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="vi">@fields</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="o">|</span> <span class="s2">"</span><span class="si">#{</span><span class="n">k</span><span class="si">}</span><span class="s2">:</span><span class="si">#{</span><span class="n">v</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span> <span class="si">}</span><span class="s2">.join(' ')}&gt;"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="no">User</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># =&gt; &lt;#User:1 username:"JEG2" password:"secret"&gt;</span>
+
+<span class="n">new_guy</span> <span class="o">=</span> <span class="no">User</span><span class="o">.</span><span class="n">new</span>
+<span class="n">new_guy</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="s2">"New Guy"</span>
+<span class="n">new_guy</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="s2">"123"</span>
+<span class="n">new_guy</span><span class="o">.</span><span class="n">save</span>
+
+<span class="no">User</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">new_guy</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>  <span class="c1"># =&gt; &lt;#User:31 username:"New Guy" password:"123"&gt;</span>
+</pre></div>
+
+<p>I snuck in a another feature in my implementation of <code>save()</code> for that example:  pipelined commands.  If you're going to issue a bunch of commands real quick, as I did with the field saves in this case, you can <em>pipeline</em> them.  This queues them up locally and then fires them all at the Redis server as your block exits.  This can make those batch operations a little more efficient.</p>
+
+<h4>Saving and Shutting Down</h4>
+
+<p>Redis does send periodic snapshot data backups to disk, unlike memcached.  I've already talked about how <a href="/key-value-stores/setting-up-the-redis-server/">you can configure exactly when these backups happen</a> on the server side, but you can also request a snapshot from the client side.  Just call <code>bgsave()</code> to trigger the usual asynchronous save or <code>save()</code> if you would prefer a synchronous backup.</p>
+
+<p>When you are done playing around with a Redis session, you can call the <code>shutdown()</code> method to close all connections, dump the database to disk, and exit the server.  If you don't wish to keep the data, you can call <code>flush_db()</code> to ditch the data in the database you are connected to.  You may also wish to examine the statistics from a call to <code>info()</code> before you <code>shutdown()</code> to see what work the server has done.</p>
+
+<p>That covers basic key-value store usage.  However, Redis has some unique features that really set it apart from other key-value stores.  We will look into those next.</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/key-value-stores/setting-up-the-redis-server/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/key-value-stores/using-key-value-stores-from-ruby/">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/key-value-stores/lists-and-sets-in-redis/">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="key-value-stores/using-redis-as-a-key-value-store">
+  In: <a href="/key-value-stores/">Key-Value Stores</a>
+  <span>|</span>
+  Tags: <a href="/tags/Redis/">Redis</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/key-value-stores/using-redis-as-a-key-value-store#comments">2 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (2)</span></h5>
+
+    <ol>
+        <li id="comment_395">
+    <div class="avatar"><img alt="Pablo" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="395">
+      <span class="c_name"><a href="http://teambox.com">Pablo</a></span>
+      <span class="c_date">August 13th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/key-value-stores/using-redis-as-a-key-value-store#comment_395">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks for the writeup, it's exactly what I was looking for.<br>
+We're probably switching from Memcached to Redis for the manual expiration options it has.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_477">
+    <div class="avatar"><img alt="viresh" height="70" src="http://www.gravatar.com/avatar/751fb135c7485ff0c36c77c59a3805cf?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="477">
+      <span class="c_name"><a href="mailto:asviresh@gmail.com">viresh</a></span>
+      <span class="c_date">July 5th, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/key-value-stores/using-redis-as-a-key-value-store#comment_477">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>awesome tutorial :) u cld have added "Queue" ( using Redis to queue jobs )</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

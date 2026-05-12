@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / Dave&#39;s No Tests Challenge</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="An exploration of what we can learn from the recent challenge that Dave Thomas gave to the Ruby Rogues:  &quot;Stop writing tests.&quot;">
+    <meta name="keywords"    content="thinking about code, software design, Databases, Process, Test-Driven Development, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/daves-no-tests-challenge/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>20</h4>
+    <span>
+      JUL<br>
+      2014
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Dave&#39;s No Tests Challenge</h3>
+        
+        <p>I've mentioned before <a href="http://graysoftinc.com/non-code/ipsc-2014-postmortem">my difficulties in the 2014 IPSC</a>.  But taking one beating is no reason not to try again.  The first loss just showed me that the contest still had more to teach me.</p>
+
+<p>A buddy of mine has spent some time with <a href="http://ipsc.ksp.sk/2014/real/problems/k.html">the crossword problem</a> and told me that he enjoyed it.  I didn't try this problem during the actual event, but I was a little familiar with it from my friend's description.</p>
+
+<p>To add to the fun, I decided this would be a great excuse to take up <a href="http://rubyrogues.com/164-rr-staying-sharp-with-dave-thomas/">the recent challenge Dave Thomas gave to the Ruby Rogues</a>:  "Stop writing tests."</p>
+
+<h4>Step 1:  Feedback Loops</h4>
+
+<p>Without tests to guide me, I really want to see what's going on.  One of the biggest advantages of tests, in my opinion, is the feedback loop it provides.  So I set out to provide my own feedback.</p>
+
+<p>Since the problem at hand involves filling in a crossword board, the easiest feedback loop I could think of was to see the board as it fills in.  The final board is also the required output.  Therefor, I decided a good first step would just be to read the board into some data structure and write it back out.  Once I had that, I could insert code between those steps to fill it in.  And constantly seeing the board evolve would let me eyeball things for obvious mistakes.</p>
+
+<p>I set out to make that happen, with the minimal amount of effort.  First I created a project:</p>
+
+<pre><code>$ mkdir -p daves_no_tests_challenge/{bin,data,lib}
+$ cd daves_no_tests_challenge/
+$ git init
+Initialized empty Git repository in /Users/jeg2/Desktop/daves_no_tests_challenge/.git/
+</code></pre>
+
+<p>Then I built a minimal data structure:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Crossword</span>
+  <span class="k">class</span> <span class="nc">Board</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">squares</span><span class="p">)</span>
+      <span class="vi">@squares</span> <span class="o">=</span> <span class="n">squares</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:squares</span>
+    <span class="kp">private</span>     <span class="ss">:squares</span>
+
+    <span class="k">def</span> <span class="nf">to_s</span>
+      <span class="n">squares</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">row</span><span class="o">|</span> <span class="n">row</span><span class="o">.</span><span class="n">join</span> <span class="p">}</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That code just takes in and stringifies (for output) some rows of crossword squares.  Eventually, this code will need to be able to add answers, but that isn't needed for this first pass.</p>
+
+<p>Next I wrapped my fledgling data structure in some reading and writing code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">require_relative</span> <span class="s2">"board"</span>
+
+<span class="k">module</span> <span class="nn">Crossword</span>
+  <span class="k">class</span> <span class="nc">Solver</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">input</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+      <span class="vi">@input</span>  <span class="o">=</span> <span class="n">input</span>
+      <span class="vi">@output</span> <span class="o">=</span> <span class="n">output</span>
+      <span class="vi">@board</span>  <span class="o">=</span> <span class="kp">nil</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:input</span><span class="p">,</span> <span class="ss">:output</span><span class="p">,</span> <span class="ss">:board</span>
+    <span class="kp">private</span>     <span class="ss">:input</span><span class="p">,</span> <span class="ss">:output</span><span class="p">,</span> <span class="ss">:board</span>
+
+    <span class="k">def</span> <span class="nf">solve</span>
+      <span class="n">parse_board</span>
+      <span class="n">write_board</span>
+    <span class="k">end</span>
+
+    <span class="kp">private</span>
+
+    <span class="k">def</span> <span class="nf">parse_board</span>
+      <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">input</span><span class="o">.</span><span class="n">gets</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/\d+/</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_i</span><span class="p">)</span>
+      <span class="vi">@board</span>        <span class="o">=</span> <span class="no">Board</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
+        <span class="nb">Array</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="p">{</span> <span class="n">input</span><span class="o">.</span><span class="n">gets</span><span class="o">.</span><span class="n">chars</span><span class="o">.</span><span class="n">first</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span> <span class="p">}</span>
+      <span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">write_board</span>
+      <span class="n">output</span><span class="o">.</span><span class="n">puts</span> <span class="n">board</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That code just parses the <code>Board</code> using the dimensions in the input file and writes it back out.  This class gives me a place to hang some clue solving code, when I'm ready for that.</p>
+
+<p>In preparation for adding an executable, I collapsed this process into a simple method call:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">require_relative</span> <span class="s2">"crossword/solver"</span>
+
+<span class="k">module</span> <span class="nn">Crossword</span>
+  <span class="kp">module_function</span>
+
+  <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="no">Solver</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">solve</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Finally, I added the minimal binary:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+
+<span class="n">require_relative</span> <span class="s2">"../lib/crossword"</span>
+
+<span class="no">Crossword</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="no">ARGF</span><span class="p">,</span> <span class="vg">$stdout</span><span class="p">)</span>
+</pre></div>
+
+<p>If we make that file executable and point it at the easy input, we can see our first empty crossword:</p>
+
+<pre><code>$ chmod +x bin/solve
+$ bin/solve data/k1.in                                                                           
+........#.#...#.#.#####.......
+......######..#.#..#...####...
+..####..#.#..#######...#......
+....#.######..#.#..#.#.#......
+....#...#.#...#.#.######......
+....#...#.########.#.#.#####..
+.#######....#...#..#.#.#......
+.#..#.#.#######......#....#...
+.#....#.....#.#.......#...#...
+.#....#.########..#########...
+.######.#.#.#.#.#.....#...#...
+.#....#.#.#.#.#.#.##########..
+.....########.#.#.....#...#...
+.#..#.#.#.#...#.#########.#...
+######...####.#.......#.#.#...
+.#..#.#.#.#....############..#
+.#..########.#....#...#.#....#
+.#..#.#.#...#####.##########.#
+.#..#.#.#..#.#....#.....#.#..#
+...#########.#########..#.#..#
+....#.#.#..#.#....#.#.########
+......#.#..#.#########..#.#..#
+.#.#..#.#..#.#..#.#.#...#.#...
+.#.#.......#.#..#.#.#.#...#...
+#####.#########.#.#.#.#...#.#.
+.#.#..#.#..#....#..########.#.
+.######.#..#######..#.#...#.#.
+...#..#.#.......#...#.#.....#.
+....######...######...#.....#.
+......#.#.............#######.
+</code></pre>
+
+<p>Seeing this made me realize that there are two sides to crosswords:  the board and the clues.  I now had some visibility into one side, but what about clues?</p>
+
+<p>For clues I wanted to know, what am I handling and what am I not.  If I printed out the not yet handled stuff, I could scan such a list for similar clues and then write the code to handle them.  I should then see the unhandled clue list shrink and some answers appear on the board.  I could then just repeat that process until I am done.</p>
+
+<p>This requires just two changes to my <code>Solver</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="k">module</span> <span class="nn">Crossword</span>
+  <span class="k">class</span> <span class="nc">Solver</span>
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">solve</span>
+      <span class="n">parse_board</span>
+      <span class="n">solve_clues</span>
+      <span class="n">write_board</span>
+    <span class="k">end</span>
+
+    <span class="kp">private</span>
+
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">solve_clues</span>
+      <span class="o">%</span><span class="n">i</span><span class="o">[</span><span class="n">across</span> <span class="n">down</span><span class="o">].</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">direction</span><span class="o">|</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="nb">gets</span><span class="o">.</span><span class="n">to_i</span>
+        <span class="n">count</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+          <span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">clue</span> <span class="o">=</span> <span class="nb">gets</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">with_index</span> <span class="p">{</span> <span class="o">|</span><span class="n">str</span><span class="p">,</span> <span class="n">i</span><span class="o">|</span>
+            <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="o">?</span> <span class="n">str</span><span class="o">.</span><span class="n">to_i</span> <span class="p">:</span> <span class="n">str</span><span class="o">.</span><span class="n">strip</span>
+          <span class="p">}</span>
+          <span class="k">if</span> <span class="kp">false</span>  <span class="c1"># FIXME:  match a clue</span>
+            <span class="c1"># FIXME:  write the answer to the board</span>
+          <span class="k">else</span>
+            <span class="nb">warn</span> <span class="s2">"No match:  </span><span class="si">#{</span><span class="n">clue</span><span class="si">}</span><span class="s2">"</span>
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I added a <code>solve_clues()</code> step to the overall process, then fleshed out that method just enough to parse clues and consider all of them failures.  Notice that I got a bit hand wavy with how the solving stuff was actually going to work.  It didn't matter yet.  I also put the clue warnings on <code>STDERR</code> because they aren't legally part of the output and I wanted to be able to redirect them and the board independently.</p>
+
+<p>Now I had a lot of output, but it showed me exactly what I needed to do:</p>
+
+<pre><code>No match:  Pokemon which evolves from Oddish
+No match:  Pokemon which evolves from Spearow
+No match:  Chemical element with the symbol Au
+No match:  Pokemon with number #63
+No match:  Pokemon with number #137
+No match:  Last name of the President of the United States who held the office in 1987
+No match:  Chemical element with the symbol Na
+No match:  Chemical element with the symbol W
+No match:  Pokemon which evolves into Arbok
+No match:  Pokemon which evolves from Machoke
+…
+........#.#...#.#.#####.......
+......######..#.#..#...####...
+..####..#.#..#######...#......
+....#.######..#.#..#.#.#......
+....#...#.#...#.#.######......
+....#...#.########.#.#.#####..
+.#######....#...#..#.#.#......
+.#..#.#.#######......#....#...
+.#....#.....#.#.......#...#...
+.#....#.########..#########...
+.######.#.#.#.#.#.....#...#...
+.#....#.#.#.#.#.#.##########..
+.....########.#.#.....#...#...
+.#..#.#.#.#...#.#########.#...
+######...####.#.......#.#.#...
+.#..#.#.#.#....############..#
+.#..########.#....#...#.#....#
+.#..#.#.#...#####.##########.#
+.#..#.#.#..#.#....#.....#.#..#
+...#########.#########..#.#..#
+....#.#.#..#.#....#.#.########
+......#.#..#.#########..#.#..#
+.#.#..#.#..#.#..#.#.#...#.#...
+.#.#.......#.#..#.#.#.#...#...
+#####.#########.#.#.#.#...#.#.
+.#.#..#.#..#....#..########.#.
+.######.#..#######..#.#...#.#.
+...#..#.#.......#...#.#.....#.
+....######...######...#.....#.
+......#.#.............#######.
+</code></pre>
+
+<h4>Step 2:  Strategies</h4>
+
+<p>Satisfied that I could now follow my process without using a test suite, it was time to make this problem easy to solve.</p>
+
+<p>I realized that different clues would need different strategies to solve and I might need to write several of those.  This made me want to add a little bit of infrastructure for loading and matching strategies.  I figured I could solve that problem now, then focus in entirely on clue specifics.</p>
+
+<p>I sketched out a base class for this approach:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Crossword</span>
+  <span class="k">class</span> <span class="nc">Strategy</span>
+    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">strategies</span>
+      <span class="vi">@strategies</span> <span class="o">||=</span> <span class="o">[</span> <span class="o">]</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">inherited</span><span class="p">(</span><span class="n">subclass</span><span class="p">)</span>
+      <span class="n">strategies</span> <span class="o">&lt;&lt;</span> <span class="n">subclass</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">load</span><span class="p">(</span><span class="n">dir</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">__dir__</span><span class="p">,</span> <span class="s2">"strategies"</span><span class="p">))</span>
+      <span class="no">Dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"</span><span class="si">#{</span><span class="n">dir</span><span class="si">}</span><span class="s2">/*.rb"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">path</span><span class="o">|</span>
+        <span class="no">Kernel</span><span class="o">.</span><span class="n">load</span> <span class="n">path</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">match</span><span class="p">(</span><span class="n">clue</span><span class="p">)</span>
+      <span class="n">strategies</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">subclass</span><span class="o">|</span>
+        <span class="n">strategy</span> <span class="o">=</span> <span class="n">subclass</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">clue</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">strategy</span> <span class="k">if</span> <span class="n">strategy</span><span class="o">.</span><span class="n">match?</span>
+      <span class="k">end</span>
+      <span class="kp">nil</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">clue</span><span class="p">)</span>
+      <span class="vi">@clue</span>       <span class="o">=</span> <span class="n">clue</span>
+      <span class="vi">@match_data</span> <span class="o">=</span> <span class="kp">nil</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:clue</span><span class="p">,</span> <span class="ss">:match_data</span>
+    <span class="kp">private</span>     <span class="ss">:clue</span><span class="p">,</span> <span class="ss">:match_data</span>
+
+    <span class="k">def</span> <span class="nf">match?</span>
+      <span class="vi">@match_data</span> <span class="o">=</span> <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">const_get</span><span class="p">(</span><span class="ss">:CLUE_REGEX</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">clue</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">answer</span>
+      <span class="nb">fail</span> <span class="no">NotImplementedError</span><span class="p">,</span> <span class="s2">"Strategies must override answer()"</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The four class methods all work together to support this simple process:</p>
+
+<ol>
+<li>I plan to define subclasses of <code>Strategy</code>
+</li>
+<li>And I'll throw all of them in the same directory</li>
+<li>So dynamically load everything in there</li>
+<li>Then search through all subclasses to find one that matches the current clue</li>
+</ol><p>The two instance methods handle matching and generating answers for clues.  Originally I considered forcing subclasses to implement both.  However a glance at the clues made me feel that at least some could be matched with a simple regex.  I decided to make that the default behavior.  Subclasses can still override <code>match?()</code> if they need more complex logic.</p>
+
+<p>My use of a constant for the regex is a little tricky.  Had I used a bare constant, Ruby would have resolved it based on the current scope.  Put simply, it would have searched for a constant in this class.  (That's an over simplification, but true enough here.)  It would not find a constant defined in a <code>Strategy</code> subclass, where I wanted to put them.  Because of that, I look up the constant manually, using Ruby's reflection capabilities.  This code will find a constant in the subclass.  The truth is, it will fail with an error if the subclass does not define the constant, but I expect <code>match?()</code> to be overriden in those cases.</p>
+
+<p>Plugging these strategies into the <code>Solver</code> is just four lines of code, explained inline:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">require_relative</span> <span class="s2">"board"</span>
+<span class="n">require_relative</span> <span class="s2">"strategy"</span>  <span class="c1"># 1:  load the dependency</span>
+
+<span class="k">module</span> <span class="nn">Crossword</span>
+  <span class="k">class</span> <span class="nc">Solver</span>
+    <span class="c1"># ...</span>
+
+    <span class="kp">private</span>
+
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">solve_clues</span>
+      <span class="no">Strategy</span><span class="o">.</span><span class="n">load</span>  <span class="c1"># 2:  dynamically load all available strategies</span>
+      <span class="o">%</span><span class="n">i</span><span class="o">[</span><span class="n">across</span> <span class="n">down</span><span class="o">].</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">direction</span><span class="o">|</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="nb">gets</span><span class="o">.</span><span class="n">to_i</span>
+        <span class="n">count</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+          <span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">clue</span> <span class="o">=</span> <span class="nb">gets</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">with_index</span> <span class="p">{</span> <span class="o">|</span><span class="n">str</span><span class="p">,</span> <span class="n">i</span><span class="o">|</span>
+            <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="o">?</span> <span class="n">str</span><span class="o">.</span><span class="n">to_i</span> <span class="p">:</span> <span class="n">str</span><span class="o">.</span><span class="n">strip</span>
+          <span class="p">}</span>
+          <span class="k">if</span> <span class="p">(</span><span class="n">strategy</span> <span class="o">=</span> <span class="no">Strategy</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">clue</span><span class="p">))</span>  <span class="c1"># 3:  find a match for the clue</span>
+            <span class="c1"># 4:  record the answer on the Board:</span>
+            <span class="n">board</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">"record_</span><span class="si">#{</span><span class="n">direction</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">strategy</span><span class="o">.</span><span class="n">answer</span><span class="p">)</span>
+          <span class="k">else</span>
+            <span class="nb">warn</span> <span class="s2">"No match:  </span><span class="si">#{</span><span class="n">clue</span><span class="si">}</span><span class="s2">"</span>
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>As you can see, this required the <code>Board</code> to gain some new methods as well, for recording answers:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Crossword</span>
+  <span class="k">class</span> <span class="nc">Board</span>
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">record_across</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+      <span class="n">answer</span><span class="o">.</span><span class="n">downcase</span><span class="o">.</span><span class="n">chars</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">char</span><span class="p">,</span> <span class="n">i</span><span class="o">|</span>
+        <span class="n">record</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="n">char</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">record_down</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+      <span class="n">answer</span><span class="o">.</span><span class="n">downcase</span><span class="o">.</span><span class="n">chars</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">char</span><span class="p">,</span> <span class="n">i</span><span class="o">|</span>
+        <span class="n">record</span><span class="p">(</span><span class="n">row</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">char</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="c1"># ...</span>
+
+    <span class="kp">private</span>
+
+    <span class="k">def</span> <span class="nf">record</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">char</span><span class="p">)</span>
+      <span class="n">square</span> <span class="o">=</span> <span class="n">squares</span><span class="o">[</span><span class="n">row</span><span class="o">][</span><span class="n">column</span><span class="o">]</span>
+
+      <span class="nb">fail</span> <span class="s2">"Outside of board"</span>  <span class="k">if</span> <span class="n">square</span><span class="o">.</span><span class="n">nil?</span>
+      <span class="nb">fail</span> <span class="s2">"Outside of answer"</span> <span class="k">if</span> <span class="n">square</span> <span class="o">==</span> <span class="s2">"."</span>
+      <span class="nb">fail</span> <span class="s2">"Answer mismatch"</span>   <span class="k">if</span> <span class="o">![</span><span class="s2">"#"</span><span class="p">,</span> <span class="n">char</span><span class="o">].</span><span class="n">include?</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>
+
+      <span class="n">square</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I did notice that <code>record_across()</code> and <code>record_down()</code> had some duplication that could be removed with some <code>yield</code> magic.  This is a pretty simple case though and I decided to let it ride.</p>
+
+<p>You'll noticed that I cranked the paranoia up a bit in <code>record()</code>.  Placing letters in a crossword puzzle is a great time to notice several potential problems like overruns or answers that don't agree.  I don't know if I would have added all of these guard clauses in the presence of a strong test suite, but I liked seeing them here in the end.  I think the extra checks here, where they mattered most, helped me write the rest of the code with more confidence.</p>
+
+<p>This felt like enough infrastructure to start solving actual clues.</p>
+
+<p>I decided to start with the Pokémon questions.  Glancing through the lists, I saw two different flavors of clues.  So I went hunting for <a href="https://raw.githubusercontent.com/veekun/pokedex/master/pokedex/data/csv/pokemon.csv">a data file that could answer both types of questions in an easy-to-read format</a>.  Having found that, I needed some code to parse the data and allow me to search through it:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"csv"</span>
+
+<span class="k">module</span> <span class="nn">Crossword</span>
+  <span class="k">class</span> <span class="nc">PokemonList</span>
+    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">loaded</span>
+      <span class="vi">@loaded</span> <span class="o">||=</span> <span class="kp">new</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">method_missing</span><span class="p">(</span><span class="nb">method</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">loaded</span><span class="o">.</span><span class="n">respond_to?</span><span class="p">(</span><span class="nb">method</span><span class="p">)</span>
+        <span class="n">loaded</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">method</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+      <span class="k">else</span>
+        <span class="k">super</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">path</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">__dir__</span><span class="p">,</span> <span class="o">*</span><span class="sx">%w[.. .. data pokemon.csv]</span><span class="p">))</span>
+      <span class="vi">@pokemon</span> <span class="o">=</span> <span class="no">CSV</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="ss">headers</span><span class="p">:</span> <span class="kp">true</span><span class="p">,</span> <span class="n">header_converters</span><span class="p">:</span> <span class="ss">:symbol</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:pokemon</span>
+    <span class="kp">private</span>     <span class="ss">:pokemon</span>
+
+    <span class="k">def</span> <span class="nf">find_by_number</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+      <span class="n">pokemon</span><span class="o">.</span><span class="n">find</span> <span class="p">{</span> <span class="o">|</span><span class="n">record</span><span class="o">|</span> <span class="n">record</span><span class="o">[</span><span class="ss">:id</span><span class="o">]</span> <span class="o">==</span> <span class="n">number</span> <span class="p">}</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I do the actual parse in <code>initialize()</code>, just handing off to the standard <code>CSV</code> library.  The class methods setup a system of fowarding to the instance methods for searching through a loaded data set.  The only search I needed to drop the first set of clues was an ability to find a Pokémon by number.</p>
+
+<p>With this database ready to go, the actual strategy for solving the clue is almost a non-event:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">require_relative</span> <span class="s2">"../pokemon_list"</span>
+
+<span class="k">module</span> <span class="nn">Crossword</span>
+  <span class="k">class</span> <span class="nc">PokemonNumber</span> <span class="o">&lt;</span> <span class="no">Strategy</span>
+    <span class="no">CLUE_REGEX</span> <span class="o">=</span> <span class="sr">/\APokemon with number #(?&lt;number&gt;\d+)\z/</span>
+
+    <span class="k">def</span> <span class="nf">answer</span>
+      <span class="no">PokemonList</span><span class="o">.</span><span class="n">find_by_number</span><span class="p">(</span><span class="n">match_data</span><span class="o">[</span><span class="ss">:number</span><span class="o">]</span><span class="p">)</span><span class="o">[</span><span class="ss">:identifier</span><span class="o">]</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>You can finally see how my stategies pay off here.  I write a regex to match the clue, capturing the key bits, then use those bits to find the right answer when called upon to do so.</p>
+
+<p>It was time to check in on those feedback loops:</p>
+
+<pre><code>No match:  Pokemon which evolves from Oddish
+No match:  Pokemon which evolves from Spearow
+No match:  Chemical element with the symbol Au
+…
+........#.#...#.#.#####.......
+......######..#.#..#...g###...
+..abra..#.#..porygon...r......
+....#.######..#.#..#.d.i......
+....#...#.#...#.#.###i#m......
+....#...#.########.#.t.e####..
+.m######....#...#..#.t.r......
+.e..#.#.#######......o....#...
+.w....#.....#.#.......#...#...
+.t....#.##a#####..#########...
+.w#####.#.r.#.#.#.....#...#...
+.o....#.#.t.#.#.#.hitmonchan..
+.....#####i##.#.#.....#...#...
+.m..#.#.#.c...#.#########.#...
+#a####...#u##.#.......#.#.#...
+.c..#.#.#.n....############..#
+.h..######o#.s....#...#.#....#
+.o..#.#.#...#a###.charmander.#
+.p..#.#.#..#.n....#.....#.#..#
+...#########.dragonite..#.#..#
+....#.#.#..#.s....#.#.primeape
+......#.#..#.lickitung..#.#..#
+.#.w..#.#..#.a..#.#.#...#.#...
+.#.e.......#.s..#.#.#.#...#...
+###e#.growlithe.#.#.#.#...#.k.
+.#.d..#.#..#....#..########.r.
+.##l###.#..#######..#.#...#.a.
+...e..#.#.......#...#.#.....b.
+....######...pinsir...#.....b.
+......#.#.............######y.
+</code></pre>
+
+<p>There are two things to notice here:</p>
+
+<ul>
+<li>There are still plenty of unsolved clues, including another flavor of Pokémon clues</li>
+<li>The board is starting to fill in and we even see some clues sharing squares</li>
+</ul><h4>Step 3:  The Real Problem</h4>
+
+<p>The rest of this puzzle was just about writing strategies to solve the various clues and it went pretty smoothly.  I'm not going to show all of them.  Checkout <a href="https://github.com/JEG2/daves_no_test_challenge">the repository on GitHub</a>, if you're curious.</p>
+
+<p>I'll show you the most challenging clue type though, just for fun.  Check out this one:</p>
+
+<pre><code>No match:  Last name of the next President of the United States after Harry S. Truman
+</code></pre>
+
+<p>This clue is still just a lookup in a database, but names are involved.  Names can be quite a curve ball.  Trust the guy named James Edward Gray II and married to Dana Ann Leslie Gray.  There's not a form in the world that handles both of our names gracefully.  I knew enough to fear this part, because there was very little chance of the database perfectly matching the clues.  Given that, I built an object just to handle name comparisons:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Crossword</span>
+  <span class="k">class</span> <span class="nc">Name</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">full_name</span><span class="p">)</span>
+      <span class="vi">@full_name</span> <span class="o">=</span> <span class="n">full_name</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:full_name</span>
+    <span class="kp">private</span>     <span class="ss">:full_name</span>
+
+    <span class="k">def</span> <span class="nf">first_name</span>
+      <span class="n">full_name</span><span class="o">[</span><span class="sr">/\A\w+/</span><span class="o">]</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">last_name</span>
+      <span class="n">full_name</span><span class="o">[</span><span class="sr">/\w+\z/</span><span class="o">]</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">==</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+      <span class="n">first_name</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">first_name</span> <span class="o">&amp;&amp;</span>
+      <span class="n">last_name</span>  <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">last_name</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Now I'll be honest:  I cheated here.  A lot.  I didn't need to worry about suffixes because my database didn't include them and I didn't need to consider middle names or initials in the comparisons for these easy clues.  (That's not true in the hard input!)  I was lucky that both lists were small enough for me to visually scan for issues like that.  It saved me a fair bit of code.</p>
+
+<p>The president database is similar to what you saw for Pokémon:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"csv"</span>
+
+<span class="n">require_relative</span> <span class="s2">"name"</span>
+
+<span class="k">module</span> <span class="nn">Crossword</span>
+  <span class="k">class</span> <span class="nc">PresidentList</span>
+    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">loaded</span>
+      <span class="vi">@loaded</span> <span class="o">||=</span> <span class="kp">new</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">method_missing</span><span class="p">(</span><span class="nb">method</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">loaded</span><span class="o">.</span><span class="n">respond_to?</span><span class="p">(</span><span class="nb">method</span><span class="p">)</span>
+        <span class="n">loaded</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">method</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+      <span class="k">else</span>
+        <span class="k">super</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">path</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">__dir__</span><span class="p">,</span> <span class="o">*</span><span class="sx">%w[.. .. data presidents.csv]</span><span class="p">))</span>
+      <span class="vi">@presidents</span> <span class="o">=</span> <span class="no">CSV</span><span class="o">.</span><span class="n">read</span><span class="p">(</span>
+        <span class="n">path</span><span class="p">,</span>
+        <span class="ss">headers</span><span class="p">:</span>           <span class="kp">true</span><span class="p">,</span>
+        <span class="n">header_converters</span><span class="p">:</span> <span class="ss">:symbol</span><span class="p">,</span>
+        <span class="ss">converters</span><span class="p">:</span>        <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">field</span><span class="p">,</span> <span class="n">field_info</span><span class="o">|</span>
+          <span class="k">if</span> <span class="n">field_info</span><span class="o">.</span><span class="n">header</span> <span class="o">==</span> <span class="ss">:president</span>
+            <span class="no">Name</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">" (2nd term)"</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span>
+          <span class="k">else</span>
+            <span class="n">field</span>
+          <span class="k">end</span>
+        <span class="p">}</span>
+
+      <span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:presidents</span>
+    <span class="kp">private</span>     <span class="ss">:presidents</span>
+
+    <span class="k">def</span> <span class="nf">find_by_name</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+      <span class="n">presidents</span><span class="o">.</span><span class="n">find</span> <span class="p">{</span> <span class="o">|</span><span class="n">record</span><span class="o">|</span> <span class="n">record</span><span class="o">[</span><span class="ss">:president</span><span class="o">]</span> <span class="o">==</span> <span class="nb">name</span> <span class="p">}</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">find_by_number</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+      <span class="n">presidents</span><span class="o">.</span><span class="n">find</span> <span class="p">{</span> <span class="o">|</span><span class="n">record</span><span class="o">|</span> <span class="n">record</span><span class="o">[</span><span class="ss">:presidency</span><span class="o">]</span> <span class="o">==</span> <span class="n">number</span> <span class="p">}</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>You can see that I used the same class method forwarding trick here.  In fact, I used it in all three databases that I built to solve this problem.  Were I not just playing around here, I'm pretty sure I would have felt compelled to extract the common code into a superclass, but I knew there was almost no chance I would need to change it during this exercise.  Copy and paste coding turned out to be good enough for this case.</p>
+
+<p>The main difference in the load here is that I had <code>CSV</code> convert the names into <code>Name</code> objects as they were read in.  This allows for easier comparisons later on.</p>
+
+<p>The two instance methods are the searches I needed to find some president by name and then look for a later president.  Here's the strategy that actually does that:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">require_relative</span> <span class="s2">"../president_list"</span>
+<span class="n">require_relative</span> <span class="s2">"../name"</span>
+
+<span class="k">module</span> <span class="nn">Crossword</span>
+  <span class="k">class</span> <span class="nc">PresidentAfter</span> <span class="o">&lt;</span> <span class="no">Strategy</span>
+    <span class="no">CLUE_REGEX</span> <span class="o">=</span> <span class="sr">/</span>
+<span class="sr">      \A (?&lt;name&gt;First|Last) \s+ name \s+ of \s+ the \s+</span>
+<span class="sr">      next \s+ President \s+ of \s+ the \s+ United \s+ States \s+ after \s+</span>
+<span class="sr">      (?&lt;before&gt;.+) \z</span>
+<span class="sr">    /x</span>
+
+    <span class="k">def</span> <span class="nf">answer</span>
+      <span class="nb">id</span>  <span class="o">=</span> <span class="no">PresidentList</span><span class="o">.</span><span class="n">find_by_name</span><span class="p">(</span>
+        <span class="no">Name</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">match_data</span><span class="o">[</span><span class="ss">:before</span><span class="o">]</span><span class="p">)</span>
+      <span class="p">)</span><span class="o">[</span><span class="ss">:presidency</span><span class="o">].</span><span class="n">to_i</span> <span class="o">+</span> <span class="mi">1</span>
+      <span class="no">PresidentList</span>
+        <span class="o">.</span><span class="n">find_by_number</span><span class="p">(</span><span class="nb">id</span><span class="o">.</span><span class="n">to_s</span><span class="p">)</span><span class="o">[</span><span class="ss">:president</span><span class="o">]</span>
+        <span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">"</span><span class="si">#{</span><span class="n">match_data</span><span class="o">[</span><span class="ss">:name</span><span class="o">].</span><span class="n">downcase</span><span class="si">}</span><span class="s2">_name"</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>These queries pick up some oddities of their individual databases, that could definitely be cleaned up, if this wasn't contest code.  That said, the strategy code is pretty short even for this trickier clue.  I'm not feeling much pain.</p>
+
+<h4>Conclusion</h4>
+
+<p>Overall, I really liked the process I slipped into here:</p>
+
+<ol>
+<li>Setup feedback loops</li>
+<li>Make the problem easy to solve</li>
+<li>Solve the problem</li>
+</ol><p>Testing can be a viable way to handle feedback loops, but it's not the only available solution.  Sure, I had a couple of times during this experiment when I introduced a bug that I found on the next run, but there weren't many of those and they were easily dealt with.  I didn't feel super hindered in this approach.  I need to keep exploring this idea though, so I know what the limitations are.</p>
+
+<p>In the end, solving just this easier portion of the problem took me roughly three and a half hours.  That's not fair though, because I was able to do a little thinking about how I should handle it before I started.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/daves-no-tests-challenge">
+  In: <a href="/rubies-in-the-rough/">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Databases/">Databases</a>, <a href="/tags/Process/">Process</a> &amp; <a href="/tags/Test-Driven%20Development/">Test-Driven Development</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/daves-no-tests-challenge#comments">0 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (0)</span></h5>
+
+    <ol>
+      
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

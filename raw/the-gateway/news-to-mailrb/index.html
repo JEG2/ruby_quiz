@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / The Gateway / news_to_mail.rb</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Here&#39;s the code for the other half of the Ruby Talk Gateway.  This code pulls posts from Usenet and emails them to the Ruby Talk mailing list.">
+    <meta name="keywords"    content="email, Usenet, Community, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/the-gateway/news-to-mailrb/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/the-gateway">The Gateway</a></h1>
+            <span>A information about a key piece of software for the early days of the Ruby community.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>12</h4>
+    <span>
+      DEC<br>
+      2006
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">news_to_mail.rb</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/the-gateway/mail-to-newsrb">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      &nbsp;
+  </div>
+</div>
+
+        <p><em>[<strong>Note</strong>:  You need to know <a href="/the-gateway/what-is-the-ruby-talk-gateway">what the Gateway is</a> before reading this article.]</em></p>
+
+<p>The second half of the Ruby Gateway runs as a cron job every five minutes and is expected to move all new newsgroup messages from the NNTP host to the Ruby Talk mailing list.  The cron invocation is simply:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">ruby</span> <span class="sr">/path/</span><span class="n">to</span><span class="o">/</span><span class="n">gateway</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">news_to_mail</span><span class="o">.</span><span class="n">rb</span> <span class="sr">/path/</span><span class="n">to</span><span class="o">/</span><span class="n">news_to_mail</span><span class="o">.</span><span class="n">log</span>
+</pre></div>
+
+<p>This side of the Gateway is not piped any messages and exit codes from it are not monitored.  It needs to tend its own affairs.</p>
+
+<h4>The Code</h4>
+
+<p>Here's the source:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">GATEWAY_DIR</span>  <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">),</span> <span class="s2">".."</span><span class="p">)</span><span class="o">.</span><span class="n">freeze</span>
+<span class="no">DATA_DIR</span>     <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">GATEWAY_DIR</span><span class="p">,</span> <span class="s2">"data"</span><span class="p">)</span><span class="o">.</span><span class="n">freeze</span>
+<span class="no">LAST_ID_FILE</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">DATA_DIR</span><span class="p">,</span> <span class="s2">"last_news_id.txt"</span><span class="p">)</span><span class="o">.</span><span class="n">freeze</span>
+<span class="no">PID_FILE</span>     <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">DATA_DIR</span><span class="p">,</span> <span class="s2">"pid.txt"</span><span class="p">)</span><span class="o">.</span><span class="n">freeze</span>
+
+<span class="vg">$LOAD_PATH</span> <span class="o">&lt;&lt;</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">GATEWAY_DIR</span><span class="p">,</span> <span class="s2">"config"</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">GATEWAY_DIR</span><span class="p">,</span> <span class="s2">"lib"</span><span class="p">)</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>The script begins by locating the root directory of the Gateway source and the data sub directory, building constants for two external files it will interact with, and adjusting the <code>$LOAD_PATH</code> so that it can <code>require</code> needed resources.</p>
+
+<p>Here are those <code>require</code>s:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="nb">require</span> <span class="s2">"servers_config"</span>
+<span class="nb">require</span> <span class="s2">"nntp"</span>
+
+<span class="nb">require</span> <span class="s2">"net/smtp"</span>
+<span class="nb">require</span> <span class="s2">"logger"</span>
+<span class="nb">require</span> <span class="s2">"timeout"</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>The first two requires are the same code used by <a href="/the-gateway/mail-to-newsrb">the other half of the Gateway</a>.  The last three are standard Ruby libraries the code will make use of.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># prepare log</span>
+<span class="n">log</span> <span class="o">=</span> <span class="no">Logger</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">ARGV</span><span class="o">.</span><span class="n">shift</span> <span class="o">||</span> <span class="vg">$stdout</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">datetime_format</span> <span class="o">=</span> <span class="s2">"%Y-%m-%d %H:%M "</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>This code opens a log file to record its status and adjusts the date and time formatting.</p>
+
+<p>With setup complete, it's now vital to ensure that the current execution is the only copy of the code we are running.  Should the Gateway get behind and fail to complete before the cron job launches another copy, duplicate messages could be sent to the list or worse.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># make sure only one copy is ever running at a time</span>
+<span class="k">begin</span>
+  <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="no">PID_FILE</span><span class="p">,</span> <span class="no">File</span><span class="o">::</span><span class="no">CREAT</span><span class="o">|</span><span class="no">File</span><span class="o">::</span><span class="no">EXCL</span><span class="o">|</span><span class="no">File</span><span class="o">::</span><span class="no">WRONLY</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">pid</span><span class="o">|</span> <span class="n">pid</span><span class="o">.</span><span class="n">puts</span> <span class="vg">$$</span> <span class="p">}</span>
+  <span class="nb">at_exit</span> <span class="k">do</span>
+    <span class="k">begin</span>
+      <span class="no">File</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="no">PID_FILE</span><span class="p">)</span>
+    <span class="k">rescue</span>
+      <span class="n">log</span><span class="o">.</span><span class="n">error</span> <span class="s2">"Unable to unlink pid file:  </span><span class="si">#{</span><span class="vg">$!</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">rescue</span>
+  <span class="n">pid</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="no">PID_FILE</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="o">.</span><span class="n">to_i</span> <span class="k">rescue</span> <span class="s2">"unknown"</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">warn</span> <span class="s2">"Process </span><span class="si">#{</span><span class="n">pid</span><span class="si">}</span><span class="s2"> was already running"</span>
+  <span class="nb">exit</span>
+<span class="k">end</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>The script attempts to write its process ID number to a file.  The <code>File::CREAT|File:EXCL</code> options ensure that the file is created or an exception is thrown, if it already existed.  When the exception comes it is assumed that an earlier execution is still running and the script exits.  If able to create the process ID file, the scripts knows it is the only copy running and it is safe to proceed.  The code then immediately arranges for Ruby to remove the file on exit.</p>
+
+<p>Note that to check for the file then create it if missing would introduce a race condition.  Another execution could create the file between check and creation.  As unlikely as that is for a five minute cron job, it's better to play things safe and just try the creation directly.</p>
+
+<p>Having made it this far, the script needs to refresh its memory of where it was in the list of newsgroup messages:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># find out what the last news item sent was</span>
+<span class="k">begin</span>
+  <span class="n">last_id_sent</span> <span class="o">=</span> <span class="nb">Integer</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="no">LAST_ID_FILE</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">)</span>
+<span class="k">rescue</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">fatal</span> <span class="s2">"Unable to get message ID of last news post:  </span><span class="si">#{</span><span class="vg">$!</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span>
+  <span class="nb">exit</span> <span class="o">-</span><span class="mi">1</span>
+<span class="k">end</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>A simple text file is used to hold the message number of the last file seen.  The code reads that file back to know where to resume its work.</p>
+
+<p>It's now time to connect to Usenet.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># </span>
+<span class="c1"># connect to NNTP host, switch to newgroup, and see how many messages are</span>
+<span class="c1"># available to read</span>
+<span class="c1"># </span>
+<span class="k">begin</span>
+  <span class="n">nntp</span><span class="p">,</span> <span class="n">last_id_available</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">,</span> <span class="kp">nil</span>
+  <span class="no">Timeout</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">nntp</span> <span class="o">=</span> <span class="no">Net</span><span class="o">::</span><span class="no">NNTP</span><span class="o">.</span><span class="n">new</span><span class="p">(</span> <span class="no">ServersConfig</span><span class="o">::</span><span class="no">NEWS_SERVER</span><span class="p">,</span>
+                          <span class="no">Net</span><span class="o">::</span><span class="no">NNTP</span><span class="o">::</span><span class="no">NNTP_PORT</span><span class="p">,</span>
+                          <span class="no">ServersConfig</span><span class="o">::</span><span class="no">NEWS_USER</span><span class="p">,</span>
+                          <span class="no">ServersConfig</span><span class="o">::</span><span class="no">NEWS_PASS</span> <span class="p">)</span>
+    <span class="n">last_id_available</span> <span class="o">=</span> <span class="n">nntp</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="no">ServersConfig</span><span class="o">::</span><span class="no">NEWSGROUP</span><span class="p">)</span><span class="o">[</span><span class="mi">3</span><span class="o">].</span><span class="n">to_i</span>
+  <span class="k">end</span>
+<span class="k">rescue</span> <span class="no">Timeout</span><span class="o">::</span><span class="no">Error</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">error</span> <span class="s2">"The NNTP connection timed out."</span>
+    <span class="nb">exit</span>
+<span class="k">rescue</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">fatal</span> <span class="s2">"Unable to establish connection to NNTP host:  </span><span class="si">#{</span><span class="vg">$!</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span>
+    <span class="nb">exit</span> <span class="o">-</span><span class="mi">1</span>
+<span class="k">end</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>This code tries to establish a connection to the NNTP host and switch to the comp.lang.ruby group being monitored.  A reasonable timeout is imposed on this code and will be for all network operations attempted.  If the connection is slow for some reason, another attempt can be made by the next cron execution.</p>
+
+<p>The script now advances the NNTP reader to the last message seen, which turns out to be complicated to get right:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># switch to the last message we sent (or the first real message before that)</span>
+<span class="k">begin</span>
+  <span class="no">Timeout</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">nntp</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">last_id_sent</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">rescue</span> <span class="no">Timeout</span><span class="o">::</span><span class="no">Error</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">error</span> <span class="s2">"The NNTP message shift timed out."</span>
+    <span class="nb">exit</span>
+<span class="k">rescue</span>
+  <span class="k">if</span> <span class="vg">$!</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="s2">"Bad article number"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">last_id_sent</span><span class="o">.</span><span class="n">nonzero?</span>
+    <span class="n">last_id_sent</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="k">retry</span>
+  <span class="k">else</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">fatal</span> <span class="s2">"Unable to switch to the last message:  </span><span class="si">#{</span><span class="vg">$!</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span>
+    <span class="nb">exit</span> <span class="o">-</span><span class="mi">1</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>The problem here is that Usenet messages can be revoked.  When that happens, the last message the script saw may no longer exist.  The real goal is the message <em>after</em> the last seen post though and an NNTP <code>NEXT</code> command will skip missing IDs.  Given that, the code backs up in the count until it can find an existing message.  <code>NEXT</code>ing forward from that will skip the vanished IDs and land the reader at the desired later message.</p>
+
+<p>To make that leap forward in the message count, the script enters an infinite loop of message processing:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="c1"># main event loop</span>
+<span class="kp">loop</span> <span class="k">do</span>
+  <span class="c1"># advance to the next message, if there is one</span>
+  <span class="n">new_last_id</span><span class="p">,</span> <span class="n">more_messages</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">,</span> <span class="kp">true</span>
+  <span class="k">begin</span>
+    <span class="no">Timeout</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span> <span class="k">do</span>
+      <span class="n">new_last_id</span> <span class="o">=</span> <span class="n">nntp</span><span class="o">.</span><span class="n">next</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="n">to_i</span>
+    <span class="k">end</span>
+  <span class="k">rescue</span> <span class="no">Timeout</span><span class="o">::</span><span class="no">Error</span>
+      <span class="n">log</span><span class="o">.</span><span class="n">error</span> <span class="s2">"Advancing the current NNTP message timed out."</span>
+      <span class="nb">exit</span>
+  <span class="k">rescue</span>
+    <span class="n">more_messages</span> <span class="o">=</span> <span class="kp">false</span>
+  <span class="k">end</span>
+  <span class="k">break</span> <span class="k">unless</span> <span class="n">more_messages</span>
+
+  <span class="c1"># reality check that we are moving forward</span>
+  <span class="k">if</span> <span class="n">new_last_id</span> <span class="o">&lt;=</span> <span class="n">last_id_sent</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">fatal</span> <span class="s2">"new_last_id (</span><span class="si">#{</span><span class="n">new_last_id</span><span class="si">}</span><span class="s2">) &lt;= last_id_sent "</span> <span class="o">+</span>
+              <span class="s2">"(</span><span class="si">#{</span><span class="n">last_id_sent</span><span class="si">}</span><span class="s2">), quitting to prevent sending duplicates"</span>
+    <span class="nb">exit</span> <span class="o">-</span><span class="mi">1</span>
+  <span class="k">end</span>
+
+  <span class="c1"># ...</span>
+</pre></div>
+
+<p>As I said, a <code>NEXT</code> command is sent to the host bringing the reader to an unseen message.  A quick sanity check is then made to ensure the count is rising.</p>
+
+<p>Note that this is also the code to determine when there are no more messages.  If the <code>NEXT</code> command fails, the message processing loop terminates.  You really need to used this combination of an infinite loop and last message detection when working with Usenet.  Any method of counting is pointless, thanks to the numbering issues I described.</p>
+
+<p>At this point, it's time to actually start reading the post:</p>
+
+<div class="highlight highlight-ruby"><pre>  <span class="c1"># ...</span>
+
+  <span class="c1"># pull the headers for the current messae</span>
+  <span class="k">begin</span>
+    <span class="n">head</span> <span class="o">=</span> <span class="kp">nil</span>
+    <span class="no">Timeout</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span> <span class="k">do</span>
+      <span class="n">head</span> <span class="o">=</span> <span class="n">nntp</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">new_last_id</span><span class="p">)</span><span class="o">[</span><span class="mi">3</span><span class="o">].</span><span class="n">join</span><span class="p">(</span><span class="s2">"</span><span class="se">\r\n</span><span class="s2">"</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\r\n</span><span class="s2">"</span>
+    <span class="k">end</span>
+  <span class="k">rescue</span> <span class="no">Timeout</span><span class="o">::</span><span class="no">Error</span>
+      <span class="n">log</span><span class="o">.</span><span class="n">error</span> <span class="s2">"Fetching the message headers timed out."</span>
+      <span class="nb">exit</span>
+  <span class="k">rescue</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">error</span> <span class="s2">"Unable to retrieve headers for message #</span><span class="si">#{</span><span class="n">new_last_id</span><span class="si">}</span><span class="s2">, "</span> <span class="o">+</span>
+              <span class="s2">"will try again later:  </span><span class="si">#{</span><span class="vg">$!</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span>
+    <span class="nb">exit</span>
+  <span class="k">end</span>
+
+  <span class="c1"># </span>
+  <span class="c1"># don't send articles that the mail_to_news program has previously forwarded</span>
+  <span class="c1"># to the newsgroup (or we'd loop)</span>
+  <span class="c1"># </span>
+  <span class="k">if</span> <span class="n">head</span> <span class="o">=~</span> <span class="sr">/^X-rubymirror:/</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span> <span class="s2">"Skipping message #</span><span class="si">#{</span><span class="n">new_last_id</span><span class="si">}</span><span class="s2">, sent by mail_to_news"</span>
+    <span class="k">next</span>
+  <span class="k">end</span>
+
+  <span class="c1"># ...</span>
+</pre></div>
+
+<p>This code pulls the message headers and performs the loop check to ensure that messages sent by <code>mail_to_news.rb</code> are skipped.</p>
+
+<div class="highlight highlight-ruby"><pre>  <span class="c1"># ...</span>
+
+  <span class="c1"># pull the body for the current message</span>
+  <span class="k">begin</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="kp">nil</span>
+    <span class="no">Timeout</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span> <span class="k">do</span>
+      <span class="n">body</span> <span class="o">=</span> <span class="n">nntp</span><span class="o">.</span><span class="n">body</span><span class="p">(</span><span class="n">new_last_id</span><span class="p">)</span><span class="o">[</span><span class="mi">3</span><span class="o">].</span><span class="n">join</span><span class="p">(</span><span class="s2">"</span><span class="se">\r\n</span><span class="s2">"</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\r\n</span><span class="s2">"</span>
+    <span class="k">end</span>
+  <span class="k">rescue</span> <span class="no">Timeout</span><span class="o">::</span><span class="no">Error</span>
+      <span class="n">log</span><span class="o">.</span><span class="n">error</span> <span class="s2">"Fetching the message body timed out."</span>
+      <span class="nb">exit</span>
+  <span class="k">rescue</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">error</span> <span class="s2">"Unable to retrieve body for message #</span><span class="si">#{</span><span class="n">new_last_id</span><span class="si">}</span><span class="s2">, "</span> <span class="o">+</span>
+              <span class="s2">"will try again later:  </span><span class="si">#{</span><span class="vg">$!</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span>
+    <span class="nb">exit</span>
+  <span class="k">end</span>
+
+  <span class="c1"># scan headers for message data</span>
+  <span class="n">subject</span> <span class="o">=</span> <span class="n">head</span> <span class="o">=~</span> <span class="sr">/^Subject:\s+([^\r\n]*)/</span>     <span class="p">?</span> <span class="vg">$1</span> <span class="p">:</span> <span class="s2">"?"</span>
+  <span class="n">from</span>    <span class="o">=</span> <span class="n">head</span> <span class="o">=~</span> <span class="sr">/^From:\s+([^\r\n]*)/</span>        <span class="p">?</span> <span class="vg">$1</span> <span class="p">:</span> <span class="s2">"?"</span>
+
+  <span class="c1"># ensure the message is properly addressed</span>
+  <span class="k">unless</span> <span class="n">head</span> <span class="o">=~</span> <span class="sr">/^To:/</span>
+    <span class="n">head</span> <span class="o">=</span> <span class="s2">"To: </span><span class="si">#{</span><span class="no">ServersConfig</span><span class="o">::</span><span class="no">MAILING_LIST</span><span class="si">}</span><span class="se">\r\n</span><span class="s2">"</span> <span class="o">+</span> <span class="n">head</span>
+  <span class="k">end</span>
+
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span> <span class="s2">"Sending message #</span><span class="si">#{</span><span class="n">new_last_id</span><span class="si">}</span><span class="s2">:  </span><span class="si">#{</span><span class="n">subject</span><span class="si">}</span><span class="s2"> -- </span><span class="si">#{</span><span class="n">from</span><span class="si">}</span><span class="s2">..."</span>
+
+  <span class="c1"># ...</span>
+</pre></div>
+
+<p>The body is then pulled.  The script then scans for some message details in the headers to allow us to log accurately about the post.  The message is also addressed.</p>
+
+<div class="highlight highlight-ruby"><pre>  <span class="c1"># ...</span>
+
+  <span class="c1"># extracting path information (poster's host, first nntp hop)</span>
+  <span class="n">posting_host</span> <span class="o">=</span> <span class="n">head</span> <span class="o">=~</span> <span class="sr">/^NNTP-Posting-Host:\s+(\S[^\r\n]*)/i</span> <span class="p">?</span> <span class="vg">$1</span> <span class="p">:</span> <span class="s2">"unknown"</span>
+
+  <span class="n">path</span> <span class="o">=</span> <span class="n">head</span> <span class="o">=~</span> <span class="sr">/^Path:\s+([^\r\n]*)/i</span> <span class="p">?</span> <span class="vg">$1</span> <span class="p">:</span> <span class="s2">"unknown"</span>
+  <span class="n">path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"!"</span><span class="p">)</span><span class="o">.</span><span class="n">delete_if</span> <span class="p">{</span> <span class="o">|</span><span class="n">hop</span><span class="o">|</span> <span class="n">hop</span> <span class="o">!~</span> <span class="sr">/^(([^.]+)\.)+([^.]+)$/</span> <span class="p">}</span>
+
+  <span class="n">first_hop</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">last</span>
+
+  <span class="c1"># adding pseudo "Received:" header and rubymirror header</span>
+  <span class="n">head</span> <span class="o">+=</span> <span class="o">&lt;&lt;</span><span class="no">END_RECEIVED</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"</span><span class="se">\r\n</span><span class="s2">"</span><span class="p">)</span>
+<span class="sh">Received: from #{first_hop} (#{first_hop})</span>
+<span class="sh">     by #{ServersConfig::NEWSGROUP} with NTTP id #{new_last_id}</span>
+<span class="sh">     for &lt;#{ServersConfig::MAILING_LIST}&gt;; #{Time.now.to_s}</span>
+<span class="sh">Received: from [#{posting_host}]</span>
+<span class="sh">     by #{first_hop} (unknown) with NNTP id #{new_last_id}</span>
+<span class="sh">     for &lt;#{ServersConfig::NEWSGROUP}&gt;; #{Time.now.to_s}</span>
+<span class="sh">Received: from Usenet via a Usenet to mail gateway located at</span>
+<span class="sh">     #{ServersConfig::NEWSGROUP}.  This service provided as a courtesy</span>
+<span class="sh">     to the ruby-talk mailing list.  If this message is SPAM, its</span>
+<span class="sh">     ultimate origin is Usenet, not this gateway program.  All</span>
+<span class="sh">     subscribers to the ruby-talk mailing list agree to receive the</span>
+<span class="sh">     Usenet postings made to comp.lang.ruby via this gateway.  Please</span>
+<span class="sh">     see http://www.ruby-lang.org/ruby-talk-usenet-policy.html.</span>
+<span class="sh">X-From-Usenet: see Received: header above.</span>
+<span class="sh">X-rubymirror: yes</span>
+
+<span class="no">END_RECEIVED</span>
+
+  <span class="c1"># build final message</span>
+  <span class="n">msg</span> <span class="o">=</span> <span class="n">head</span> <span class="o">+</span> <span class="n">body</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span> <span class="s2">"Message looks like: </span><span class="si">#{</span><span class="n">msg</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span>
+
+  <span class="c1"># ...</span>
+</pre></div>
+
+<p>The above adds a header explaining the service and constructs the final message.</p>
+
+<div class="highlight highlight-ruby"><pre>  <span class="c1"># ...</span>
+
+  <span class="c1"># attempt to send email</span>
+  <span class="k">unless</span> <span class="vg">$DEBUG</span>
+    <span class="k">begin</span>
+      <span class="no">Timeout</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span> <span class="k">do</span>
+        <span class="no">Net</span><span class="o">::</span><span class="no">SMTP</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="no">ServersConfig</span><span class="o">::</span><span class="no">SMTP_SERVER</span><span class="p">,</span> <span class="mi">25</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">smtp</span><span class="o">|</span>
+          <span class="n">smtp</span><span class="o">.</span><span class="n">send_mail</span><span class="p">(</span> <span class="n">msg</span><span class="p">,</span>
+                          <span class="no">ServersConfig</span><span class="o">::</span><span class="no">MAIL_SENDER</span><span class="p">,</span>
+                          <span class="no">ServersConfig</span><span class="o">::</span><span class="no">MAILING_LIST</span> <span class="p">)</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">rescue</span> <span class="no">Timeout</span><span class="o">::</span><span class="no">Error</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span> <span class="s2">"The SMTP connection timed out."</span>
+        <span class="nb">exit</span>
+    <span class="k">rescue</span>
+      <span class="n">log</span><span class="o">.</span><span class="n">fatal</span> <span class="s2">"Unable to send email:  </span><span class="si">#{</span><span class="vg">$!</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span>
+      <span class="nb">exit</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">end</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span> <span class="s2">"...  Sent."</span>
+  <span class="k">end</span>
+
+  <span class="c1"># ...</span>
+</pre></div>
+
+<p>Here a connection is established to the SMTP server and the email is sent.  The <code>$DEBUG</code> flag allows me to spot check Gateway functionality without actually sending emails to Ruby Talk.</p>
+
+<p>On to the final step:</p>
+
+<div class="highlight highlight-ruby"><pre>  <span class="c1"># ...</span>
+
+  <span class="c1"># record new high-water mark</span>
+  <span class="k">begin</span>
+    <span class="k">unless</span> <span class="vg">$DEBUG</span> <span class="ow">or</span> <span class="n">new_last_id</span> <span class="o">==</span> <span class="n">last_id_sent</span>
+      <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="no">LAST_ID_FILE</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">file</span><span class="o">|</span> <span class="n">file</span><span class="o">.</span><span class="n">puts</span> <span class="n">new_last_id</span> <span class="p">}</span>
+    <span class="k">end</span>
+  <span class="k">rescue</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">error</span> <span class="s2">"Unable to write message ID to file:  </span><span class="si">#{</span><span class="vg">$!</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span>
+  <span class="k">end</span>
+  <span class="n">last_id_sent</span> <span class="o">=</span> <span class="n">new_last_id</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span> <span class="s2">"New last message sent ID:  </span><span class="si">#{</span><span class="n">last_id_sent</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Getting this far means the script sent an email successfully, so it records the new last seen ID for future runs.  That final <code>end</code> signals the end of the message processing event loop.</p>
+
+<h4>Possible Improvements</h4>
+
+<p>This code is pretty feature complete.</p>
+
+<p>About the only enhancement I can think of would be to DRY up some of the timeout and error handling code.  That's trickier that you might guess because of the extra layers of scoping plus the error messages and exit codes.  We almost need a multi-block syntax here.  If someone poses a reasonable alternative I'll consider it, but I've tried to keep the code pretty straight forward and the truth is that is just may not be worth the effort.</p>
+
+<p>Any comments or suggestions for the Gateway can be left as comments below.</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/the-gateway/mail-to-newsrb">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      &nbsp;
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="the-gateway/news-to-mailrb">
+  In: <a href="/the-gateway">The Gateway</a>
+  <span>|</span>
+  Tags: <a href="/tags/Community">Community</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-gateway/news-to-mailrb#comments">0 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (0)</span></h5>
+
+    <ol>
+      
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/the-gateway/news-to-mailrb/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="w2U0n+nrUgO3RPyZiar2foiuwjgbrJSV3LhYtdtcP04=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-gateway%2Fnews-to-mailrb" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthe-gateway%2Fnews-to-mailrb" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

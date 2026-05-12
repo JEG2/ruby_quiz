@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rusting / Taking Rust to Task</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="An example of me exploring how to do message passing style multiprocessing in Rust.">
+    <meta name="keywords"    content="Rust, Concurrency, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rusting/taking-rust-to-task/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rusting">Rusting</a></h1>
+            <span>The section where I examine what I am learning when compiling Rust code.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>6</h4>
+    <span>
+      SEP<br>
+      2014
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Taking Rust to Task</h3>
+        
+        <p>Now that I've reached the point where I can get some Rust code running without asking questions in IRC every five minutes, I really wanted to play with some <em>tasks</em>.  Tasks are the way Rust handles multiprocessing code.  Under the hood they can map one-to-one with operating system threads or you can use a many-to-one mapping that I'm not ready to go into yet.</p>
+
+<p>Probably one of the most exciting aspect of tasks in Rust, in my opinion, is that <a href="http://carol-nichols.com/2014/07/14/ruby-rust-concurrency/">unsafe use of shared memory is rejected outright as a compile error</a>.  That lead me to want to figure out how you communicate correctly.  (Spoiler:  the same was you do in Ruby:  <a href="http://graysoftinc.com/rubies-in-the-rough/sleepy-programs">just pass messages</a>.)</p>
+
+<p>Ready to dive in, I grossly simplified a recent challenge from work and coded it up in Rust.  You can get the idea with a glance at <code>main()</code>:</p>
+
+<div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">collections</span><span class="o">::</span><span class="n">HashMap</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+
+<span class="k">fn</span> <span class="n">string_vec</span><span class="p">(</span><span class="n">strs</span><span class="o">:</span> <span class="o">&amp;</span><span class="p">[</span><span class="o">&amp;</span><span class="err">'</span><span class="k">static</span> <span class="k">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="k">mut</span> <span class="n">v</span> <span class="o">=</span> <span class="n">Vec</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="n">in</span> <span class="n">strs</span><span class="p">.</span><span class="n">iter</span><span class="p">()</span> <span class="p">{</span>
+        <span class="n">v</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">to_string</span><span class="p">());</span>
+    <span class="p">}</span>
+    <span class="n">v</span>
+<span class="p">}</span>
+
+<span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="k">mut</span> <span class="n">services</span> <span class="o">=</span> <span class="n">HashMap</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+    <span class="n">services</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="s">"S1"</span><span class="p">.</span><span class="n">to_string</span><span class="p">(),</span> <span class="n">string_vec</span><span class="p">([</span><span class="s">"A"</span><span class="p">,</span> <span class="s">"B"</span><span class="p">]));</span>
+    <span class="n">services</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="s">"S2"</span><span class="p">.</span><span class="n">to_string</span><span class="p">(),</span> <span class="n">string_vec</span><span class="p">([</span><span class="s">"A"</span><span class="p">,</span> <span class="s">"C"</span><span class="p">]));</span>
+    <span class="n">services</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="s">"S3"</span><span class="p">.</span><span class="n">to_string</span><span class="p">(),</span> <span class="n">string_vec</span><span class="p">([</span><span class="s">"C"</span><span class="p">,</span> <span class="s">"D"</span><span class="p">,</span> <span class="s">"E"</span><span class="p">,</span> <span class="s">"F"</span><span class="p">]));</span>
+    <span class="n">services</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="s">"S4"</span><span class="p">.</span><span class="n">to_string</span><span class="p">(),</span> <span class="n">string_vec</span><span class="p">([</span><span class="s">"D"</span><span class="p">,</span> <span class="s">"B"</span><span class="p">]));</span>
+    <span class="n">services</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="s">"S5"</span><span class="p">.</span><span class="n">to_string</span><span class="p">(),</span> <span class="n">string_vec</span><span class="p">([</span><span class="s">"A"</span><span class="p">,</span> <span class="s">"Z"</span><span class="p">]));</span>
+
+    <span class="k">let</span> <span class="n">work</span> <span class="o">=</span> <span class="n">Work</span><span class="p">(</span><span class="n">Search</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="s">"A"</span><span class="p">.</span><span class="n">to_string</span><span class="p">(),</span> <span class="s">"B"</span><span class="p">.</span><span class="n">to_string</span><span class="p">()));</span>
+
+    <span class="k">let</span> <span class="k">mut</span> <span class="n">task_manager</span> <span class="o">=</span> <span class="n">TaskManager</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="n">services</span><span class="p">);</span>
+    <span class="n">task_manager</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">work</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The <code>HashMap</code> sets up the story.  Let's assume we have various travel services:  <em>S1</em>, <em>S2</em>, etc.  Each of those services can reach various stops.  For example, <em>S1</em> can reach <em>A</em> and <em>B</em>.  Now the <code>work</code> variable tells you what we want to do, which is to search for ways to get from <em>A</em> to <em>B</em>.</p>
+
+<p>The twist is handled by <code>TaskManager</code>.  It's going to run each service in an isolated separate process (a <em>task</em> in Rust speak) that only knows about its own stops.  This means finding non-direct paths must involve inter-process communication.</p>
+
+<p>The <code>string_vec()</code> helper just builds a vector of <code>String</code> objects for me.  I'm not using <code>String</code> for its mutability, but it's more of an attempt to clarify ownership without scattering lifetime specifications everywhere.  (This may not been ideal.  Please remember that I'm still a pretty green Rust programmer.)</p>
+
+<p>If the code I write works, it will find two possible paths for our search and indeed it does:</p>
+
+<pre><code>$ ./pathfinder 
+Path: A--S1--&gt;B
+Path: A--S2--&gt;C--S3--&gt;D--S4--&gt;B
+</code></pre>
+
+<p>The rest of this blog post will examine just how it accomplishes this.</p>
+
+<p>Let's begin with a pretty trivial data structure:</p>
+
+<div class="highlight highlight-rust"><pre><span class="cp">#[deriving(Clone)]</span>
+<span class="k">struct</span> <span class="n">Path</span> <span class="p">{</span>
+    <span class="n">from</span><span class="o">:</span>    <span class="n">String</span><span class="p">,</span>
+    <span class="n">to</span><span class="o">:</span>      <span class="n">String</span><span class="p">,</span>
+    <span class="n">service</span><span class="o">:</span> <span class="n">String</span>
+<span class="p">}</span>
+<span class="k">impl</span> <span class="n">Path</span> <span class="p">{</span>
+    <span class="k">fn</span> <span class="n">new</span><span class="p">(</span><span class="n">from</span><span class="o">:</span> <span class="n">String</span><span class="p">,</span> <span class="n">to</span><span class="o">:</span> <span class="n">String</span><span class="p">,</span> <span class="n">service</span><span class="o">:</span> <span class="n">String</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span> <span class="p">{</span>
+        <span class="n">Path</span><span class="p">{</span><span class="n">from</span><span class="o">:</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="o">:</span> <span class="n">to</span><span class="p">,</span> <span class="n">service</span><span class="o">:</span> <span class="n">service</span><span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">to_string</span><span class="p">(</span><span class="o">&amp;</span><span class="n">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">String</span> <span class="p">{</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">from</span>
+            <span class="p">.</span><span class="n">clone</span><span class="p">()</span>
+            <span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="s">"--"</span><span class="p">)</span>
+            <span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">service</span><span class="p">.</span><span class="n">as_slice</span><span class="p">())</span>
+            <span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="s">"--&gt;"</span><span class="p">)</span>
+            <span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">to</span><span class="p">.</span><span class="n">as_slice</span><span class="p">())</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This just defines a <code>Path</code> as two endpoints and the <code>service</code> that connects them.  You can see that the <code>to_string()</code> method gives us the simple ASCII arrow output from the solution.</p>
+
+<p><code>Search</code> builds on <code>Path</code>:</p>
+
+<div class="highlight highlight-rust"><pre><span class="cp">#[deriving(Clone)]</span>
+<span class="k">struct</span> <span class="n">Search</span> <span class="p">{</span>
+    <span class="n">from</span><span class="o">:</span>  <span class="n">String</span><span class="p">,</span>
+    <span class="n">to</span><span class="o">:</span>    <span class="n">String</span><span class="p">,</span>
+    <span class="n">paths</span><span class="o">:</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="n">Path</span><span class="o">&gt;</span>
+<span class="p">}</span>
+<span class="k">impl</span> <span class="n">Search</span> <span class="p">{</span>
+    <span class="k">fn</span> <span class="n">new</span><span class="p">(</span><span class="n">from</span><span class="o">:</span> <span class="n">String</span><span class="p">,</span> <span class="n">to</span><span class="o">:</span> <span class="n">String</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Search</span> <span class="p">{</span>
+        <span class="n">Search</span><span class="p">{</span><span class="n">from</span><span class="o">:</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="o">:</span> <span class="n">to</span><span class="p">,</span> <span class="n">paths</span><span class="o">:</span> <span class="n">vec</span><span class="o">!</span><span class="p">[]}</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">services</span><span class="p">(</span><span class="o">&amp;</span><span class="n">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="p">{</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">paths</span><span class="p">.</span><span class="n">iter</span><span class="p">().</span><span class="n">map</span><span class="p">(</span><span class="o">|</span><span class="n">path</span><span class="o">|</span> <span class="n">path</span><span class="p">.</span><span class="n">service</span><span class="p">.</span><span class="n">clone</span><span class="p">()).</span><span class="n">collect</span><span class="p">()</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">stops</span><span class="p">(</span><span class="o">&amp;</span><span class="n">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="k">mut</span> <span class="n">all</span> <span class="o">=</span> <span class="n">vec</span><span class="o">!</span><span class="p">[];</span>
+        <span class="n">all</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">from</span><span class="p">.</span><span class="n">clone</span><span class="p">());</span>
+        <span class="n">all</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">to</span><span class="p">.</span><span class="n">clone</span><span class="p">());</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="n">in</span> <span class="n">self</span><span class="p">.</span><span class="n">paths</span><span class="p">.</span><span class="n">iter</span><span class="p">()</span> <span class="p">{</span>
+            <span class="n">all</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">path</span><span class="p">.</span><span class="n">from</span><span class="p">.</span><span class="n">clone</span><span class="p">());</span>
+            <span class="n">all</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">path</span><span class="p">.</span><span class="n">to</span><span class="p">.</span><span class="n">clone</span><span class="p">());</span>
+        <span class="p">}</span>
+        <span class="n">all</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">add_path</span><span class="p">(</span><span class="o">&amp;</span><span class="n">self</span><span class="p">,</span> <span class="n">path</span><span class="o">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Search</span> <span class="p">{</span>
+        <span class="n">Search</span><span class="p">{</span> <span class="n">from</span><span class="o">:</span>  <span class="n">path</span><span class="p">.</span><span class="n">to</span><span class="p">.</span><span class="n">clone</span><span class="p">(),</span>
+                <span class="n">to</span><span class="o">:</span>    <span class="n">self</span><span class="p">.</span><span class="n">to</span><span class="p">.</span><span class="n">clone</span><span class="p">(),</span>
+                <span class="n">paths</span><span class="o">:</span> <span class="n">self</span><span class="p">.</span><span class="n">paths</span><span class="p">.</span><span class="n">clone</span><span class="p">().</span><span class="n">append</span><span class="p">([</span><span class="n">path</span><span class="p">])</span> <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>A <code>Search</code> holds the endpoints we're currently trying to traverse and any <code>paths</code> collected so far in an attempt to reach our goal.  The <code>add_path()</code> method is used with partial matches.  It returns a new <code>Search</code> for the remaining distance with the partial <code>Path</code> added to the list.</p>
+
+<p>The other methods, <code>services()</code> and <code>stops()</code>, just return lists of what has been used so far in the accumulated paths.  These are helpful in avoiding building circular paths.</p>
+
+<p>Note that both data structures so far are cloneable.  This is so that copies can be made to sent across channels to other tasks.</p>
+
+<p>We need two more aggregate data structures to be the messages that we will shuttle between tasks:</p>
+
+<div class="highlight highlight-rust"><pre><span class="cp">#[deriving(Clone)]</span>
+<span class="k">enum</span> <span class="n">Job</span> <span class="p">{</span>
+    <span class="n">Work</span><span class="p">(</span><span class="n">Search</span><span class="p">),</span>
+    <span class="n">Finish</span>
+<span class="p">}</span>
+
+<span class="k">enum</span> <span class="n">Event</span> <span class="p">{</span>
+    <span class="n">Match</span><span class="p">(</span><span class="n">Vec</span><span class="o">&lt;</span><span class="n">Path</span><span class="o">&gt;</span><span class="p">),</span>
+    <span class="n">Partial</span><span class="p">(</span><span class="n">Vec</span><span class="o">&lt;</span><span class="n">Search</span><span class="o">&gt;</span><span class="p">),</span>
+    <span class="n">Done</span><span class="p">(</span><span class="n">String</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>A <code>Job</code> can be either a wrapped <code>Search</code> we want to perform or the special <code>Finish</code> flag.  The latter just tells a task to bust out of its infinite listening-for-searches loop and exit cleanly.  This <code>enum</code> lists the messages we can send <strong>to</strong> the service tasks.</p>
+
+<p>Messages <strong>from</strong> a service task (back to our not yet examined <code>TaskManager</code>) are called an <code>Event</code>.  There are three possible types.  <code>Match</code> means we have a full solution, using the included paths.  <code>Partial</code> means that the task matched part of the path and is sending back a list of searches to try for locating the rest of it.  Again <code>Done</code> is a special flag that pretty much means, "I've got nothing."  This flag includes the name of the service for a reason that will become obvious after we view this next helper object:</p>
+
+<div class="highlight highlight-rust"><pre><span class="k">struct</span> <span class="n">SearchTracker</span> <span class="p">{</span>
+    <span class="n">counts</span><span class="o">:</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="k">uint</span><span class="o">&gt;</span>
+<span class="p">}</span>
+<span class="k">impl</span> <span class="n">SearchTracker</span> <span class="p">{</span>
+    <span class="k">fn</span> <span class="n">new</span><span class="o">&lt;</span><span class="err">'</span><span class="n">a</span><span class="p">,</span> <span class="n">I</span><span class="o">:</span> <span class="n">Iterator</span><span class="o">&lt;&amp;</span><span class="err">'</span><span class="n">a</span> <span class="n">String</span><span class="o">&gt;&gt;</span><span class="p">(</span><span class="k">mut</span> <span class="n">service_names</span><span class="o">:</span> <span class="n">I</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SearchTracker</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="k">mut</span> <span class="n">tracker</span> <span class="o">=</span> <span class="n">SearchTracker</span><span class="p">{</span><span class="n">counts</span><span class="o">:</span> <span class="n">HashMap</span><span class="o">::</span><span class="n">new</span><span class="p">()};</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="n">in</span> <span class="n">service_names</span> <span class="p">{</span>
+            <span class="n">tracker</span><span class="p">.</span><span class="n">counts</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">name</span><span class="p">.</span><span class="n">clone</span><span class="p">(),</span> <span class="m">0</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="n">tracker</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">add_search</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span> <span class="n">in</span> <span class="n">self</span><span class="p">.</span><span class="n">counts</span><span class="p">.</span><span class="n">mut_iter</span><span class="p">()</span> <span class="p">{</span>
+            <span class="o">*</span><span class="n">count</span> <span class="o">+=</span> <span class="m">1</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">mark_done</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">,</span> <span class="n">name</span><span class="o">:</span> <span class="n">String</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="n">count</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">counts</span><span class="p">.</span><span class="n">get_mut</span><span class="p">(</span><span class="o">&amp;</span><span class="n">name</span><span class="p">);</span>
+        <span class="o">*</span><span class="n">count</span> <span class="o">-=</span> <span class="m">1</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">is_done</span><span class="p">(</span><span class="o">&amp;</span><span class="n">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">bool</span> <span class="p">{</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">counts</span><span class="p">.</span><span class="n">values</span><span class="p">().</span><span class="n">all</span><span class="p">(</span><span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="o">*</span><span class="n">n</span> <span class="o">==</span> <span class="m">0</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The idea behind <code>SearchTracker</code> is that we want to know when we're done seeing results from the various tasks.  We can do that by expecting exactly one response (an <code>Event</code>) from each task for each <code>Search</code> sent.</p>
+
+<p>This object just makes a counter for each service name passed into the constructor.  You can then <code>add_search()</code> to bump all counters (because each <code>Search</code> is sent to all service tasks) and <code>mark_done()</code> to reduce a named counter when you receive a response from that service.  The <code>is_done()</code> method will return true when all the counts balance out.</p>
+
+<p>We need one last helper before we get into the actual process:</p>
+
+<div class="highlight highlight-rust"><pre><span class="k">struct</span> <span class="n">MultiTaskSender</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="p">{</span>
+    <span class="n">senders</span><span class="o">:</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="n">Sender</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;&gt;</span>
+<span class="p">}</span>
+<span class="k">impl</span><span class="o">&lt;</span><span class="n">T</span><span class="o">:</span> <span class="n">Clone</span> <span class="o">+</span> <span class="n">Send</span><span class="o">&gt;</span> <span class="n">MultiTaskSender</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="p">{</span>
+    <span class="k">fn</span> <span class="n">new</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">MultiTaskSender</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="p">{</span>
+        <span class="n">MultiTaskSender</span><span class="p">{</span><span class="n">senders</span><span class="o">:</span> <span class="n">vec</span><span class="o">!</span><span class="p">[]}</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">add_sender</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">,</span> <span class="n">sender</span><span class="o">:</span> <span class="n">Sender</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">senders</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">sender</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">send</span><span class="p">(</span><span class="o">&amp;</span><span class="n">self</span><span class="p">,</span> <span class="n">t</span><span class="o">:</span> <span class="n">T</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">for</span> <span class="n">sender</span> <span class="n">in</span> <span class="n">self</span><span class="p">.</span><span class="n">senders</span><span class="p">.</span><span class="n">iter</span><span class="p">()</span> <span class="p">{</span>
+            <span class="n">sender</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">t</span><span class="p">.</span><span class="n">clone</span><span class="p">());</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>As I said, each <code>Search</code> will be sent to all tasks.  This simple multicaster just allows you to <code>add_sender()</code> as each task is built and later <code>send()</code> to all those channels.  The actual object sent is handled as a generic type that we just need to be able to <code>Clone</code> and <code>Send</code>.</p>
+
+<p>We're finally ready for the main workhorse of this code:</p>
+
+<div class="highlight highlight-rust"><pre><span class="k">struct</span> <span class="n">TaskManager</span> <span class="p">{</span>
+    <span class="n">services</span><span class="o">:</span>       <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span><span class="p">,</span>
+    <span class="n">tracker</span><span class="o">:</span>        <span class="n">SearchTracker</span><span class="p">,</span>
+    <span class="n">multi_sender</span><span class="o">:</span>   <span class="n">MultiTaskSender</span><span class="o">&lt;</span><span class="n">Job</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="n">event_sender</span><span class="o">:</span>   <span class="n">Sender</span><span class="o">&lt;</span><span class="n">Event</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="n">event_receiver</span><span class="o">:</span> <span class="n">Receiver</span><span class="o">&lt;</span><span class="n">Event</span><span class="o">&gt;</span>
+<span class="p">}</span>
+<span class="k">impl</span> <span class="n">TaskManager</span> <span class="p">{</span>
+    <span class="k">fn</span> <span class="n">new</span><span class="p">(</span><span class="n">services</span><span class="o">:</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TaskManager</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span> <span class="o">=</span> <span class="n">channel</span><span class="p">();</span>
+        <span class="n">TaskManager</span><span class="p">{</span> <span class="n">services</span><span class="o">:</span>       <span class="n">services</span><span class="p">.</span><span class="n">clone</span><span class="p">(),</span>
+                     <span class="n">tracker</span><span class="o">:</span>        <span class="n">SearchTracker</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="n">services</span><span class="p">.</span><span class="n">keys</span><span class="p">()),</span>
+                     <span class="n">multi_sender</span><span class="o">:</span>   <span class="n">MultiTaskSender</span><span class="o">::</span><span class="n">new</span><span class="p">(),</span>
+                     <span class="n">event_sender</span><span class="o">:</span>   <span class="n">sender</span><span class="p">,</span>
+                     <span class="n">event_receiver</span><span class="o">:</span> <span class="n">receiver</span> <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">run</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">,</span> <span class="n">work</span><span class="o">:</span> <span class="n">Job</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">launch_services</span><span class="p">();</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">send_job</span><span class="p">(</span><span class="n">work</span><span class="p">);</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">wait_for_services</span><span class="p">();</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">send_job</span><span class="p">(</span><span class="n">Finish</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This shows you what a <code>TaskManager</code> keeps track of, which is just the data for our challenge, the helper objects, and various channels (the pipes of communication between Rust tasks).  You can see how this gets setup in <code>new()</code>.</p>
+
+<p>Once we have everything we need to track, <code>run()</code> actually does the <code>Job</code>.  It will:</p>
+
+<ol>
+<li>Launch a task for each service</li>
+<li>Send the full search we want to perform</li>
+<li>Wait for and respond to reported work from the tasks</li>
+<li>Signal all tasks to shutdown when the work is done</li>
+</ol><p>Two pieces of this process are beating heart of the system.  Here's the first of those:</p>
+
+<div class="highlight highlight-rust"><pre><span class="k">impl</span> <span class="n">TaskManager</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+
+    <span class="k">fn</span> <span class="n">launch_services</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">stops</span><span class="p">)</span> <span class="n">in</span> <span class="n">self</span><span class="p">.</span><span class="n">services</span><span class="p">.</span><span class="n">clone</span><span class="p">().</span><span class="n">move_iter</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">let</span> <span class="n">task_event_sender</span>                <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">event_sender</span><span class="p">.</span><span class="n">clone</span><span class="p">();</span>
+            <span class="k">let</span> <span class="p">(</span><span class="n">search_sender</span><span class="p">,</span> <span class="n">search_receiver</span><span class="p">)</span> <span class="o">=</span> <span class="n">channel</span><span class="p">();</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">multi_sender</span><span class="p">.</span><span class="n">add_sender</span><span class="p">(</span><span class="n">search_sender</span><span class="p">.</span><span class="n">clone</span><span class="p">());</span>
+            <span class="n">spawn</span><span class="p">(</span> <span class="n">proc</span><span class="p">()</span> <span class="p">{</span>
+                <span class="k">loop</span> <span class="p">{</span>
+                    <span class="k">let</span> <span class="n">job</span> <span class="o">=</span> <span class="n">search_receiver</span><span class="p">.</span><span class="n">recv</span><span class="p">();</span>
+                    <span class="k">match</span> <span class="n">job</span> <span class="p">{</span>
+                        <span class="n">Work</span><span class="p">(</span><span class="n">search</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+                            <span class="k">if</span> <span class="n">stops</span><span class="p">.</span><span class="n">contains</span><span class="p">(</span><span class="o">&amp;</span><span class="n">search</span><span class="p">.</span><span class="n">from</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+                               <span class="n">stops</span><span class="p">.</span><span class="n">contains</span><span class="p">(</span><span class="o">&amp;</span><span class="n">search</span><span class="p">.</span><span class="n">to</span><span class="p">)</span> <span class="p">{</span>
+                                <span class="k">let</span> <span class="n">path</span>  <span class="o">=</span> <span class="n">Path</span><span class="o">::</span><span class="n">new</span><span class="p">(</span>
+                                    <span class="n">search</span><span class="p">.</span><span class="n">from</span><span class="p">,</span>
+                                    <span class="n">search</span><span class="p">.</span><span class="n">to</span><span class="p">,</span>
+                                    <span class="n">name</span><span class="p">.</span><span class="n">clone</span><span class="p">()</span>
+                                <span class="p">);</span>
+                                <span class="k">let</span> <span class="n">paths</span> <span class="o">=</span> <span class="n">search</span><span class="p">.</span><span class="n">paths</span><span class="p">.</span><span class="n">append</span><span class="p">([</span><span class="n">path</span><span class="p">]);</span>
+                                <span class="n">task_event_sender</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">Match</span><span class="p">(</span><span class="n">paths</span><span class="p">))</span>
+                            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                                <span class="k">let</span> <span class="k">mut</span> <span class="n">tos</span>      <span class="o">=</span> <span class="n">stops</span><span class="p">.</span><span class="n">clone</span><span class="p">();</span>
+                                <span class="k">let</span>     <span class="n">previous</span> <span class="o">=</span> <span class="n">search</span><span class="p">.</span><span class="n">stops</span><span class="p">();</span>
+                                <span class="n">tos</span><span class="p">.</span><span class="n">retain</span><span class="p">(</span><span class="o">|</span><span class="n">stop</span><span class="o">|</span> <span class="o">!</span><span class="n">previous</span><span class="p">.</span><span class="n">contains</span><span class="p">(</span><span class="n">stop</span><span class="p">));</span>
+                                <span class="k">if</span> <span class="o">!</span><span class="n">search</span><span class="p">.</span><span class="n">services</span><span class="p">().</span><span class="n">contains</span><span class="p">(</span><span class="o">&amp;</span><span class="n">name</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+                                   <span class="n">stops</span><span class="p">.</span><span class="n">contains</span><span class="p">(</span><span class="o">&amp;</span><span class="n">search</span><span class="p">.</span><span class="n">from</span><span class="p">)</span>       <span class="o">&amp;&amp;</span>
+                                   <span class="o">!</span><span class="n">tos</span><span class="p">.</span><span class="n">is_empty</span><span class="p">()</span> <span class="p">{</span>
+                                    <span class="k">let</span> <span class="n">searches</span> <span class="o">=</span> <span class="n">tos</span><span class="p">.</span><span class="n">iter</span><span class="p">().</span><span class="n">map</span><span class="p">(</span> <span class="o">|</span><span class="n">to</span><span class="o">|</span> <span class="p">{</span>
+                                        <span class="k">let</span> <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="o">::</span><span class="n">new</span><span class="p">(</span>
+                                            <span class="n">search</span><span class="p">.</span><span class="n">from</span><span class="p">.</span><span class="n">clone</span><span class="p">(),</span>
+                                            <span class="n">to</span><span class="p">.</span><span class="n">clone</span><span class="p">(),</span>
+                                            <span class="n">name</span><span class="p">.</span><span class="n">clone</span><span class="p">()</span>
+                                        <span class="p">);</span>
+                                        <span class="n">search</span><span class="p">.</span><span class="n">add_path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                                    <span class="p">}</span> <span class="p">).</span><span class="n">collect</span><span class="p">();</span>
+                                    <span class="n">task_event_sender</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">Partial</span><span class="p">(</span><span class="n">searches</span><span class="p">));</span>
+                                <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                                    <span class="n">task_event_sender</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">Done</span><span class="p">(</span><span class="n">name</span><span class="p">.</span><span class="n">clone</span><span class="p">()));</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                        <span class="n">Finish</span>       <span class="o">=&gt;</span> <span class="p">{</span> <span class="k">break</span><span class="p">;</span> <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span> <span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>You're pretty much looking at a service task here (the whole part inside the call to <code>spawn()</code>).  Inside, they are just an endless <code>loop</code> calling <code>recv()</code> to get new <code>Work</code> wrapped <code>Search</code> objects from the channel.  The first <code>if</code> branch inside the <code>match</code> of <code>Work(search)</code> handles the simple case of the service matching the <code>Search</code> exactly.</p>
+
+<p>When the <code>else</code> branch is selected, because we don't have a direct match, some work is done to see if a partial match is possible.  (This is a foolish algorithm, by the way.  It does partial matches if it can directly match the <code>from</code> endpoint and not the <code>to</code>.  This rules out some viable scenarios, but it helped to keep this already large example smaller.)</p>
+
+<p>If a partial match is found, it's transformed into a list of new searches to try that may later find direct matches or more partial matches.  When no direct or partial match is found, the <code>Done</code> flag is sent back so <code>TaskManager</code> knows to stop waiting on this task.</p>
+
+<p>The <code>Finish</code> <code>match</code> clause just breaks out of the <code>loop</code> as described previously.  Outside of <code>spawn()</code> is a simple loop that creates each task and some code that prepares the variables for the task to capture.</p>
+
+<div class="highlight highlight-rust"><pre><span class="k">impl</span> <span class="n">TaskManager</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+
+    <span class="k">fn</span> <span class="n">wait_for_services</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">loop</span> <span class="p">{</span>
+            <span class="k">match</span> <span class="n">self</span><span class="p">.</span><span class="n">event_receiver</span><span class="p">.</span><span class="n">recv</span><span class="p">()</span> <span class="p">{</span>
+                <span class="n">Match</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>      <span class="o">=&gt;</span> <span class="p">{</span>
+                    <span class="k">let</span> <span class="n">name</span> <span class="o">=</span> <span class="n">paths</span><span class="p">.</span><span class="n">last</span><span class="p">().</span><span class="n">expect</span><span class="p">(</span><span class="s">"No path"</span><span class="p">).</span><span class="n">service</span><span class="p">.</span><span class="n">clone</span><span class="p">();</span>
+                    <span class="n">self</span><span class="p">.</span><span class="n">tracker</span><span class="p">.</span><span class="n">mark_done</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
+
+                    <span class="k">let</span> <span class="n">path_string</span> <span class="o">=</span> <span class="n">paths</span><span class="p">.</span><span class="n">iter</span><span class="p">().</span><span class="n">skip</span><span class="p">(</span><span class="m">1</span><span class="p">).</span><span class="n">fold</span><span class="p">(</span>
+                        <span class="n">paths</span><span class="p">[</span><span class="m">0</span><span class="p">].</span><span class="n">to_string</span><span class="p">(),</span>
+                        <span class="o">|</span><span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="o">|</span> <span class="n">s</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">to_string</span><span class="p">().</span><span class="n">as_slice</span><span class="p">().</span><span class="n">slice_from</span><span class="p">(</span><span class="m">1</span><span class="p">))</span>
+                    <span class="p">);</span>
+                    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"Path: {}"</span><span class="p">,</span> <span class="n">path_string</span><span class="p">);</span>
+                <span class="p">}</span>
+                <span class="n">Partial</span><span class="p">(</span><span class="n">searches</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+                    <span class="k">let</span> <span class="n">name</span> <span class="o">=</span> <span class="n">searches</span><span class="p">.</span><span class="n">last</span><span class="p">()</span>
+                                       <span class="p">.</span><span class="n">expect</span><span class="p">(</span><span class="s">"No search"</span><span class="p">)</span>
+                                       <span class="p">.</span><span class="n">paths</span>
+                                       <span class="p">.</span><span class="n">last</span><span class="p">()</span>
+                                       <span class="p">.</span><span class="n">expect</span><span class="p">(</span><span class="s">"No path"</span><span class="p">)</span>
+                                       <span class="p">.</span><span class="n">service</span>
+                                       <span class="p">.</span><span class="n">clone</span><span class="p">();</span>
+                    <span class="n">self</span><span class="p">.</span><span class="n">tracker</span><span class="p">.</span><span class="n">mark_done</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
+
+                    <span class="k">for</span> <span class="n">search</span> <span class="n">in</span> <span class="n">searches</span><span class="p">.</span><span class="n">iter</span><span class="p">()</span> <span class="p">{</span>
+                        <span class="n">self</span><span class="p">.</span><span class="n">send_job</span><span class="p">(</span><span class="n">Work</span><span class="p">(</span><span class="n">search</span><span class="p">.</span><span class="n">clone</span><span class="p">()));</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+                <span class="n">Done</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>        <span class="o">=&gt;</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">tracker</span><span class="p">.</span><span class="n">mark_done</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">self</span><span class="p">.</span><span class="n">tracker</span><span class="p">.</span><span class="n">is_done</span><span class="p">()</span> <span class="p">{</span> <span class="k">break</span><span class="p">;</span> <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This chunk of code is the other half of the puzzle.  It's another infinite <code>loop</code> listening on the <code>Event</code> channel.  A full <code>Match</code> is pretty printed and a <code>Partial</code> is sent back out to the services in a wave of new searches.  Regardless of the <code>Event</code> type, we record the response for the sending service, though where we find the service name varies by case.  This allows us to exit this <code>loop</code> and the program when our <code>tracker</code> says we're done.</p>
+
+<p>There's only one final method on <code>TaskManager</code> and it's what actually sends the messages to the service tasks, tracking each new <code>Search</code> as it goes out:</p>
+
+<div class="highlight highlight-rust"><pre><span class="k">impl</span> <span class="n">TaskManager</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+
+    <span class="k">fn</span> <span class="n">send_job</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">,</span> <span class="n">job</span><span class="o">:</span> <span class="n">Job</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">match</span> <span class="n">job</span> <span class="p">{</span>
+            <span class="n">Work</span><span class="p">(</span><span class="n">_</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">tracker</span><span class="p">.</span><span class="n">add_search</span><span class="p">();</span> <span class="p">}</span>
+            <span class="n">Finish</span>  <span class="o">=&gt;</span> <span class="p">{</span> <span class="cm">/* do nothing */</span> <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">multi_sender</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">job</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>You can find <a href="https://github.com/JEG2/learning_rust/blob/be1cb6cca05dbc92368073fd6c7d703df4b98350/pathfinder/pathfinder.rs">the full code</a> on GitHub.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="rusting/taking-rust-to-task">
+  In: <a href="/rusting">Rusting</a>
+  <span>|</span>
+  Tags: <a href="/tags/Concurrency">Concurrency</a> &amp; <a href="/tags/Rust">Rust</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rusting/taking-rust-to-task#comments">1 Comment</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (1)</span></h5>
+
+    <ol>
+        <li id="comment_558">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="https://avatars.githubusercontent.com/u/5639?v=4" width="70" /></div>
+    <div class="comment-info" data-comment-id="558">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">September 9th, 2014</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rusting/taking-rust-to-task#comment_558">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p><a href="https://www.youtube.com/watch?v=oAZ7F7bqT-o">Concurrency in Rust</a> is a handy talk for learning what's available in Rust for multiprocessing.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rusting/taking-rust-to-task/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="S3XvYRgMBnNvDbjalY1bcf+l5I6+xngIdFhZ2dFH0nI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="558" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frusting%2Ftaking-rust-to-task" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frusting%2Ftaking-rust-to-task" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_558" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/rusting/taking-rust-to-task/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="S3XvYRgMBnNvDbjalY1bcf+l5I6+xngIdFhZ2dFH0nI=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frusting%2Ftaking-rust-to-task" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frusting%2Ftaking-rust-to-task" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

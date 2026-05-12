@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Character Encodings / Understanding M17n (Multilingualization)</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This post lays out my plans to turn all of my readers into character encoding experts.">
+    <meta name="keywords"    content="encodings, m17n, Multilingualization, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/character-encodings/understanding-m17n-multilingualization/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/character-encodings">Character Encodings</a></h1>
+            <span>My extensive coverage of a complex topic all programmers should study a little.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>14</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Understanding M17n (Multilingualization)</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/character-encodings/what-is-a-character-encoding/">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p>Big changes are coming to Ruby in version 1.9 with regard to character encodings.  Ruby is going from a language with some of the weakest character encoding support to arguably some of the best support out there for working with different encodings.  We're all grown up now.</p>
+
+<p>The downside is that the new code comes with a good size learning curve.  I would know because I recently battled through figuring it out so I could add support to the standard CSV library for nearly all of the encodings.  It was a battle too.  It's brave new territory and there's not a lot of help out there yet for understanding Ruby's new features.</p>
+
+<p>I'm hoping to change that.</p>
+
+<p>This posting will be the start of a new series of blog articles designed to explain the character encoding support in Ruby 1.9.  I'm going to assume you know absolutely nothing about character encodings though and begin by explaining in detail what they are and why we have them.</p>
+
+<p>After that, we're going to examine the character encoding support in Ruby 1.8.  There's a lot less support there to examine, but it's not well understood and I'm hoping that seeing it in detail will help with understanding how and why Ruby 1.9 is changing.</p>
+
+<p>Finally, we will examine all the new encoding features of Ruby 1.9 in as much detail as possible.  We will literally cover it all.  Along the way, I'll talk strategy and give you all the helpful tips I know to successfully managing character encodings, in general as well as with Ruby specifics.</p>
+
+<p>This message will serve as a table of contents for this series of posts, so you may want to bookmark it if this topic is of interest to you.  Here are all of the posts, in order:</p>
+
+<ol>
+<li> <a href="/character-encodings/what-is-a-character-encoding/">What is a character encoding?</a>
+</li>
+<li><a href="/character-encodings/the-unicode-character-set-and-encodings/">The Unicode Character Set and Encodings</a></li>
+<li><a href="/character-encodings/general-encoding-strategies/">General Encoding Strategies</a></li>
+<li><a href="/character-encodings/bytes-and-characters-in-ruby-18/">Bytes and Characters in Ruby 1.8</a></li>
+<li><a href="/character-encodings/the-kcode-variable-and-jcode-library/">The $KCODE Variable and jcode Library</a></li>
+<li><a href="/character-encodings/encoding-conversion-with-iconv/">Encoding Conversion With iconv</a></li>
+<li><a href="/character-encodings/ruby-18-character-encoding-flaws/">Ruby 1.8 Character Encoding Flaws</a></li>
+<li><a href="/character-encodings/ruby-19s-string/">Ruby 1.9's String</a></li>
+<li><a href="/character-encodings/ruby-19s-three-default-encodings/">Ruby 1.9's Three Default Encodings</a></li>
+<li><a href="/character-encodings/miscellaneous-m17n-details/">Miscellaneous M17n Details</a></li>
+<li><a href="/character-encodings/what-ruby-19-gives-us/">What Ruby 1.9 Gives Us</a></li>
+</ol>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/character-encodings/what-is-a-character-encoding/">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="character-encodings/understanding-m17n-multilingualization">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/understanding-m17n-multilingualization#comments">16 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (16)</span></h5>
+
+    <ol>
+        <li id="comment_222">
+    <div class="avatar"><img alt="LUcas EFe" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="222">
+      <span class="c_name"><a href="http://www.drivendevelopment.com.ar/">LUcas EFe</a></span>
+      <span class="c_date">October 14th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_222">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thank you, man. This is really appreciated. </p>
+
+<p>Regards</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_245">
+    <div class="avatar"><img alt="Csiszár Attila" height="70" src="http://www.gravatar.com/avatar/da4cd4dbec59a8509ed2e6d5c41fd86b?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="245">
+      <span class="c_name"><a href="mailto:csiszar.ati@gmail.com">Csiszár Attila</a></span>
+      <span class="c_date">December 28th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_245">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Very informative and nice articles!</p>
+
+<p>Could you give some insights about date localization too? I struggled last time with localizing dates and I'm not happy at all with Ruby's capabilities. This is an another weak point in 1.8x and I'm curious how this will be changing in 1.9?</p>
+
+<p>Thanks,<br>
+Attila</p></div>
+    <ol>
+      
+        <li id="comment_246">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="246">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">December 28th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_246">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Ruby itself doesn't really provide any localization tools.  You will need to look into add-on libraries for this.</p>
+
+<p>The <a href="http://railscasts.com/episodes/138-i18n">latest versions of Rails have some support for this</a>, but it's pretty young and unrefined, in my opinion.  For full featured support you might want to try a library like <a href="http://www.yotabanana.com/hiki/ruby-gettext.html">Ruby-GetText-Package</a>.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_296">
+    <div class="avatar"><img alt="roger" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="296">
+      <span class="c_name"><a href="http://allgems.ruby-forum.com">roger</a></span>
+      <span class="c_date">July 15th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_296">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Fascinatingly, googling for m17n returned a link to this in the top 10 :)</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_299">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="299">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">August 6th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_299">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Here's another good resource for m17n documentation by Brain Candler:  <a href="http://github.com/candlerb/string19/tree/master">http://github.com/candlerb/string19/tree/master</a>.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_300">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="300">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">August 6th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_300">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>When you are ready to deal with character encodings from Ruby's C API, <a href="http://yugui.jp/articles/838">Yugui has some tips</a> for that.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_341">
+    <div class="avatar"><img alt="Joe Grossberg" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="341">
+      <span class="c_name"><a href="http://www.joegrossberg.com">Joe Grossberg</a></span>
+      <span class="c_date">January 8th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_341">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Just a quick suggestion: it would be nice if you stated that M17N == "multilingualization", for those new to the subject and unfamiliar with the jargon.</p></div>
+    <ol>
+      
+        <li id="comment_342">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="342">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">January 8th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_342">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I do mention it when I get into coverage of 1.9's system, but you're right that I probably should have said it on this introduction.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_349">
+    <div class="avatar"><img alt="Rohan D" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="349">
+      <span class="c_name">Rohan D</span>
+      <span class="c_date">February 24th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_349">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Sexy article</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_400">
+    <div class="avatar"><img alt="Tin Htay Hlaing" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="400">
+      <span class="c_name">Tin Htay Hlaing</span>
+      <span class="c_date">September 16th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_400">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thank you so much for your post.It is really supportive for me </p></div>
+    <ol>
+      
+        <li id="comment_401">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="401">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">September 16th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_401">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Glad I could help.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_417">
+    <div class="avatar"><img alt="samuelgilman" height="70" src="http://www.gravatar.com/avatar/b681feb514f5756a45a4f106cf0f32de?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="417">
+      <span class="c_name"><a href="mailto:samuelgilman@gmail.com">samuelgilman</a></span>
+      <span class="c_date">January 6th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_417">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Very painful :)</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_449">
+    <div class="avatar"><img alt="Mike Owens" height="70" src="http://www.gravatar.com/avatar/bc341c3fcd0a2aa63bdedc290b17fcce?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="449">
+      <span class="c_name"><a href="mailto:mikeowens@gmail.com">Mike Owens</a></span>
+      <span class="c_date">June 15th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_449">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I got bit by this today doing some logfile processing, and I was too grateful to find your excellent writeup on the topic. It is both comprehensive and concise. Each entry is well thought out and gets right to the point. I really appreciate your taking the time to explain all this and do it so well.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_473">
+    <div class="avatar"><img alt="Kang" height="70" src="http://www.gravatar.com/avatar/ab36cdd7a51942c562ae942a0dd07b45?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="473">
+      <span class="c_name"><a href="mailto:ysorigin@gmail.com">Kang</a></span>
+      <span class="c_date">May 21st, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_473">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Great series of posts.<br>
+From these, I can get a basic understanding about char encoding in Ruby.<br>
+thanks~</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_474">
+    <div class="avatar"><img alt="Craig" height="70" src="http://www.gravatar.com/avatar/0d1f1fcc3f1a8326148f9fdb59f8f195?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="474">
+      <span class="c_name"><a href="mailto:sdfsdf@sd.snet">Craig</a></span>
+      <span class="c_date">May 22nd, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_474">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Ruby's Unicode handling is a misfeature. Carrying around the original serialization format for the life of the string is utterly moronic.</p>
+
+<p>Also, your profile picture looks like "Doofy" from Scary Movie.</p></div>
+    <ol>
+      
+        <li id="comment_475">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="475">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">May 22nd, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/understanding-m17n-multilingualization#comment_475">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Are we talking about the <code>encoding()</code> method?  If so, how would you know the format of the bytes without it?</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

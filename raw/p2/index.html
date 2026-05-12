@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="The Ruby programming blog of James Edward Gray II (JEG2).  Any content of interest to Rubyists specifically, or developers in general, is fair game.">
+    <meta name="keywords"    content="Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1>Gray Soft</h1>
+            <span>The Ruby programming blog of James Edward Gray II (JEG2).</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+            <ul class="blog-list">
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>20</h4>
+    <span>
+      SEP<br>
+      2014
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/deadly-regular-expressions/can-you-snake-case-camelcase-with-one-regex"><h3 class="blog-title">Can You snake_case/CamelCase With One Regex?</h3></a>
+          <p>In Rails, methods like <a href="https://github.com/rails/rails/blob/1a2e3a0431651a44ab39e0881237c182770e29ed/activesupport/lib/active_support/inflector/methods.rb#L80-L100"><code>underscore()</code></a> and <a href="https://github.com/rails/rails/blob/1a2e3a0431651a44ab39e0881237c182770e29ed/activesupport/lib/active_support/inflector/methods.rb#L52-L78"><code>camelize()</code></a> use several regexen to transform the <code>String</code> under the hood.  Many people have asked if you can do it with a single regex though.  These specs I borrowed from Rails seem to say yes:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+
+<span class="k">class</span> <span class="nc">String</span>
+  <span class="k">def</span> <span class="nf">snake_case</span><span class="p">(</span><span class="n">acronyms</span> <span class="o">=</span> <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">acronyms</span><span class="p">)</span>
+    <span class="nb">gsub</span><span class="p">(</span> <span class="sr">%r{</span>
+<span class="sr">      (?:</span>
+<span class="sr">        (?&lt;before&gt;  \b | [A-Za-z\d]   )</span>
+<span class="sr">        (?&lt;acronym&gt; </span><span class="si">#{</span><span class="n">acronyms</span><span class="o">.</span><span class="n">regex</span><span class="si">}</span><span class="sr"> )</span>
+<span class="sr">        (?&lt;after&gt;   \b | [^a-z]       )</span>
+<span class="sr">      )</span>
+<span class="sr">      |</span>
+<span class="sr">      (?: (?&lt;before&gt; [A-Z]+ ) (?&lt;after&gt; [A-Z][^A-Z] ) )</span>
+<span class="sr">      |</span>
+<span class="sr">      (?: (?&lt;before&gt; [^A-Z:] ) (?&lt;after&gt; [A-Z] ) )</span>
+<span class="sr">      |</span>
+<span class="sr">      (?&lt;nesting&gt; :: )</span>
+<span class="sr">    }x</span> <span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">m</span><span class="o">|</span>
+      <span class="k">if</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:nesting</span><span class="o">]</span>
+        <span class="s2">"/"</span>
+      <span class="k">else</span>
+        <span class="o">[</span><span class="vg">$~</span><span class="o">[</span><span class="ss">:before</span><span class="o">]</span><span class="p">,</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:acronym</span><span class="o">]</span><span class="p">,</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:after</span><span class="o">]]</span>
+          <span class="o">.</span><span class="n">compact</span>
+          <span class="o">.</span><span class="n">reject</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:empty?</span><span class="p">)</span>
+          <span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="p">}</span><span class="o">.</span><span class="n">downcase</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">CamelCase</span><span class="p">(</span><span class="n">acronyms</span> <span class="o">=</span> <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">acronyms</span><span class="p">)</span>
+    <span class="nb">gsub</span><span class="p">(</span> <span class="sr">%r{</span>
+<span class="sr">      (?:</span>
+<span class="sr">        (?: \A | _ | (?&lt;nesting&gt; / ) )</span>
+<span class="sr">        (?&lt;acronym&gt; </span><span class="si">#{</span><span class="n">acronyms</span><span class="o">.</span><span class="n">inverted_regex</span><span class="si">}</span><span class="sr"> )</span>
+<span class="sr">        (?= \b | [A-Z_] )</span>
+<span class="sr">      )</span>
+<span class="sr">      |</span>
+<span class="sr">      (?: (?: \A | _ ) (?&lt;letter&gt; . ) )</span>
+<span class="sr">      |</span>
+<span class="sr">      (?: (?&lt;nesting&gt; / ) (?&lt;letter&gt; . ) )</span>
+<span class="sr">    }mx</span> <span class="p">)</span> <span class="p">{</span>
+      <span class="n">nested</span>      <span class="o">=</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:nesting</span><span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="s2">"::"</span>
+      <span class="n">capitalized</span> <span class="o">=</span> <span class="n">acronyms</span><span class="o">.</span><span class="n">capitalize</span><span class="p">(</span><span class="vg">$~</span><span class="o">[</span><span class="ss">:acronym</span><span class="o">]</span><span class="p">)</span> <span class="p">{</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:letter</span><span class="o">].</span><span class="n">upcase</span> <span class="p">}</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">nested</span><span class="si">}#{</span><span class="n">capitalized</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">}</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">camelCase</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">CamelCase</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sr">/\A[A-Z]/</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">first_char</span><span class="o">|</span> <span class="n">first_char</span><span class="o">.</span><span class="n">downcase</span> <span class="p">}</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">acronyms</span>
+    <span class="vi">@acronyms</span> <span class="o">||=</span> <span class="no">AcronymManager</span><span class="o">.</span><span class="n">new</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">class</span> <span class="nc">AcronymManager</span>
+  <span class="no">NEVER_MATCHES</span> <span class="o">=</span> <span class="sr">/\zA/</span>
+
+  <span class="k">def</span> <span class="nf">initialize</span>
+    <span class="vi">@acronyms</span> <span class="o">=</span> <span class="p">{</span> <span class="p">}</span>
+    <span class="vi">@inverted</span> <span class="o">=</span> <span class="p">{</span> <span class="p">}</span>
+  <span class="k">end</span>
+
+  <span class="kp">attr_reader</span> <span class="ss">:acronyms</span><span class="p">,</span> <span class="ss">:inverted</span>
+  <span class="kp">private</span>     <span class="ss">:acronyms</span><span class="p">,</span> <span class="ss">:inverted</span>
+
+  <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">acronym</span><span class="p">)</span>
+    <span class="n">acronyms</span><span class="o">[</span><span class="n">acronym</span><span class="o">]</span> <span class="o">=</span> <span class="n">acronym</span><span class="o">.</span><span class="n">downcase</span>
+    <span class="vi">@inverted</span>         <span class="o">=</span> <span class="n">acronyms</span><span class="o">.</span><span class="n">invert</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">regex</span>
+    <span class="k">return</span> <span class="no">NEVER_MATCHES</span> <span class="k">if</span> <span class="n">acronyms</span><span class="o">.</span><span class="n">empty?</span>
+
+    <span class="sr">/(?:</span><span class="si">#{</span><span class="n">acronyms</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="no">Regexp</span><span class="o">.</span><span class="n">method</span><span class="p">(</span><span class="ss">:escape</span><span class="p">))</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">'|'</span><span class="p">)</span><span class="si">}</span><span class="sr">)/</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">inverted_regex</span>
+    <span class="k">return</span> <span class="no">NEVER_MATCHES</span> <span class="k">if</span> <span class="n">acronyms</span><span class="o">.</span><span class="n">empty?</span>
+
+    <span class="sr">/(?:</span><span class="si">#{</span><span class="n">inverted</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="no">Regexp</span><span class="o">.</span><span class="n">method</span><span class="p">(</span><span class="ss">:escape</span><span class="p">))</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">'|'</span><span class="p">)</span><span class="si">}</span><span class="sr">)/</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">capitalize</span><span class="p">(</span><span class="n">acronym</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">default</span><span class="p">)</span>
+    <span class="n">inverted</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">acronym</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">default</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">if</span> <span class="vg">$PROGRAM_NAME</span> <span class="o">==</span> <span class="bp">__FILE__</span>
+  <span class="nb">require</span> <span class="s2">"minitest/autorun"</span>
+
+  <span class="n">describe</span> <span class="s2">"Case changing"</span> <span class="k">do</span>
+    <span class="c1"># https://github.com/rails/rails/blob/</span>
+    <span class="c1"># 620f4a4fc962c863b91a51876ffdf58f33bedb9c/activesupport/test/</span>
+    <span class="c1"># inflector_test_cases.rb#L118-L123</span>
+    <span class="n">let</span><span class="p">(</span><span class="ss">:examples</span><span class="p">)</span> <span class="p">{</span>
+      <span class="p">{</span>
+        <span class="s2">"Product"</span>               <span class="o">=&gt;</span> <span class="s2">"product"</span><span class="p">,</span>
+        <span class="s2">"SpecialGuest"</span>          <span class="o">=&gt;</span> <span class="s2">"special_guest"</span><span class="p">,</span>
+        <span class="s2">"ApplicationController"</span> <span class="o">=&gt;</span> <span class="s2">"application_controller"</span><span class="p">,</span>
+        <span class="s2">"Area51Controller"</span>      <span class="o">=&gt;</span> <span class="s2">"area51_controller"</span><span class="p">,</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="c1"># https://github.com/rails/rails/blob/</span>
+    <span class="c1"># 620f4a4fc962c863b91a51876ffdf58f33bedb9c/activesupport/test/</span>
+    <span class="c1"># inflector_test_cases.rb#L139-L145</span>
+    <span class="n">let</span><span class="p">(</span><span class="ss">:one_way_snake_examples</span><span class="p">)</span> <span class="p">{</span>
+      <span class="p">{</span>
+        <span class="s2">"HTMLTidy"</span>              <span class="o">=&gt;</span> <span class="s2">"html_tidy"</span><span class="p">,</span>
+        <span class="s2">"HTMLTidyGenerator"</span>     <span class="o">=&gt;</span> <span class="s2">"html_tidy_generator"</span><span class="p">,</span>
+        <span class="s2">"FreeBSD"</span>               <span class="o">=&gt;</span> <span class="s2">"free_bsd"</span><span class="p">,</span>
+        <span class="s2">"HTML"</span>                  <span class="o">=&gt;</span> <span class="s2">"html"</span><span class="p">,</span>
+        <span class="s2">"ForceXMLController"</span>    <span class="o">=&gt;</span> <span class="s2">"force_xml_controller"</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="c1"># https://github.com/rails/rails/blob/</span>
+    <span class="c1"># 620f4a4fc962c863b91a51876ffdf58f33bedb9c/activesupport/test/</span>
+    <span class="c1"># inflector_test.rb#L98</span>
+    <span class="n">let</span><span class="p">(</span><span class="ss">:one_way_camel_examples</span><span class="p">)</span> <span class="p">{</span>
+      <span class="p">{</span>
+        <span class="s2">"CamelCase"</span>             <span class="o">=&gt;</span> <span class="s2">"Camel_Case"</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="c1"># added by James</span>
+    <span class="n">let</span><span class="p">(</span><span class="ss">:path_examples</span><span class="p">)</span> <span class="p">{</span>
+      <span class="p">{</span>
+        <span class="s2">"SomeLib::WithClass"</span>    <span class="o">=&gt;</span> <span class="s2">"some_lib/with_class"</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="c1"># https://github.com/rails/rails/blob/</span>
+    <span class="c1"># 620f4a4fc962c863b91a51876ffdf58f33bedb9c/activesupport/test/</span>
+    <span class="c1"># inflector_test.rb#L101-L145</span>
+    <span class="n">let</span><span class="p">(</span><span class="ss">:acronym_examples</span><span class="p">)</span> <span class="p">{</span>
+      <span class="p">{</span>
+        <span class="s2">"API"</span>                   <span class="o">=&gt;</span> <span class="s2">"api"</span><span class="p">,</span>
+        <span class="s2">"APIController"</span>         <span class="o">=&gt;</span> <span class="s2">"api_controller"</span><span class="p">,</span>
+        <span class="s2">"Nokogiri::HTML"</span>        <span class="o">=&gt;</span> <span class="s2">"nokogiri/html"</span><span class="p">,</span>
+        <span class="s2">"HTTPAPI"</span>               <span class="o">=&gt;</span> <span class="s2">"http_api"</span><span class="p">,</span>
+        <span class="s2">"HTTP::Get"</span>             <span class="o">=&gt;</span> <span class="s2">"http/get"</span><span class="p">,</span>
+        <span class="s2">"SSLError"</span>              <span class="o">=&gt;</span> <span class="s2">"ssl_error"</span><span class="p">,</span>
+        <span class="s2">"RESTful"</span>               <span class="o">=&gt;</span> <span class="s2">"restful"</span><span class="p">,</span>
+        <span class="s2">"RESTfulController"</span>     <span class="o">=&gt;</span> <span class="s2">"restful_controller"</span><span class="p">,</span>
+        <span class="s2">"Nested::RESTful"</span>       <span class="o">=&gt;</span> <span class="s2">"nested/restful"</span><span class="p">,</span>
+        <span class="s2">"IHeartW3C"</span>             <span class="o">=&gt;</span> <span class="s2">"i_heart_w3c"</span><span class="p">,</span>
+        <span class="s2">"PhDRequired"</span>           <span class="o">=&gt;</span> <span class="s2">"phd_required"</span><span class="p">,</span>
+        <span class="s2">"IRoRU"</span>                 <span class="o">=&gt;</span> <span class="s2">"i_ror_u"</span><span class="p">,</span>
+        <span class="s2">"RESTfulHTTPAPI"</span>        <span class="o">=&gt;</span> <span class="s2">"restful_http_api"</span><span class="p">,</span>
+
+        <span class="c1"># misdirection</span>
+        <span class="s2">"Capistrano"</span>            <span class="o">=&gt;</span> <span class="s2">"capistrano"</span><span class="p">,</span>
+        <span class="s2">"CapiController"</span>        <span class="o">=&gt;</span> <span class="s2">"capi_controller"</span><span class="p">,</span>
+        <span class="s2">"HttpsApis"</span>             <span class="o">=&gt;</span> <span class="s2">"https_apis"</span><span class="p">,</span>
+        <span class="s2">"Html5"</span>                 <span class="o">=&gt;</span> <span class="s2">"html5"</span><span class="p">,</span>
+        <span class="s2">"Restfully"</span>             <span class="o">=&gt;</span> <span class="s2">"restfully"</span><span class="p">,</span>
+        <span class="s2">"RoRails"</span>               <span class="o">=&gt;</span> <span class="s2">"ro_rails"</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="n">it</span> <span class="s2">"can snake_case a String"</span> <span class="k">do</span>
+      <span class="n">examples</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">camel</span><span class="p">,</span> <span class="n">snake</span><span class="o">|</span>
+        <span class="n">camel</span><span class="o">.</span><span class="n">snake_case</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="n">snake</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="n">it</span> <span class="s2">"can handle some tricky one-way cases for snake_case"</span> <span class="k">do</span>
+      <span class="n">one_way_snake_examples</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">camel</span><span class="p">,</span> <span class="n">snake</span><span class="o">|</span>
+        <span class="n">camel</span><span class="o">.</span><span class="n">snake_case</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="n">snake</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="n">it</span> <span class="s2">"can CamelCase a String"</span> <span class="k">do</span>
+      <span class="n">examples</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">camel</span><span class="p">,</span> <span class="n">snake</span><span class="o">|</span>
+        <span class="n">snake</span><span class="o">.</span><span class="n">CamelCase</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="n">camel</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="n">it</span> <span class="s2">"can handle some tricky one-way cases for CamelCase"</span> <span class="k">do</span>
+      <span class="n">one_way_camel_examples</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">camel</span><span class="p">,</span> <span class="n">snakey</span><span class="o">|</span>
+        <span class="n">snakey</span><span class="o">.</span><span class="n">CamelCase</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="n">camel</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="n">it</span> <span class="s2">"can camelCase a String"</span> <span class="k">do</span>
+      <span class="s2">"camel_case"</span><span class="o">.</span><span class="n">camelCase</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="s2">"camelCase"</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="n">it</span> <span class="s2">"can convert nesting to paths and back"</span> <span class="k">do</span>
+      <span class="n">path_examples</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">camel</span><span class="p">,</span> <span class="n">snake</span><span class="o">|</span>
+        <span class="n">camel</span><span class="o">.</span><span class="n">snake_case</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="n">snake</span><span class="p">)</span>
+        <span class="n">snake</span><span class="o">.</span><span class="n">CamelCase</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="n">camel</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="n">it</span> <span class="s2">"is aware of acronyms"</span> <span class="k">do</span>
+      <span class="n">acronyms</span> <span class="o">=</span> <span class="no">AcronymManager</span><span class="o">.</span><span class="n">new</span>
+      <span class="n">acronyms</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"API"</span><span class="p">)</span>
+      <span class="n">acronyms</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"HTML"</span><span class="p">)</span>
+      <span class="n">acronyms</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"HTTP"</span><span class="p">)</span>
+      <span class="n">acronyms</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"RESTful"</span><span class="p">)</span>
+      <span class="n">acronyms</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"W3C"</span><span class="p">)</span>
+      <span class="n">acronyms</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"PhD"</span><span class="p">)</span>
+      <span class="n">acronyms</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"RoR"</span><span class="p">)</span>
+      <span class="n">acronyms</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"SSL"</span><span class="p">)</span>
+
+      <span class="n">acronym_examples</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">camel</span><span class="p">,</span> <span class="n">snake</span><span class="o">|</span>
+        <span class="n">camel</span><span class="o">.</span><span class="n">snake_case</span><span class="p">(</span><span class="n">acronyms</span><span class="p">)</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="n">snake</span><span class="p">)</span>
+        <span class="n">snake</span><span class="o">.</span><span class="n">CamelCase</span><span class="p">(</span><span class="n">acronyms</span><span class="p">)</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="n">camel</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div><p><a href="/deadly-regular-expressions/can-you-snake-case-camelcase-with-one-regex">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="deadly-regular-expressions/can-you-snake-case-camelcase-with-one-regex">
+  In: <a href="/deadly-regular-expressions">Deadly Regular Expressions</a>
+  <span>|</span>
+  Tags: <a href="/tags/Regular%20Expression">Regular Expression</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/deadly-regular-expressions/can-you-snake-case-camelcase-with-one-regex#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>19</h4>
+    <span>
+      SEP<br>
+      2014
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/deadly-regular-expressions/you-cant-parse-x-html-with-regex"><h3 class="blog-title">&quot;You can&#39;t parse [X]HTML with regex.&quot;</h3></a>
+          <p>The only explanation I'll give for the following code it to provide this link to <a href="http://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags/1732454#1732454">my favorite Stack Overflow answer</a>.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"open-uri"</span>
+
+<span class="no">URL</span>    <span class="o">=</span> <span class="s2">"http://stackoverflow.com/questions/1732348/"</span> <span class="o">+</span>
+         <span class="s2">"regex-match-open-tags-except-xhtml-self-contained-tags"</span>
+<span class="no">PARSER</span> <span class="o">=</span> <span class="sr">%r{</span>
+<span class="sr">  (?&lt;doctype_declaration&gt;</span>
+<span class="sr">    &lt;!DOCTYPE\b (?&lt;doctype&gt; [^&gt;]* ) &gt;</span>
+<span class="sr">  ){0}</span>
+<span class="sr">  (?&lt;comment&gt;</span>
+<span class="sr">    &lt;!-- .* --&gt;</span>
+<span class="sr">  ){0}</span>
+
+<span class="sr">  (?&lt;script_tag&gt;</span>
+<span class="sr">    &lt; \s* (?&lt;tag_name&gt; script ) \s* (?&lt;attributes&gt; [^&gt;]* &gt; )</span>
+<span class="sr">      (?&lt;script&gt; .*? )</span>
+<span class="sr">    &lt; \s* / \s* script \s* &gt;</span>
+<span class="sr">  ){0}</span>
+<span class="sr">  (?&lt;self_closed_tag&gt;</span>
+<span class="sr">    &lt; \s* (?&lt;tag_name&gt; \w+ ) \s* (?&lt;attributes&gt; [^&gt;]* / \s* &gt; )</span>
+<span class="sr">  ){0}</span>
+<span class="sr">  (?&lt;unclosed_tag&gt;</span>
+<span class="sr">    &lt; \s*</span>
+<span class="sr">    (?&lt;tag_name&gt; link | meta | br | input | hr | img ) \b</span>
+<span class="sr">    \s*</span>
+<span class="sr">    (?&lt;attributes&gt; [^&gt;]* &gt; )</span>
+<span class="sr">  ){0}</span>
+<span class="sr">  (?&lt;open_tag&gt;</span>
+<span class="sr">    &lt; \s* (?&lt;tag_name&gt; \w+ ) \s* (?&lt;attributes&gt; [^&gt;]* &gt; )</span>
+<span class="sr">  ){0}</span>
+<span class="sr">  (?&lt;close_tag&gt;</span>
+<span class="sr">    &lt; \s* / \s* (?&lt;tag_name&gt; \w+ ) \s* &gt;</span>
+<span class="sr">  ){0}</span>
+
+<span class="sr">  (?&lt;attribute&gt;</span>
+<span class="sr">    (?&lt;attribute_name&gt; [-\w]+ )</span>
+<span class="sr">    (?: \s* = \s* (?&lt;attribute_value&gt; "[^"]*" | '[^']*' | [^&gt;\s]+ ) )? \s*</span>
+<span class="sr">  ){0}</span>
+<span class="sr">  (?&lt;attribute_list&gt;</span>
+<span class="sr">    \g&lt;attribute&gt;</span>
+<span class="sr">    (?= [^&gt;]* &gt; \z )  # attributes keep a trailing &gt; to disambiguate from text</span>
+<span class="sr">  ){0}</span>
+
+<span class="sr">  (?&lt;text&gt;</span>
+<span class="sr">    (?! [^&lt;]* /?\s*&gt; \z )  # a guard to prevent this from parsing attributes</span>
+<span class="sr">    [^&lt;]+</span>
+<span class="sr">  ){0}</span>
+
+<span class="sr">  \G</span>
+<span class="sr">  (?:</span>
+<span class="sr">    \g&lt;doctype_declaration&gt;</span>
+<span class="sr">    |</span>
+<span class="sr">    \g&lt;comment&gt;</span>
+<span class="sr">    |</span>
+<span class="sr">    \g&lt;script_tag&gt;</span>
+<span class="sr">    |</span>
+<span class="sr">    \g&lt;self_closed_tag&gt;</span>
+<span class="sr">    |</span>
+<span class="sr">    \g&lt;unclosed_tag&gt;</span>
+<span class="sr">    |</span>
+<span class="sr">    \g&lt;open_tag&gt;</span>
+<span class="sr">    |</span>
+<span class="sr">    \g&lt;attribute_list&gt;</span>
+<span class="sr">    |</span>
+<span class="sr">    \g&lt;close_tag&gt;</span>
+<span class="sr">    |</span>
+<span class="sr">    \g&lt;text&gt;</span>
+<span class="sr">  )</span>
+<span class="sr">  \s*</span>
+<span class="sr">}mix</span>
+
+<span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+  <span class="n">stack</span> <span class="o">=</span> <span class="o">[</span><span class="p">{</span><span class="ss">attributes</span><span class="p">:</span> <span class="o">[</span> <span class="o">]</span><span class="p">,</span> <span class="ss">contents</span><span class="p">:</span> <span class="o">[</span> <span class="o">]</span><span class="p">,</span> <span class="nb">name</span><span class="p">:</span> <span class="ss">:root</span><span class="p">}</span><span class="o">]</span>
+  <span class="kp">loop</span> <span class="k">do</span>
+    <span class="n">html</span><span class="o">.</span><span class="n">sub!</span><span class="p">(</span><span class="no">PARSER</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="ow">or</span> <span class="k">break</span>
+    <span class="k">if</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:doctype_declaration</span><span class="o">]</span>
+      <span class="n">add_to_tree</span><span class="p">(</span><span class="n">stack</span><span class="o">.</span><span class="n">last</span><span class="p">,</span> <span class="s2">"DOCTYPE"</span><span class="p">,</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:doctype</span><span class="o">].</span><span class="n">strip</span><span class="p">)</span>
+    <span class="k">elsif</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:script_tag</span><span class="o">]</span>
+      <span class="n">add_to_stack</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:tag_name</span><span class="o">]</span><span class="p">,</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:attributes</span><span class="o">]</span><span class="p">,</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:script</span><span class="o">]</span><span class="p">)</span>
+    <span class="k">elsif</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:self_closed_tag</span><span class="o">]</span> <span class="o">||</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:unclosed_tag</span><span class="o">]</span> <span class="o">||</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:open_tag</span><span class="o">]</span>
+      <span class="n">add_to_stack</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:tag_name</span><span class="o">]</span><span class="p">,</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:attributes</span><span class="o">]</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:open_tag</span><span class="o">]</span><span class="p">)</span>
+    <span class="k">elsif</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:close_tag</span><span class="o">]</span>
+      <span class="n">stack</span><span class="o">.</span><span class="n">pop</span>
+    <span class="k">elsif</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:text</span><span class="o">]</span>
+      <span class="n">stack</span><span class="o">.</span><span class="n">last</span><span class="o">[</span><span class="ss">:contents</span><span class="o">]</span> <span class="o">&lt;&lt;</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:text</span><span class="o">]</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+  <span class="n">stack</span><span class="o">.</span><span class="n">pop</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">add_to_tree</span><span class="p">(</span><span class="n">branch</span><span class="p">,</span> <span class="nb">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">branch</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+    <span class="n">branch</span><span class="o">[</span><span class="nb">name</span><span class="o">]</span>  <span class="o">=</span> <span class="o">[</span><span class="n">branch</span><span class="o">[</span><span class="nb">name</span><span class="o">]]</span> <span class="k">unless</span> <span class="n">branch</span><span class="o">[</span><span class="nb">name</span><span class="o">].</span><span class="n">is_a?</span><span class="p">(</span><span class="nb">Array</span><span class="p">)</span>
+    <span class="n">branch</span><span class="o">[</span><span class="nb">name</span><span class="o">]</span> <span class="o">&lt;&lt;</span> <span class="n">value</span>
+  <span class="k">else</span>
+    <span class="n">branch</span><span class="o">[</span><span class="nb">name</span><span class="o">]</span> <span class="o">=</span> <span class="n">value</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">add_to_stack</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">,</span> <span class="n">attributes_html</span><span class="p">,</span> <span class="n">contents</span><span class="p">,</span> <span class="nb">open</span> <span class="o">=</span> <span class="kp">false</span><span class="p">)</span>
+  <span class="n">tag</span> <span class="o">=</span> <span class="p">{</span> <span class="ss">attributes</span><span class="p">:</span> <span class="n">parse_attributes</span><span class="p">(</span><span class="n">attributes_html</span><span class="p">),</span>
+          <span class="ss">contents</span><span class="p">:</span>   <span class="o">[</span><span class="n">contents</span><span class="o">].</span><span class="n">reject</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:empty?</span><span class="p">),</span>
+          <span class="nb">name</span><span class="p">:</span>       <span class="n">tag_name</span> <span class="p">}</span>
+  <span class="n">add_to_tree</span><span class="p">(</span><span class="n">stack</span><span class="o">.</span><span class="n">last</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+  <span class="n">stack</span><span class="o">.</span><span class="n">last</span><span class="o">[</span><span class="ss">:contents</span><span class="o">]</span> <span class="o">&lt;&lt;</span> <span class="n">tag</span>
+  <span class="n">stack</span>                 <span class="o">&lt;&lt;</span> <span class="n">tag</span> <span class="k">if</span> <span class="nb">open</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">parse_attributes</span><span class="p">(</span><span class="n">attributes_html</span><span class="p">)</span>
+  <span class="n">attributes</span> <span class="o">=</span> <span class="p">{</span> <span class="p">}</span>
+  <span class="kp">loop</span> <span class="k">do</span>
+    <span class="n">attributes_html</span><span class="o">.</span><span class="n">sub!</span><span class="p">(</span><span class="no">PARSER</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="ow">or</span> <span class="k">break</span>
+    <span class="n">add_to_tree</span><span class="p">(</span>
+      <span class="n">attributes</span><span class="p">,</span>
+      <span class="vg">$~</span><span class="o">[</span><span class="ss">:attribute_name</span><span class="o">]</span><span class="p">,</span>
+      <span class="p">(</span><span class="vg">$~</span><span class="o">[</span><span class="ss">:attribute_value</span><span class="o">]</span> <span class="o">||</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:attribute_name</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sr">/\A(["'])(.*)\1\z/</span><span class="p">,</span> <span class="s1">'\2'</span><span class="p">)</span>
+    <span class="p">)</span>
+  <span class="k">end</span>
+  <span class="n">attributes</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">convert_to_bbcode</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">Hash</span><span class="p">)</span>
+    <span class="nb">name</span> <span class="o">=</span> <span class="n">node</span><span class="o">[</span><span class="ss">:name</span><span class="o">].</span><span class="n">sub</span><span class="p">(</span><span class="sr">/\Astrike\z/</span><span class="p">,</span> <span class="s2">"s"</span><span class="p">)</span>
+    <span class="s2">"[</span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">]</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:contents</span><span class="o">].</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">c</span><span class="o">|</span> <span class="nb">send</span><span class="p">(</span><span class="n">__method__</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="si">}</span><span class="s2">.join}[/</span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">]"</span>
+  <span class="k">else</span>
+    <span class="n">node</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">html</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="no">URL</span><span class="p">,</span> <span class="o">&amp;</span><span class="ss">:read</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span>
+<span class="n">ast</span>  <span class="o">=</span> <span class="n">parse</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+<span class="nb">puts</span> <span class="n">ast</span><span class="o">[</span><span class="s2">"html"</span><span class="o">][</span><span class="s2">"body"</span><span class="o">][</span><span class="s2">"div"</span><span class="o">]</span>
+  <span class="o">.</span><span class="n">find</span> <span class="p">{</span> <span class="o">|</span><span class="n">div</span><span class="o">|</span> <span class="n">div</span><span class="o">[</span><span class="ss">:attributes</span><span class="o">][</span><span class="s2">"class"</span><span class="o">]</span> <span class="o">==</span> <span class="s2">"container"</span>      <span class="p">}</span><span class="o">[</span><span class="s2">"div"</span><span class="o">]</span>
+  <span class="o">.</span><span class="n">find</span> <span class="p">{</span> <span class="o">|</span><span class="n">div</span><span class="o">|</span> <span class="n">div</span><span class="o">[</span><span class="ss">:attributes</span><span class="o">][</span><span class="s2">"id"</span><span class="o">]</span>    <span class="o">==</span> <span class="s2">"content"</span>        <span class="p">}</span><span class="o">[</span><span class="s2">"div"</span><span class="o">][</span><span class="s2">"div"</span><span class="o">]</span>
+  <span class="o">.</span><span class="n">find</span> <span class="p">{</span> <span class="o">|</span><span class="n">div</span><span class="o">|</span> <span class="n">div</span><span class="o">[</span><span class="ss">:attributes</span><span class="o">][</span><span class="s2">"id"</span><span class="o">]</span>    <span class="o">==</span> <span class="s2">"mainbar"</span>        <span class="p">}</span><span class="o">[</span><span class="s2">"div"</span><span class="o">]</span>
+  <span class="o">.</span><span class="n">find</span> <span class="p">{</span> <span class="o">|</span><span class="n">div</span><span class="o">|</span> <span class="n">div</span><span class="o">[</span><span class="ss">:attributes</span><span class="o">][</span><span class="s2">"id"</span><span class="o">]</span>    <span class="o">==</span> <span class="s2">"answers"</span>        <span class="p">}</span><span class="o">[</span><span class="s2">"div"</span><span class="o">]</span>
+  <span class="o">.</span><span class="n">find</span> <span class="p">{</span> <span class="o">|</span><span class="n">div</span><span class="o">|</span> <span class="n">div</span><span class="o">[</span><span class="ss">:attributes</span><span class="o">][</span><span class="s2">"id"</span><span class="o">]</span>    <span class="o">==</span> <span class="s2">"answer-1732454"</span> <span class="p">}</span><span class="o">[</span><span class="s2">"table"</span><span class="o">][</span><span class="s2">"tr"</span><span class="o">]</span>
+  <span class="o">.</span><span class="n">first</span><span class="o">[</span><span class="s2">"td"</span><span class="o">]</span>
+  <span class="o">.</span><span class="n">find</span> <span class="p">{</span> <span class="o">|</span><span class="n">div</span><span class="o">|</span> <span class="n">div</span><span class="o">[</span><span class="ss">:attributes</span><span class="o">][</span><span class="s2">"class"</span><span class="o">]</span> <span class="o">==</span> <span class="s2">"answercell"</span>     <span class="p">}</span><span class="o">[</span><span class="s2">"div"</span><span class="o">][</span><span class="s2">"p"</span><span class="o">]</span>
+  <span class="o">.</span><span class="n">first</span><span class="o">[</span><span class="ss">:contents</span><span class="o">]</span>
+  <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="nb">method</span><span class="p">(</span><span class="ss">:convert_to_bbcode</span><span class="p">))</span>  <span class="c1"># to reach a wider audience</span>
+  <span class="o">.</span><span class="n">join</span>
+</pre></div><p><a href="/deadly-regular-expressions/you-cant-parse-x-html-with-regex">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="deadly-regular-expressions/you-cant-parse-x-html-with-regex">
+  In: <a href="/deadly-regular-expressions">Deadly Regular Expressions</a>
+  <span>|</span>
+  Tags: <a href="/tags/For%20Fun">For Fun</a>, <a href="/tags/Parsing">Parsing</a> &amp; <a href="/tags/Regular%20Expression">Regular Expression</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/deadly-regular-expressions/you-cant-parse-x-html-with-regex#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>11</h4>
+    <span>
+      SEP<br>
+      2014
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rusting/experimenting-with-ownership"><h3 class="blog-title">Experimenting With Ownership</h3></a>
+          <p>Let's use a trivial exercise to see what we can learn about ownership, moving, borrowing, and more in Rust.  Here's the idea:</p>
+
+<ol>
+<li>We'll allocate a list of numbers</li>
+<li>We'll add one to each number in the list</li>
+<li>We'll print the resulting list of numbers</li>
+</ol><p>This is a simple process requiring only a few lines of code:</p>
+
+<div class="highlight highlight-rust"><pre><span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="k">mut</span> <span class="n">numbers</span> <span class="o">=</span> <span class="n">vec</span><span class="o">!</span><span class="p">[</span><span class="m">1</span><span class="k">u</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">];</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="n">in</span> <span class="n">numbers</span><span class="p">.</span><span class="n">mut_iter</span><span class="p">()</span> <span class="p">{</span>
+        <span class="o">*</span><span class="n">n</span> <span class="o">+=</span> <span class="m">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"{}"</span><span class="p">,</span> <span class="n">numbers</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The output is hopefully what we all expect to see:</p>
+
+<pre><code>$ ./one_function 
+[2, 3, 4]
+</code></pre>
+
+<p>In this code there is just one variable:  <code>numbers</code>.  That variable <em>owns</em> a list of numbers on the heap and it's scope is limited to the <code>main()</code> function, which is just a way to say that the data exists for the length of that function call.  Since all three steps happen in that one function call, ownership doesn't really affect us here.</p>
+
+<p>To better examine what ownership really means, let's add one small twist to our exercise:</p>
+
+<ul>
+<li>The increment of each number in the list must happen in a separate function</li>
+</ul><p><a href="/rusting/experimenting-with-ownership">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rusting/experimenting-with-ownership">
+  In: <a href="/rusting">Rusting</a>
+  <span>|</span>
+  Tags: <a href="/tags/Iterators">Iterators</a>, <a href="/tags/Rust">Rust</a> &amp; <a href="/tags/Syntax">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rusting/experimenting-with-ownership#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>6</h4>
+    <span>
+      SEP<br>
+      2014
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rusting/taking-rust-to-task"><h3 class="blog-title">Taking Rust to Task</h3></a>
+          <p>Now that I've reached the point where I can get some Rust code running without asking questions in IRC every five minutes, I really wanted to play with some <em>tasks</em>.  Tasks are the way Rust handles multiprocessing code.  Under the hood they can map one-to-one with operating system threads or you can use a many-to-one mapping that I'm not ready to go into yet.</p>
+
+<p>Probably one of the most exciting aspect of tasks in Rust, in my opinion, is that <a href="http://carol-nichols.com/2014/07/14/ruby-rust-concurrency/">unsafe use of shared memory is rejected outright as a compile error</a>.  That lead me to want to figure out how you communicate correctly.  (Spoiler:  the same was you do in Ruby:  <a href="http://graysoftinc.com/rubies-in-the-rough/sleepy-programs">just pass messages</a>.)</p>
+
+<p>Ready to dive in, I grossly simplified a recent challenge from work and coded it up in Rust.  You can get the idea with a glance at <code>main()</code>:</p>
+
+<div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">collections</span><span class="o">::</span><span class="n">HashMap</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+
+<span class="k">fn</span> <span class="n">string_vec</span><span class="p">(</span><span class="n">strs</span><span class="o">:</span> <span class="o">&amp;</span><span class="p">[</span><span class="o">&amp;</span><span class="err">'</span><span class="k">static</span> <span class="k">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="k">mut</span> <span class="n">v</span> <span class="o">=</span> <span class="n">Vec</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="n">in</span> <span class="n">strs</span><span class="p">.</span><span class="n">iter</span><span class="p">()</span> <span class="p">{</span>
+        <span class="n">v</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">to_string</span><span class="p">());</span>
+    <span class="p">}</span>
+    <span class="n">v</span>
+<span class="p">}</span>
+
+<span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="k">mut</span> <span class="n">services</span> <span class="o">=</span> <span class="n">HashMap</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+    <span class="n">services</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="s">"S1"</span><span class="p">.</span><span class="n">to_string</span><span class="p">(),</span> <span class="n">string_vec</span><span class="p">([</span><span class="s">"A"</span><span class="p">,</span> <span class="s">"B"</span><span class="p">]));</span>
+    <span class="n">services</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="s">"S2"</span><span class="p">.</span><span class="n">to_string</span><span class="p">(),</span> <span class="n">string_vec</span><span class="p">([</span><span class="s">"A"</span><span class="p">,</span> <span class="s">"C"</span><span class="p">]));</span>
+    <span class="n">services</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="s">"S3"</span><span class="p">.</span><span class="n">to_string</span><span class="p">(),</span> <span class="n">string_vec</span><span class="p">([</span><span class="s">"C"</span><span class="p">,</span> <span class="s">"D"</span><span class="p">,</span> <span class="s">"E"</span><span class="p">,</span> <span class="s">"F"</span><span class="p">]));</span>
+    <span class="n">services</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="s">"S4"</span><span class="p">.</span><span class="n">to_string</span><span class="p">(),</span> <span class="n">string_vec</span><span class="p">([</span><span class="s">"D"</span><span class="p">,</span> <span class="s">"B"</span><span class="p">]));</span>
+    <span class="n">services</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="s">"S5"</span><span class="p">.</span><span class="n">to_string</span><span class="p">(),</span> <span class="n">string_vec</span><span class="p">([</span><span class="s">"A"</span><span class="p">,</span> <span class="s">"Z"</span><span class="p">]));</span>
+
+    <span class="k">let</span> <span class="n">work</span> <span class="o">=</span> <span class="n">Work</span><span class="p">(</span><span class="n">Search</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="s">"A"</span><span class="p">.</span><span class="n">to_string</span><span class="p">(),</span> <span class="s">"B"</span><span class="p">.</span><span class="n">to_string</span><span class="p">()));</span>
+
+    <span class="k">let</span> <span class="k">mut</span> <span class="n">task_manager</span> <span class="o">=</span> <span class="n">TaskManager</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="n">services</span><span class="p">);</span>
+    <span class="n">task_manager</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">work</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div><p><a href="/rusting/taking-rust-to-task">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rusting/taking-rust-to-task">
+  In: <a href="/rusting">Rusting</a>
+  <span>|</span>
+  Tags: <a href="/tags/Concurrency">Concurrency</a> &amp; <a href="/tags/Rust">Rust</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rusting/taking-rust-to-task#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>27</h4>
+    <span>
+      AUG<br>
+      2014
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rusting/which-types-to-type"><h3 class="blog-title">Which Types to Type</h3></a>
+          <p>I've mentioned before that I'm writing some Rust code, specifically an RPN calculator as a simple exercise.  I'm going to dump the code here so we can discuss one aspect of it, but do remember that I'm very new to Rust and this code could surely be better:</p>
+
+<div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">fmt</span><span class="p">;</span>
+<span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">os</span><span class="p">;</span>
+
+<span class="k">struct</span> <span class="n">Stack</span> <span class="p">{</span>
+    <span class="n">numbers</span><span class="o">:</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="k">f64</span><span class="o">&gt;</span>
+<span class="p">}</span>
+<span class="k">impl</span> <span class="n">Stack</span> <span class="p">{</span>
+    <span class="k">fn</span> <span class="n">new</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Stack</span> <span class="p">{</span>
+        <span class="n">Stack</span><span class="p">{</span><span class="n">numbers</span><span class="o">:</span> <span class="n">vec</span><span class="o">!</span><span class="p">[]}</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">is_empty</span><span class="p">(</span><span class="o">&amp;</span><span class="n">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">bool</span> <span class="p">{</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">is_empty</span><span class="p">()</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">push</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">,</span> <span class="n">number</span><span class="o">:</span> <span class="k">f64</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">number</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">f64</span> <span class="p">{</span>
+        <span class="o">*</span><span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">last</span><span class="p">().</span><span class="n">expect</span><span class="p">(</span><span class="s">"Stack empty."</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">add</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">)</span>      <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">_do_binary_operation</span><span class="p">(</span><span class="o">|</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="o">|</span> <span class="n">l</span> <span class="o">+</span> <span class="n">r</span><span class="p">);</span> <span class="p">}</span>
+    <span class="k">fn</span> <span class="n">subtract</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">)</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">_do_binary_operation</span><span class="p">(</span><span class="o">|</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="o">|</span> <span class="n">l</span> <span class="o">-</span> <span class="n">r</span><span class="p">);</span> <span class="p">}</span>
+    <span class="k">fn</span> <span class="n">multiply</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">)</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">_do_binary_operation</span><span class="p">(</span><span class="o">|</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="o">|</span> <span class="n">l</span> <span class="o">*</span> <span class="n">r</span><span class="p">);</span> <span class="p">}</span>
+    <span class="k">fn</span> <span class="n">divide</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">)</span>   <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">_do_binary_operation</span><span class="p">(</span><span class="o">|</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="o">|</span> <span class="n">l</span> <span class="o">/</span> <span class="n">r</span><span class="p">);</span> <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">_do_binary_operation</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">,</span> <span class="n">operation</span><span class="o">:</span> <span class="o">|</span><span class="k">f64</span><span class="p">,</span> <span class="k">f64</span><span class="o">|</span> <span class="o">-&gt;</span> <span class="k">f64</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="n">r</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">pop</span><span class="p">().</span><span class="n">expect</span><span class="p">(</span><span class="s">"Stack underflow."</span><span class="p">);</span>
+        <span class="k">let</span> <span class="n">l</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">pop</span><span class="p">().</span><span class="n">expect</span><span class="p">(</span><span class="s">"Stack underflow."</span><span class="p">);</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">operation</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="k">impl</span> <span class="n">fmt</span><span class="o">::</span><span class="n">Show</span> <span class="k">for</span> <span class="n">Stack</span> <span class="p">{</span>
+    <span class="k">fn</span> <span class="n">fmt</span><span class="p">(</span><span class="o">&amp;</span><span class="n">self</span><span class="p">,</span> <span class="n">f</span><span class="o">:</span> <span class="o">&amp;</span><span class="k">mut</span> <span class="n">fmt</span><span class="o">::</span><span class="n">Formatter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmt</span><span class="o">::</span><span class="n">Result</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="k">mut</span> <span class="n">s</span> <span class="o">=</span> <span class="n">String</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+        <span class="k">let</span> <span class="k">mut</span> <span class="n">i</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">len</span><span class="p">();</span>
+        <span class="k">for</span> <span class="n">number</span> <span class="n">in</span> <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">iter</span><span class="p">()</span> <span class="p">{</span>
+            <span class="n">i</span> <span class="o">-=</span> <span class="m">1</span><span class="p">;</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="o">&amp;</span><span class="n">format</span><span class="o">!</span><span class="p">(</span><span class="s">"{}: {}</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">number</span><span class="p">));</span>
+        <span class="p">}</span>
+        <span class="n">s</span><span class="p">.</span><span class="n">pop_char</span><span class="p">();</span>
+        <span class="n">write</span><span class="o">!</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s">"{}"</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="n">Tokenizer</span> <span class="p">{</span>
+    <span class="n">tokens</span><span class="o">:</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="n">i</span><span class="o">:</span>      <span class="k">uint</span>
+<span class="p">}</span>
+<span class="k">impl</span> <span class="n">Tokenizer</span> <span class="p">{</span>
+    <span class="k">fn</span> <span class="n">new</span><span class="p">(</span><span class="n">expression</span><span class="o">:</span> <span class="o">&amp;</span><span class="k">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tokenizer</span> <span class="p">{</span>
+        <span class="n">Tokenizer</span><span class="p">{</span>
+          <span class="n">tokens</span><span class="o">:</span> <span class="n">expression</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="o">|</span><span class="n">c</span><span class="o">:</span> <span class="n">char</span><span class="o">|</span> <span class="n">c</span><span class="p">.</span><span class="n">is_whitespace</span><span class="p">())</span>
+                            <span class="p">.</span><span class="n">map</span><span class="p">(</span><span class="o">|</span><span class="n">s</span><span class="o">|</span> <span class="n">s</span><span class="p">.</span><span class="n">to_string</span><span class="p">())</span>
+                            <span class="p">.</span><span class="n">collect</span><span class="p">(),</span>
+          <span class="n">i</span><span class="o">:</span>      <span class="m">0</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">has_next_token</span><span class="p">(</span><span class="o">&amp;</span><span class="n">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">bool</span> <span class="p">{</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">self</span><span class="p">.</span><span class="n">tokens</span><span class="p">.</span><span class="n">len</span><span class="p">()</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">next_token</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="o">&amp;</span><span class="k">str</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="o">!</span><span class="n">self</span><span class="p">.</span><span class="n">has_next_token</span><span class="p">()</span> <span class="p">{</span> <span class="k">fail</span><span class="o">!</span><span class="p">(</span><span class="s">"Tokens exhausted."</span><span class="p">)</span> <span class="p">}</span>
+
+        <span class="k">let</span> <span class="n">token</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">tokens</span><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">i</span><span class="p">].</span><span class="n">as_slice</span><span class="p">();</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">i</span>   <span class="o">+=</span> <span class="m">1</span><span class="p">;</span>
+        <span class="n">token</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="n">RPNCalculator</span> <span class="p">{</span>
+    <span class="n">stack</span><span class="o">:</span>  <span class="n">Stack</span><span class="p">,</span>
+    <span class="n">tokens</span><span class="o">:</span> <span class="n">Tokenizer</span>
+<span class="p">}</span>
+<span class="k">impl</span> <span class="n">RPNCalculator</span> <span class="p">{</span>
+    <span class="k">fn</span> <span class="n">new</span><span class="p">(</span><span class="n">stack</span><span class="o">:</span> <span class="n">Stack</span><span class="p">,</span> <span class="n">tokens</span><span class="o">:</span> <span class="n">Tokenizer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RPNCalculator</span> <span class="p">{</span>
+        <span class="n">RPNCalculator</span><span class="p">{</span><span class="n">stack</span><span class="o">:</span> <span class="n">stack</span><span class="p">,</span> <span class="n">tokens</span><span class="o">:</span> <span class="n">tokens</span><span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">calculate</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">f64</span> <span class="p">{</span>
+        <span class="k">while</span> <span class="n">self</span><span class="p">.</span><span class="n">tokens</span><span class="p">.</span><span class="n">has_next_token</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">let</span> <span class="n">token</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">tokens</span><span class="p">.</span><span class="n">next_token</span><span class="p">();</span>
+            <span class="k">if</span> <span class="o">!</span><span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">is_empty</span><span class="p">()</span> <span class="p">{</span>
+                <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"{}"</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"T: {}</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">token</span><span class="p">);</span>
+            <span class="k">match</span> <span class="n">token</span> <span class="p">{</span>
+                <span class="s">"+"</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">add</span><span class="p">();</span> <span class="p">}</span>
+                <span class="s">"-"</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">subtract</span><span class="p">();</span> <span class="p">}</span>
+                <span class="s">"*"</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">multiply</span><span class="p">();</span> <span class="p">}</span>
+                <span class="s">"/"</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">divide</span><span class="p">();</span> <span class="p">}</span>
+                <span class="n">n</span>   <span class="o">=&gt;</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">from_str</span><span class="p">(</span><span class="n">n</span><span class="p">).</span><span class="n">expect</span><span class="p">(</span><span class="s">"Not a number."</span><span class="p">));</span> <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="o">!</span><span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">is_empty</span><span class="p">()</span> <span class="p">{</span>
+            <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"{}</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">result</span><span class="p">()</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">let</span>     <span class="n">expression</span> <span class="o">=</span> <span class="n">os</span><span class="o">::</span><span class="n">args</span><span class="p">();</span>
+    <span class="k">let</span>     <span class="n">stack</span>      <span class="o">=</span> <span class="n">Stack</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+    <span class="k">let</span>     <span class="n">tokenizer</span>  <span class="o">=</span> <span class="n">Tokenizer</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="n">expression</span><span class="p">[</span><span class="m">1</span><span class="p">].</span><span class="n">as_slice</span><span class="p">());</span>
+    <span class="k">let</span> <span class="k">mut</span> <span class="n">calculator</span> <span class="o">=</span> <span class="n">RPNCalculator</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">);</span>
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"{}"</span><span class="p">,</span> <span class="n">calculator</span><span class="p">.</span><span class="n">calculate</span><span class="p">());</span>
+<span class="p">}</span>
+</pre></div><p><a href="/rusting/which-types-to-type">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rusting/which-types-to-type">
+  In: <a href="/rusting">Rusting</a>
+  <span>|</span>
+  Tags: <a href="/tags/Rust">Rust</a> &amp; <a href="/tags/Style">Style</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rusting/which-types-to-type#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>22</h4>
+    <span>
+      AUG<br>
+      2014
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/sleepy-programs"><h3 class="blog-title">Sleepy Programs</h3></a>
+          <p>When we think of real multiprocessing, our thoughts probably drift more towards languages like Erlang, Go, Clojure, or Rust.  Such languages really focus on getting separate "processes" to communicate via messages.  This makes it a lot easier to know when one process is waiting on another, because calls to receive messages typically block until one is available.</p>
+
+<p>But what about Ruby?  Can we do intelligent process coordination in Ruby?</p>
+
+<p>Yes, we can.  The tools for it are more awkward though.  It's easy to run into tricky edge cases and hard to code your way out of them correctly.</p>
+
+<p>Let's play with an example to see how good we can make things.  Here's what we will do:</p>
+
+<ol>
+<li>We will start one parent process that will <code>fork()</code> a single child process</li>
+<li>The child will push three messages onto a RabbitMQ queue and <code>exit()</code>
+</li>
+<li>The parent will listen for three messages to arrive, then <code>exit()</code>
+</li>
+</ol><p>Here's a somewhat sloppy first attempt at solving this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby</span>
+
+<span class="nb">require</span> <span class="s2">"benchmark"</span>
+
+<span class="nb">require</span> <span class="s2">"bunny"</span>
+
+<span class="no">QUEUE_NAME</span> <span class="o">=</span> <span class="s2">"example"</span>
+<span class="no">MESSAGES</span>   <span class="o">=</span> <span class="sx">%w[first second third]</span>
+
+<span class="k">def</span> <span class="nf">send_messages</span><span class="p">(</span><span class="o">*</span><span class="n">messages</span><span class="p">)</span>
+  <span class="n">connection</span> <span class="o">=</span> <span class="no">Bunny</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">tap</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:start</span><span class="p">)</span>
+  <span class="n">exchange</span>   <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">create_channel</span><span class="o">.</span><span class="n">default_exchange</span>
+
+  <span class="n">messages</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">message</span><span class="o">|</span>
+    <span class="n">exchange</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">routing_key</span><span class="p">:</span> <span class="no">QUEUE_NAME</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="n">connection</span><span class="o">.</span><span class="n">close</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">listen_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span>
+  <span class="n">connection</span> <span class="o">=</span> <span class="no">Bunny</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">tap</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:start</span><span class="p">)</span>
+  <span class="n">queue</span>      <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">create_channel</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="no">QUEUE_NAME</span><span class="p">,</span> <span class="n">auto_delete</span><span class="p">:</span> <span class="kp">true</span><span class="p">)</span>
+
+  <span class="n">queue</span><span class="o">.</span><span class="n">subscribe</span> <span class="k">do</span> <span class="o">|</span><span class="n">delivery_info</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">payload</span><span class="o">|</span>
+    <span class="n">received_messages</span> <span class="o">&lt;&lt;</span> <span class="n">payload</span>
+  <span class="k">end</span>
+
+  <span class="n">time_it</span><span class="p">(</span><span class="s2">"Received </span><span class="si">#{</span><span class="no">MESSAGES</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> messages"</span><span class="p">)</span> <span class="k">do</span>
+    <span class="k">yield</span>
+  <span class="k">end</span>
+
+  <span class="n">connection</span><span class="o">.</span><span class="n">close</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">time_it</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+  <span class="n">elapsed</span> <span class="o">=</span> <span class="no">Benchmark</span><span class="o">.</span><span class="n">realtime</span> <span class="k">do</span>
+    <span class="k">yield</span>
+  <span class="k">end</span>
+  <span class="nb">puts</span> <span class="s2">"%s: %.2fs"</span> <span class="o">%</span> <span class="o">[</span><span class="nb">name</span><span class="p">,</span> <span class="n">elapsed</span><span class="o">]</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">wait_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span>
+  <span class="k">until</span> <span class="n">received_messages</span> <span class="o">==</span> <span class="no">MESSAGES</span>
+    <span class="nb">sleep</span> <span class="mi">0</span><span class="o">.</span><span class="mi">1</span>  <span class="c1"># don't peg the CPU while we wait</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">send_and_receive</span>
+  <span class="n">pid</span> <span class="o">=</span> <span class="nb">fork</span> <span class="k">do</span>
+    <span class="nb">sleep</span> <span class="mi">3</span>  <span class="c1"># make sure we're receiving before they are sent</span>
+    <span class="n">send_messages</span><span class="p">(</span><span class="o">*</span><span class="no">MESSAGES</span><span class="p">)</span>
+  <span class="k">end</span>
+  <span class="no">Process</span><span class="o">.</span><span class="n">detach</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span>
+
+  <span class="n">received_messages</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+  <span class="n">listen_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">wait_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">send_and_receive</span>
+</pre></div><p><a href="/rubies-in-the-rough/sleepy-programs">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/sleepy-programs">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Concurrency">Concurrency</a> &amp; <a href="/tags/Performance">Performance</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/sleepy-programs#comments">8 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      AUG<br>
+      2014
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rusting/guard-clauses-rust-style"><h3 class="blog-title">Guard Clauses, Rust Style</h3></a>
+          <p>When I'm programming in Ruby, I will often use guard clauses to prevent undesirable scenarios.  For example, let's say I'm building a simple <code>Stack</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Stack</span>
+  <span class="k">def</span> <span class="nf">initialize</span>
+    <span class="vi">@numbers</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+    <span class="vi">@numbers</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">peek</span>
+    <span class="nb">fail</span> <span class="s2">"Stack underflow"</span> <span class="k">if</span> <span class="vi">@numbers</span><span class="o">.</span><span class="n">empty?</span>
+
+    <span class="vi">@numbers</span><span class="o">.</span><span class="n">last</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">stack</span> <span class="o">=</span> <span class="no">Stack</span><span class="o">.</span><span class="n">new</span>
+
+<span class="no">ARGV</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">number</span><span class="o">|</span>
+  <span class="n">stack</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">number</span><span class="o">.</span><span class="n">to_f</span><span class="p">)</span>
+<span class="k">end</span>
+
+<span class="nb">p</span> <span class="n">stack</span><span class="o">.</span><span class="n">peek</span>
+</pre></div>
+
+<p>If I only want to work with numbers everywhere, I add a line like the call to <code>fail()</code> above.  This prevents a <code>nil</code> from being returned from <code>peek()</code>, ruining my expectation that I will have numbers everywhere.</p>
+
+<p>When I first started playing with Rust, I wanted to write code the same way:</p>
+
+<div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">os</span><span class="p">;</span>
+
+<span class="k">struct</span> <span class="n">Stack</span> <span class="p">{</span>
+    <span class="n">numbers</span><span class="o">:</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="k">f64</span><span class="o">&gt;</span>
+<span class="p">}</span>
+<span class="k">impl</span> <span class="n">Stack</span> <span class="p">{</span>
+    <span class="k">fn</span> <span class="n">new</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Stack</span> <span class="p">{</span>
+        <span class="n">Stack</span><span class="p">{</span><span class="n">numbers</span><span class="o">:</span> <span class="n">vec</span><span class="o">!</span><span class="p">[]}</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">push</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">,</span> <span class="n">number</span><span class="o">:</span> <span class="k">f64</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">number</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">peek</span><span class="p">(</span><span class="o">&amp;</span><span class="n">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">f64</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">is_empty</span><span class="p">()</span> <span class="p">{</span> <span class="k">fail</span><span class="o">!</span><span class="p">(</span><span class="s">"Stack underflow"</span><span class="p">);</span> <span class="p">}</span>
+
+        <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">last</span><span class="p">()</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="k">mut</span> <span class="n">stack</span> <span class="o">=</span> <span class="n">Stack</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+
+    <span class="k">for</span> <span class="n">number</span> <span class="n">in</span> <span class="n">os</span><span class="o">::</span><span class="n">args</span><span class="p">().</span><span class="n">tail</span><span class="p">().</span><span class="n">iter</span><span class="p">()</span> <span class="p">{</span>
+        <span class="n">stack</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">from_str</span><span class="p">(</span><span class="n">number</span><span class="p">.</span><span class="n">as_slice</span><span class="p">()).</span><span class="n">expect</span><span class="p">(</span><span class="s">"Not a number"</span><span class="p">));</span>
+    <span class="p">}</span>
+
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"{}"</span><span class="p">,</span> <span class="n">stack</span><span class="p">.</span><span class="n">peek</span><span class="p">());</span>
+<span class="p">}</span>
+</pre></div><p><a href="/rusting/guard-clauses-rust-style">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rusting/guard-clauses-rust-style">
+  In: <a href="/rusting">Rusting</a>
+  <span>|</span>
+  Tags: <a href="/tags/Error%20Handling">Error Handling</a>, <a href="/tags/Patterns">Patterns</a> &amp; <a href="/tags/Rust">Rust</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rusting/guard-clauses-rust-style#comments">2 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      AUG<br>
+      2014
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rusting/asking-better-questions"><h3 class="blog-title">Asking Better Questions</h3></a>
+          <p>I've been playing with some Rust lately and learning a bunch of new concepts.</p>
+
+<p>As part of my experimentation, I built <a href="https://gist.github.com/JEG2/f57212afa30bd7a48d7c">an RPN calculator in the language</a>, just as an exercise that would require a moderate amount of code to be worked out.  Honestly, I don't fully understand everything that I had to do to get this code working yet.  Maybe 20% of it came about as me following instructions from what seem to be very helpful compiler errors.</p>
+
+<p>I wanted to start attacking these concepts that I didn't understand to increase my knowledge.  Of course, I was impatient.  I had some working code and I knew what I was missing, so I jumped into <a href="http://chat.mibbit.com/?server=irc.mozilla.org&amp;channel=%23rust">IRC</a>, pointed at the code, and asked some not-at-all complete questions.  All I got was crickets.</p>
+
+<p>This isn't a failing of the Rust community.  It's a lesson I have to relearn every now and then.  You have to take the time to present a good enough question that answering it is easy enough and worth it.  It's hard work to get your head around 100 lines of code and, even if you do, you'll still be missing plenty of context if the question isn't really well formed.  Given that, most people just ignore the question.  That's probably for the better too, because any answers provided likely would have missed the points I really needed help with.</p><p><a href="/rusting/asking-better-questions">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rusting/asking-better-questions">
+  In: <a href="/rusting">Rusting</a>
+  <span>|</span>
+  Tags: <a href="/tags/Community">Community</a> &amp; <a href="/tags/Rust">Rust</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rusting/asking-better-questions#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>20</h4>
+    <span>
+      JUL<br>
+      2014
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/daves-no-tests-challenge"><h3 class="blog-title">Dave&#39;s No Tests Challenge</h3></a>
+          <p>I've mentioned before <a href="http://graysoftinc.com/non-code/ipsc-2014-postmortem">my difficulties in the 2014 IPSC</a>.  But taking one beating is no reason not to try again.  The first loss just showed me that the contest still had more to teach me.</p>
+
+<p>A buddy of mine has spent some time with <a href="http://ipsc.ksp.sk/2014/real/problems/k.html">the crossword problem</a> and told me that he enjoyed it.  I didn't try this problem during the actual event, but I was a little familiar with it from my friend's description.</p>
+
+<p>To add to the fun, I decided this would be a great excuse to take up <a href="http://rubyrogues.com/164-rr-staying-sharp-with-dave-thomas/">the recent challenge Dave Thomas gave to the Ruby Rogues</a>:  "Stop writing tests."</p>
+
+<h4>Step 1:  Feedback Loops</h4>
+
+<p>Without tests to guide me, I really want to see what's going on.  One of the biggest advantages of tests, in my opinion, is the feedback loop it provides.  So I set out to provide my own feedback.</p>
+
+<p>Since the problem at hand involves filling in a crossword board, the easiest feedback loop I could think of was to see the board as it fills in.  The final board is also the required output.  Therefor, I decided a good first step would just be to read the board into some data structure and write it back out.  Once I had that, I could insert code between those steps to fill it in.  And constantly seeing the board evolve would let me eyeball things for obvious mistakes.</p><p><a href="/rubies-in-the-rough/daves-no-tests-challenge">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/daves-no-tests-challenge">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Databases">Databases</a>, <a href="/tags/Process">Process</a> &amp; <a href="/tags/Test-Driven%20Development">Test-Driven Development</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/daves-no-tests-challenge#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>10</h4>
+    <span>
+      JUL<br>
+      2014
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/book-reviews/one-programmers-library"><h3 class="blog-title">One Programmer&#39;s Library</h3></a>
+          <p>I have always enjoyed the posts where people list out all of the books they think are important, given some subject.  They vary wildly.  For example, <a href="https://signalvnoise.com/posts/3375-the-five-programming-books-that-meant-most-to-me">some are very to-the-point</a> while <a href="http://www.daniellesucher.com/2014/01/05/the-best-books-i-read-in-2013/">others are rich in detail</a> (and Danielle makes one of those each year).</p>
+
+<p>I began to wonder what my list would look like.  Below I've tried to make those decisions.  I was surprised by just how hard it is to restrict myself to the bare essentials.  A lot of things that I read influence me in some way.</p>
+
+<h4>The Classics</h4>
+
+<p>I'll start with the super obvious titles you've likely heard mentioned before.</p>
+
+<ul>
+<li>
+<a href="https://martinfowler.com/books/refactoring.html">Refactoring: Improving the Design of Existing Code</a> is probably the classically great programming text that had the biggest effect on me.  This book teaches you how to turn the code you have into the code you want.  It doesn't get much more essential than that.</li>
+<li>
+<a href="https://www.oreilly.com/library/view/smalltalk-best-practice/9780132852098/">Smalltalk Best Practice Patterns</a> is the book I learned a new language just to read.  It's worth that.  This is <em>The Field Manual of Object-Oriented Tactics</em> and it helps you know what to do line-by-line.</li>
+<li>
+<a href="https://martinfowler.com/books/eaa.html">Patterns of Enterprise Application Architecture</a> is the book you should read so you can see how much great knowledge we've had about building programs for over a decade.  Odds are that this book can teach you multiple strategies for problems you face regularly.</li>
+<li>
+<a href="https://pragprog.com/titles/tpp20/the-pragmatic-programmer-20th-anniversary-edition/">The Pragmatic Programmer: From Journeyman to Master</a> is one of those rare books that can make you a better person, in addition to a better programmer.  Advice like "Fix Broken Windows" and "Make Stone Soup" have universal scope.  This is a must read.</li>
+<li>
+<a href="https://www.oreilly.com/library/view/programming-pearls-second/9780134498058/">Programming Pearls (2nd Edition)</a> is a book about algorithms and, eventually, all programmers need to learn some algorithms.  The upside of this title is that it's fun from page one.  That helps to keep you interested in what can be a dry topic.</li>
+<li>
+<a href="http://www.growing-object-oriented-software.com/">Growing Object-Oriented Software, Guided by Tests</a> is almost surely the single biggest influence on how I do Test-Driven Development.  There are other schools of thought but pick one and dig deep enough into TDD until you're confident about when and how to use it.  This is a tool everyone needs in their toolbox.</li>
+</ul><p><a href="/book-reviews/one-programmers-library">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="book-reviews/one-programmers-library">
+  In: <a href="/book-reviews">Book Reviews</a>
+  <span>|</span>
+  Tags: <a href="/tags/Process">Process</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/book-reviews/one-programmers-library#comments">1 Comment</a>
+</div>
+
+      </li>
+</ul>
+
+<div class="pagination text-center"><ul><li class="previous_page"><a class="previous_page" rel="prev start" href="/?page=1">&#8592; Previous</a></li> <li><a rel="prev start" href="/?page=1">1</a></li> <li class="active"><a class="active">2</a></li> <li><a rel="next" href="/?page=3">3</a></li> <li><a href="/?page=4">4</a></li> <li><a href="/?page=5">5</a></li> <li><a href="/?page=6">6</a></li> <li><a href="/?page=7">7</a></li> <li><a href="/?page=8">8</a></li> <li><a href="/?page=9">9</a></li> <li class="disabled"><a>&hellip;</a></li> <li><a href="/?page=13">13</a></li> <li><a href="/?page=14">14</a></li> <li class="next"><a class="next" rel="next" href="/?page=3">Next &#8594;</a></li></ul></div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

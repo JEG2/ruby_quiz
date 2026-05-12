@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="The Ruby programming blog of James Edward Gray II (JEG2).  Any content of interest to Rubyists specifically, or developers in general, is fair game.">
+    <meta name="keywords"    content="Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1>Gray Soft</h1>
+            <span>The Ruby programming blog of James Edward Gray II (JEG2).</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+            <ul class="blog-list">
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>30</h4>
+    <span>
+      MAR<br>
+      2009
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/ruby-19s-string"><h3 class="blog-title">Ruby 1.9&#39;s String</h3></a>
+          <p>Ruby 1.9 has an all new encoding engine called m17n (for multilingualization, with 17 letters between the m and n).  This new engine may not be what you are use to from many other modern languages.</p>
+
+<p>It's common to pick one versatile encoding, likely a Unicode encoding, and work with all data in that one format.  Ruby 1.9 goes a different way.  Instead of favoring one encoding, Ruby 1.9 makes it possible to work with data in over 80 encodings.</p>
+
+<p>To accomplish this, changes had to be made in several places where Ruby works with character data.  You're going to notice those changes the most in Ruby's <code>String</code> though, so let's begin by talking about what's changed there.</p>
+
+<h4>All Strings are now Encoded</h4>
+
+<p>In Ruby 1.8 a <code>String</code> was a collection of bytes.  You sometimes treated those bytes as other things, like characters when you hit it with a <code>Regexp</code> or lines when you called <code>each()</code>.  At it's core though, it was just some bytes.  You indexed the data by byte counts, sizes where in bytes, and so on.</p>
+
+<p>In Ruby 1.9 a <code>String</code> is now a collection of encoded data.  That means it is both the raw bytes and the attached <code>Encoding</code> information about how to interpret those bytes.</p><p><a href="/character-encodings/ruby-19s-string">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/ruby-19s-string">
+  In: <a href="/character-encodings">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization">Multilingualization</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/ruby-19s-string#comments">15 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>23</h4>
+    <span>
+      MAR<br>
+      2009
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/conferences/the-grays-at-mountainwest-rubyconf-2009"><h3 class="blog-title">The Grays at MountainWest RubyConf 2009</h3></a>
+          <p>Dana and I really enjoyed our first MountainWest RubyConf experience.  The talks were very high caliber, the venue great, and the hosts generous.  This conference also proves that not only does a single-track conference still work, it's just plain better.</p>
+
+<p>Anyway, we've had some requests for our slides so I've made them available.  You can view <a href="https://speakerdeck.com/jeg2/littlebigruby">the slides</a> for <a href="http://confreaks.com/videos/48-mwrc2009-littlebigruby">my LittleBIGRuby talk</a> or <a href="https://speakerdeck.com/jeg2/fear-me-not">Dana's slides</a> from <a href="http://confreaks.com/videos/80-mwrc2009-regular-expressions">her Lightning talk on regular expression</a>.</p>
+        </div>
+        <div class="meta-info" data-slug="conferences/the-grays-at-mountainwest-rubyconf-2009">
+  In: <a href="/conferences">Conferences</a>
+  <span>|</span>
+  Tags: <a href="/tags/Presentations">Presentations</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/conferences/the-grays-at-mountainwest-rubyconf-2009#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>8</h4>
+    <span>
+      FEB<br>
+      2009
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/book-reviews/pragmatic-thinking-and-learning"><h3 class="blog-title">Pragmatic Thinking &amp; Learning</h3></a>
+          <p>I have a new standard by which all future reading material will measured.  Any book that casually mentions lock picking and follows it up with a footnote reference to further reading that will improve your lock picking skills when restricted to an improvised toolset is an instant hit.  <a href="http://www.pragprog.com/titles/ahptl">Pragmatic Thinking &amp; Learning</a> does exactly that.  While that description may be a bit of hyperbole (I had to look that word up Andy), the book really does deliver, both on the lock picking references and the great content.</p>
+
+<p>If I had to sum up Pragmatic Thinking &amp; Learning in one sentence it would be:  it's a book about how to start thinking about thinking, with a moderate computer programmer slant.  If that sounds a bit general, well, it is.  A construction worker or anyone else could learn new things that would help them in their jobs and just day to day lives from this book.  I know I would love for my teenage foreign exchange student to read it, because she could learn a lot from it.  I'm pretty sure this book does exist in many other forms targeted at different groups of people.  The advantage of this one is that I get the jokes and metaphors.  Hooray for geek humor!</p><p><a href="/book-reviews/pragmatic-thinking-and-learning">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="book-reviews/pragmatic-thinking-and-learning">
+  In: <a href="/book-reviews">Book Reviews</a>
+  <span>|</span>
+  Tags: <a href="/tags/Process">Process</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/book-reviews/pragmatic-thinking-and-learning#comments">2 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>7</h4>
+    <span>
+      JAN<br>
+      2009
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/early-steps/the-evils-of-the-for-loop"><h3 class="blog-title">The Evils of the For Loop</h3></a>
+          <p>I've never liked the <code>for…in</code> loop in Ruby.  I cringe every time I see it in examples (Rails seems to put it in views a lot) and I tend to switch it to an <code>each()</code> call.  It really bugs me.</p>
+
+<p>That's mostly just my gut reaction, but if I had to put it into words it's that I fell in love with Ruby's iterators early on and <code>for</code> just doesn't seem to fit in well with them.  I don't think that's just my emotions talking either, it really doesn't fit in.  I'll try to show you why I say that.</p>
+
+<p>First, let's see what I'm talking about.  We are all pretty comfortable with <code>each()</code>, right?</p>
+
+<div class="highlight highlight-ruby"><pre><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span> <span class="nb">p</span> <span class="n">i</span> <span class="p">}</span>
+<span class="c1"># &gt;&gt; 1</span>
+<span class="c1"># &gt;&gt; 2</span>
+<span class="c1"># &gt;&gt; 3</span>
+</pre></div>
+
+<p>I doubt that surprises anyone.  Many of you probably also know that Ruby allows you to write that as:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">3</span>
+  <span class="nb">p</span> <span class="n">i</span>
+<span class="k">end</span>
+<span class="c1"># &gt;&gt; 1</span>
+<span class="c1"># &gt;&gt; 2</span>
+<span class="c1"># &gt;&gt; 3</span>
+</pre></div>
+
+<p>That's <strong>almost</strong> the same thing.  It really does use <code>each()</code> under the hood, for example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">MyEachThing</span>
+  <span class="k">def</span> <span class="nf">each</span>
+    <span class="k">yield</span> <span class="mi">1</span>
+    <span class="k">yield</span> <span class="mi">42</span>
+    <span class="k">yield</span> <span class="mi">2</span>
+    <span class="k">yield</span> <span class="mi">42</span>
+    <span class="k">yield</span> <span class="mi">3</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="no">MyEachThing</span><span class="o">.</span><span class="n">new</span>
+  <span class="nb">p</span> <span class="n">i</span>
+<span class="k">end</span>
+<span class="c1"># &gt;&gt; 1</span>
+<span class="c1"># &gt;&gt; 42</span>
+<span class="c1"># &gt;&gt; 2</span>
+<span class="c1"># &gt;&gt; 42</span>
+<span class="c1"># &gt;&gt; 3</span>
+</pre></div><p><a href="/early-steps/the-evils-of-the-for-loop">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="early-steps/the-evils-of-the-for-loop">
+  In: <a href="/early-steps">Early Steps</a>
+  <span>|</span>
+  Tags: <a href="/tags/Iterators">Iterators</a> &amp; <a href="/tags/Syntax">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/early-steps/the-evils-of-the-for-loop#comments">11 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>12</h4>
+    <span>
+      DEC<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/about-this-blog/rss-upgrades"><h3 class="blog-title">RSS Upgrades</h3></a>
+          <p>I've had an RSS feed for the entire blog up for some time now at <a href="http://graysoftinc.com/feed.xml">http://graysoftinc.com/feed.xml</a>.  Yes, I know, it sucked.  Several of you emailed me to tell me just how much it sucked.</p>
+
+<p>In my defense, I wrote this blogging engine because I wanted to play around different aspects of how this software could work.  Spam prevention was high on that list for me, because it affected me a lot.  Not being a feed reader junkie, RSS was less critical to me.  I know it was important to you though and I'm trying to make good on my promises, finally.</p>
+
+<p>The number one complaint was that my RSS feeds did not include content, just descriptions.  This is fixed.  The full article is now in the feed.</p>
+
+<p>I'm not sure how well that's going to work out yet.  Regular readers know that I'm terribly wordy, so even just placing the last ten articles in the feed makes it quite large.  I don't know how inconvenient that's going to be for you or me yet, but we can try it out for now.</p>
+
+<p>As and added bonus, I've added category specific feeds and article specific feeds that show comments as they come in.  Just click the feed link in the footer of any category or article page to try these out.</p><p><a href="/about-this-blog/rss-upgrades">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="about-this-blog/rss-upgrades">
+  In: <a href="/about-this-blog">About This Blog</a>
+  <span>|</span>
+  Tags: <a href="/tags/Feeds">Feeds</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/about-this-blog/rss-upgrades#comments">7 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>11</h4>
+    <span>
+      DEC<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/ruby-18-character-encoding-flaws"><h3 class="blog-title">Ruby 1.8 Character Encoding Flaws</h3></a>
+          <p>Now that we have toured the entire landscape of Ruby 1.8's encoding support, we need to discuss the problems the system has.  These long standing issues are what pushed the core team to build the m17n (multilingualization) implementation for Ruby 1.9.</p>
+
+<p>The main problems are:</p>
+
+<ul>
+<li>Not enough encodings supported</li>
+<li>
+<code>Regexp</code>-only support just isn't comprehensive enough</li>
+<li>
+<code>$KCODE</code> is a global setting for all encodings</li>
+</ul><p>I imagine most of those are pretty straightforward, but let's talk through them just to make sure we learn from the mistakes of the past.  I'm pretty sure this will make it easier to understand why things are the way they are in Ruby 1.9.</p>
+
+<p>The "not enough encodings" complaint should be the most obvious of all.  Ruby 1.8 supports four and one is just no encoding.  That means you really only get UTF-8 and two Asian encodings.  The UTF-8 support is how we've managed to make it this far, but there are a ton of common encodings that just aren't covered.</p>
+
+<p>The most important thing to realize here though is that we can't just keep adding encodings to Ruby 1.8.  The system wasn't designed with that in mind.  We will run out of letters to tack onto the end of a <code>Regexp</code> very fast.  It's just not practical.</p><p><a href="/character-encodings/ruby-18-character-encoding-flaws">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/ruby-18-character-encoding-flaws">
+  In: <a href="/character-encodings">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization">Multilingualization</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/ruby-18-character-encoding-flaws#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>11</h4>
+    <span>
+      DEC<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/book-reviews/the-definitive-guide-to-sqlite"><h3 class="blog-title">The Definitive Guide to SQLite</h3></a>
+          <p>I'm a huge fan of <a href="http://sqlite.org/">SQLite</a>.  Every time I do something with the little database it always manages to impress me in new ways.  Here's a pop quiz for you:</p>
+
+<ul>
+<li>Did you know SQLite is totally free?  I mean really free.  All the code is in the public domain, protected by affidavits, and you can literally do anything you like with it.</li>
+<li>Did you know SQLite uses "manifest typing" which is similar to Ruby's dynamic typing?  The database engine will really allow you to handle field types in whatever way is best for your needs.  Of course, you can do type checking in triggers if you prefer to be more strict.</li>
+<li>Everyone knows SQLite shoves an entire database in one file, but did you know that it can work with more than one of those files at once?  Yes, SQLite can query across multiple databases.</li>
+</ul><p>I could go on and on.  Really, I could.  SQLite is that cool.</p>
+
+<p>It's almost silly to use flat files these days.  If you find yourself needing one, you can load one gem instead, stick a full database in the file, take advantage of transactions and locking (very multiprocessing friendly), gain a full query language for working with the data, and have a prebuilt human interface completely separate from your code (the command-line tool is great for debugging).  It's hard to beat that.</p><p><a href="/book-reviews/the-definitive-guide-to-sqlite">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="book-reviews/the-definitive-guide-to-sqlite">
+  In: <a href="/book-reviews">Book Reviews</a>
+  <span>|</span>
+  Tags: <a href="/tags/Databases">Databases</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/book-reviews/the-definitive-guide-to-sqlite#comments">3 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>9</h4>
+    <span>
+      DEC<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/screencasts/xmpp-and-metaprogramming-screencasts"><h3 class="blog-title">XMPP and Metaprogramming Screencasts</h3></a>
+          <p>I've mentioned <a href="/screencasts/getting-git-thanks-to-peepcode">some nice screencasts</a> I've found in the past.  Well, I've been watching quite a few more lately and I've uncovered some more hits.</p>
+
+<p>First, <a href="http://peepcode.com/">PeepCode</a> has another excellent <a href="http://peepcode.com/products/xmpp">screencast on using XMPP with Ruby</a>.  This video explains what XMPP is and isn't, why it's important, and shows a good deal of information about how you can work with the protocol to accomplish some real world server to server or human communication tasks.  You don't need any prior XMPP knowledge going into this one.</p>
+
+<p>It's hard to overstate exactly how much PeepCode got right with this video.  For example, I've seen quite a few screencasts now that byte off more than they can chew for a short video.  That's not the case here.  XMPP turns out to be perfectly bite sized in that a one hour video can serve as a strong introduction to pretty much all you need to know when using it.  This has other advantages too.  Since the creator isn't trying to squeeze too much content into too short of time, he can afford to drop some truly stellar related tips.  In the case of the XMPP video these are what IM client to use when debugging, because it allows you to see the underlying protocol, and how to easily combine XMPP with DRb for fire-and-forget messaging.  These extras really push this screencast over the top.</p><p><a href="/screencasts/xmpp-and-metaprogramming-screencasts">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="screencasts/xmpp-and-metaprogramming-screencasts">
+  In: <a href="/screencasts">Screencasts</a>
+  <span>|</span>
+  Tags: <a href="/tags/XMPP">XMPP</a> &amp; <a href="/tags/Metaprogramming">Metaprogramming</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/screencasts/xmpp-and-metaprogramming-screencasts#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>8</h4>
+    <span>
+      DEC<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/encoding-conversion-with-iconv"><h3 class="blog-title">Encoding Conversion With iconv</h3></a>
+          <p>There's one last standard library we need to discuss for us to have completely covered Ruby 1.8's support for character encodings.  The <code>iconv</code> library ships with Ruby and it can handle an impressive set of character encoding conversions.</p>
+
+<p>This is an important piece of the puzzle.  You may have accepted my advice that it's OK to just work with UTF-8 data whenever you have the choice, but the fact is that there's a lot of non-UTF-8 data in the world.  Legacy systems may have produced data before UTF-8 was popular, some services may work in different encodings for any number of reasons, and not quite everyone has embraced Unicode fully yet.  If you run into data like this, you will need a way to convert it to UTF-8 as you import it and possibly a way to convert it back when you export it. That's exactly what <code>iconv</code> does.</p>
+
+<p>Instead of jumping right into Ruby's <code>iconv</code> library, let's come at it with a slightly different approach.  <code>iconv</code> is actually a C library that performs these conversions and on most systems where it is installed you will have a command-line interface for it.</p><p><a href="/character-encodings/encoding-conversion-with-iconv">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/encoding-conversion-with-iconv">
+  In: <a href="/character-encodings">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization">Multilingualization</a> &amp; <a href="/tags/Unicode">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/encoding-conversion-with-iconv#comments">22 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>3</h4>
+    <span>
+      DEC<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/about-this-blog/browser-captcha"><h3 class="blog-title">Browser CAPTCHA</h3></a>
+          <p>I'm sure everyone has noticed that my blog posting has dramatically fallen off from the rate I was getting articles out.  Unfortunately, I've been spending my blog time fighting the endless war against spam.  I've made some progress there and thought I would share some details that others might find useful.</p>
+
+<p>As I've <a href="/about-this-blog/death-and-spam">covered previously</a> this blog now requires me to approve all comments.  I'm super happy with this decision.  I approve posts promptly, so there's pretty much no downside for users and this means you have not seen a single spam message on this site since I made the change.  This was literally the perfect solution…  on the viewer's side of the fence.</p>
+
+<p>What it didn't fix was the hassle on my side.  I don't mind approving messages at all, as long as I have a reasonable pile to go through.  However, the spammers really ramped up their efforts against me lately and this blog received 11,134 comment posts in the month of November alone.  Six of those were legitimate comments.  That exceeds my definition of reasonable.</p><p><a href="/about-this-blog/browser-captcha">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="about-this-blog/browser-captcha">
+  In: <a href="/about-this-blog">About This Blog</a>
+  <span>|</span>
+  Tags: <a href="/tags/Blogging">Blogging</a> &amp; <a href="/tags/Spam">Spam</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/about-this-blog/browser-captcha#comments">8 Comments</a>
+</div>
+
+      </li>
+</ul>
+
+<div class="pagination text-center"><ul><li class="previous_page"><a class="previous_page" rel="prev" href="/?page=6">&#8592; Previous</a></li> <li><a rel="start" href="/?page=1">1</a></li> <li><a href="/?page=2">2</a></li> <li><a href="/?page=3">3</a></li> <li><a href="/?page=4">4</a></li> <li><a href="/?page=5">5</a></li> <li><a rel="prev" href="/?page=6">6</a></li> <li class="active"><a class="active">7</a></li> <li><a rel="next" href="/?page=8">8</a></li> <li><a href="/?page=9">9</a></li> <li><a href="/?page=10">10</a></li> <li><a href="/?page=11">11</a></li> <li><a href="/?page=12">12</a></li> <li><a href="/?page=13">13</a></li> <li><a href="/?page=14">14</a></li> <li class="next"><a class="next" rel="next" href="/?page=8">Next &#8594;</a></li></ul></div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Ruby Tutorials / eval() Isn&#39;t Quite Pure Evil</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="The scary truth about eval().">
+    <meta name="keywords"    content="Ruby idioms, Metaprogramming, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/ruby-tutorials/eval-isnt-quite-pure-evil/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/ruby-tutorials">Ruby Tutorials</a></h1>
+            <span>Tutorials on Ruby specific concepts.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>5</h4>
+    <span>
+      SEP<br>
+      2009
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">eval() Isn&#39;t Quite Pure Evil</h3>
+        
+        <p>I was explaining method lookup to the Lone Star Ruby Conference attendees and needed to show some trivial code like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">B</span>
+  <span class="k">def</span> <span class="nf">call</span>
+    <span class="nb">puts</span> <span class="s2">"B"</span>
+    <span class="k">super</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">module</span> <span class="nn">C</span>
+  <span class="k">def</span> <span class="nf">call</span>
+    <span class="nb">puts</span> <span class="s2">"C"</span>
+    <span class="k">super</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">module</span> <span class="nn">D</span>
+  <span class="k">def</span> <span class="nf">call</span>
+    <span class="nb">puts</span> <span class="s2">"D"</span>
+    <span class="k">super</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Unfortunately, my space was limited due to the code being on slides and me needing to show more than just what you see above.  I cracked under the pressure and committed two major programming sins.  First, I collapsed the code with <code>eval()</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="sx">%w[B C D]</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span>
+  <span class="nb">eval</span> <span class="o">&lt;&lt;-</span><span class="no">END_RUBY</span>
+<span class="sh">  module #{name}</span>
+<span class="sh">    def call</span>
+<span class="sh">      puts "#{name}"</span>
+<span class="sh">      super</span>
+<span class="sh">    end</span>
+<span class="sh">  end</span>
+<span class="no">  END_RUBY</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Then I really blew it when I jokingly apologized to the audience for using <code>eval()</code>.</p>
+
+<p>I got the first email with corrected code before I even finished the speech.  OK, the email was from a friend and he wasn't mean, but he still instantly needed to set me straight.  I had clearly turned from the light.</p>
+
+<p>Only, his corrected code didn't quite work.  It got close, but it had bugs.  Still the approach was sound and it could be made to work.  Let me fix the bugs and show you what was recommended:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="sx">%w[B C D]</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span>
+  <span class="n">mod</span> <span class="o">=</span> <span class="no">Module</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span>
+    <span class="n">define_method</span> <span class="ss">:call</span> <span class="k">do</span>
+      <span class="nb">puts</span> <span class="nb">name</span>
+      <span class="k">super</span><span class="p">()</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+  <span class="no">Object</span><span class="o">.</span><span class="n">const_set</span><span class="p">(</span><span class="nb">name</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Is that better?  It is a line shorter and it avoids the use of <code>eval()</code>, which we all know to be pure evil.  I found it a bit harder to follow the closure logic here though and remember that the point was to show clear code on a slide.  I also wouldn't want to have to explain to anyone why the parentheses are required on the <code>super()</code> in that example, if only because it has nothing to do with the real point of the code.</p>
+
+<p>That leads us to the natural question:  why is <code>eval()</code> pure evil?</p>
+
+<p>I hear two complaints most often when this talk comes up.  The first is that <code>eval()</code> is dangerous.  That usually means that we could take in some malicious code from a user and pass it into <code>eval()</code> where it would destroy our hard drive, or worse.  Only, I'm not doing that.  I made the variables here and user input is not involved.  I think we're safe this time.</p>
+
+<p>The other reason people tend to complain is that it's too much tool for the job.  What does that mean?  Is it slower because it includes extra busy work for the computer?  Nope:</p>
+
+<pre><code>$ cat time_eval.rb
+#!/usr/bin/env ruby -wKU
+
+require "benchmark"
+
+TESTS = 10_000
+Benchmark.bmbm do |results|
+  results.report("eval():") { TESTS.times {
+    %w[B C D].each do |name|
+      eval &lt;&lt;-END_RUBY
+      module #{name}
+        def call
+          puts "#{name}"
+          super
+        end
+      end
+      END_RUBY
+    end
+  } }
+  results.report("closures:") { TESTS.times {
+    %w[B C D].each do |name|
+      mod = Module.new do
+        define_method :call do
+          puts name
+          super()
+        end
+      end
+      Object.const_set(name, mod)
+    end
+  } }
+end
+$ ruby time_eval.rb 2&gt; /dev/null
+Rehearsal ---------------------------------------------
+eval():     0.940000   0.080000   1.020000 (  1.027164)
+closures:   1.070000   0.150000   1.220000 (  1.216268)
+------------------------------------ total: 2.240000sec
+
+                user     system      total        real
+eval():     0.950000   0.080000   1.030000 (  1.034849)
+closures:   1.070000   0.150000   1.220000 (  1.219367)
+</code></pre>
+
+<p>Every time I tried that test <code>eval()</code> came out the same or faster.  It always seems to be faster on the calling side:</p>
+
+<pre><code>$ cat time_eval_calls.rb 
+#!/usr/bin/env ruby -wKU
+
+require "benchmark"
+
+class A
+  def call
+    warn "A"
+  end
+end
+%w[B C D].each do |name|
+  eval &lt;&lt;-END_RUBY
+  module #{name}
+    def call
+      warn "#{name}"
+      super
+    end
+  end
+  END_RUBY
+end
+class E &lt; A
+  include B
+  include C
+  include D
+  def call
+    warn "E"
+    super
+  end
+end
+
+class F
+  def call
+    warn "F"
+  end
+end
+%w[G H I].each do |name|
+  mod = Module.new do
+    define_method :call do
+      warn name
+      super()
+    end
+  end
+  Object.const_set(name, mod)
+end
+class J &lt; F
+  include G
+  include H
+  include I
+  def call
+    warn "J"
+    super
+  end
+end
+
+TESTS = 10_000
+Benchmark.bmbm do |results|
+  results.report("eval():")   { TESTS.times { E.new.call } }
+  results.report("closures:") { TESTS.times { J.new.call } }
+end
+$ ruby time_eval_calls.rb 2&gt; /dev/null
+Rehearsal ---------------------------------------------
+eval():     0.210000   0.100000   0.310000 (  0.315426)
+closures:   0.270000   0.120000   0.390000 (  0.389828)
+------------------------------------ total: 0.700000sec
+
+                user     system      total        real
+eval():     0.210000   0.100000   0.310000 (  0.314385)
+closures:   0.270000   0.120000   0.390000 (  0.390397)
+</code></pre>
+
+<p>That makes sense if you think about it.  The closure version will need to hunt through the scopes and resolve those variables with each call.  The <code>eval()</code> call builds a normal Ruby method though, so once it executes it's just a normal method call.</p>
+
+<p>I guess I'm all out of objections.</p>
+
+<p>I agree it's sometimes worth avoiding <code>eval()</code>.  However, I think we need to admit that it's sometimes OK to use <code>eval()</code>.  The trick is to ditch the fear and rationally evaluate which of the two you are facing.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="ruby-tutorials/eval-isnt-quite-pure-evil">
+  In: <a href="/ruby-tutorials/">Ruby Tutorials</a>
+  <span>|</span>
+  Tags: <a href="/tags/Metaprogramming/">Metaprogramming</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comments">24 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (24)</span></h5>
+
+    <ol>
+        <li id="comment_302">
+    <div class="avatar"><img alt="Darrick Wiebe" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="302">
+      <span class="c_name"><a href="http://github.com/pangloss">Darrick Wiebe</a></span>
+      <span class="c_date">September 5th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_302">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I absolutely agree that <code>eval()</code> should have a place in any Ruby metaprogrammer's toolbox. In most cases <code>eval()</code> is the simplest solution that works, and should be chosen on that basis alone.</p>
+
+<p>I think that <code>eval</code>ing a <code>String</code> should be considered the preferred technique for defining methods on the fly or performing <code>instance_eval</code>s or <code>class_eval</code>s unless certain conditions are met which tilt the balance in favor of using a block.  If I need to pull variables out of the scope that is defining my meta code, and if they are not simply basic <code>String</code>s, <code>Symbol</code>s or <code>Numeric</code>s, then it makes sense to spring for the conceptual overhead of understanding the block scoping of the <code>eval</code> method you need.  Otherwise—and this is most cases—it's probably best to interpolate what you need and into the <code>String</code> and <code>eval</code> it.</p>
+
+<p>In most cases, the small difference in performance between the two options is not worth considering and in order to avoid the trap of premature optimization it should not be.</p>
+
+<p>None of what I'm saying here takes into account the possibility of <code>eval</code>ing user input, and if anyone is considering doing any kind of metaprogramming based on user input, their most important decision is probably not which kind of gun to shoot themselves in the foot with anyway.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_303">
+    <div class="avatar"><img alt="Benjamin Kudria" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="303">
+      <span class="c_name"><a href="http://ben.kudria.net">Benjamin Kudria</a></span>
+      <span class="c_date">September 7th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_303">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p><code>eval()</code> is evil because it turns your code into a <code>String</code>.</p>
+
+<p><code>String</code>s are for data, and putting your code into data destroys the ability of all sorts of useful tools, like code coverage, cyclomatic complexity calculators, and all sorts of other static analyzers—I'm not even going to mention editor syntax highlighting.</p>
+
+<p>Now, the proper solution is a real <a href="http://en.wikipedia.org/wiki/Homoiconicity">homoiconic language</a>, but Ruby isn't going to go there any time soon. So, while <code>eval</code> is evil, it can't be helped in Ruby. But, please, use it as sparingly as often!</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_306">
+    <div class="avatar"><img alt="James H" height="70" src="http://www.gravatar.com/avatar/90ebe8da17aabd36cc30d9f96a530e6f?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="306">
+      <span class="c_name"><a href="mailto:james.herdman@gmail.com">James H</a></span>
+      <span class="c_date">September 7th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_306">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I know you didn't want to explain the parenthesis on <code>super()</code> on the slide, but would you be so kind as to explain it here?</p></div>
+    <ol>
+      
+        <li id="comment_308">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="308">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">September 7th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_308">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I'm happy to explain the required parentheses, yes.</p>
+
+<p><code>super</code> is one of those magical keywords in Ruby.  It often looks like a normal method call, but it has a little magic involved.  When you call <code>super</code> without any parentheses, it invokes a method of the same name higher in the call chain passing the same arguments that the method which invoked <code>super</code> received.  That's the magic.  You can choose to specify the arguments yourself, with or without parentheses, overriding the magical behavior.  The default for a bare call though is the magic.</p>
+
+<p><code>eval()</code> can define normal Ruby methods, which is how I used it in my example.  Because of that, you get all the normal magic and <code>super</code> works the same.  In my example, the <code>super</code>'s forward all arguments up the call chain.  There just don't happen to be any arguments to forward.</p>
+
+<p>As I hinted at in the article though, <code>define_method()</code> is kind of a second class citizen.  It builds a method for you, but you don't quite get all of the normal method magic.  <code>super</code> is one of the cases where the magic doesn't work.  To protect you from bugs, Ruby tosses an error when it sees a bare <code>super</code> inside of a <code>define_method()</code> call.  The reason is that it assumes you wanted the magic and it can't give it in this case, so the error serves as a warning that your expectations may be off.</p>
+
+<p>In my example though, I didn't need the magic.  I have nothing to pass up.  Even though I can usually do that with a bare method call, this is one of the exceptions.  A bare <code>super</code> call would summon the no-magic-here warning error.  Thus, I have to explicitly pass zero arguments with the empty parentheses.</p>
+
+<p>See why I didn't want to have to explain that to the audience?  Yuck!</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_310">
+    <div class="avatar"><img alt="Matt Todd" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="310">
+      <span class="c_name"><a href="http://maraby.org/">Matt Todd</a></span>
+      <span class="c_date">September 8th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_310">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Hey James, great article. It's great that we're challenging notions of proper style and practice all the time (yet another reason why Why the Lucky Stiff was my hero, RIP).</p>
+
+<p>Anyways, wanted to chime in that I think there's also a difference in execution position as well in that evaling dynamic methods and modules at load time is absolutely fine but that runtime might be less ideal. I like to have most of my dynamic evaluation happen at once in the beginning before the "live" state of the application (for long-running apps mostly).</p>
+
+<p>Thanks for sharing!</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_311">
+    <div class="avatar"><img alt="Pykler" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="311">
+      <span class="c_name">Pykler</span>
+      <span class="c_date">September 9th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_311">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p><code>eval</code> is evil, they even sound the same.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_312">
+    <div class="avatar"><img alt="Bob Aman" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="312">
+      <span class="c_name"><a href="http://sporkmonger.com/">Bob Aman</a></span>
+      <span class="c_date">September 9th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_312">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I'm curious.  If Ruby didn't have <code>eval()</code> at all, what (rational) things couldn't you do with eval-less Ruby that could be done with Ruby as it exists today?  I mean, there have been a few times where I thought I had a legitimate use case for <code>eval()</code>, but thus far, I've almost always ended up being proven wrong once I get far enough along in the development process.  Template languages are the only significant legitimate use I can think of, that couldn't easily be handled by some other facility of the language.</p></div>
+    <ol>
+      
+        <li id="comment_313">
+    <div class="avatar"><img alt="Glenn Vanderburg" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="313">
+      <span class="c_name"><a href="http://vanderburg.org/">Glenn Vanderburg</a></span>
+      <span class="c_date">September 9th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_313">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>That's an interesting thought experiment, and you're right that there are very few things that you can do with <code>eval</code> that you couldn't do without.</p>
+
+<p>But if you're suggesting that as an argument against having <code>eval</code> in the language ... well, if we had the rule that we only wanted one way to do something in the language, half of Ruby would have to go, and we'd just have Python.  ;-)</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_327">
+    <div class="avatar"><img alt="Mat Brown" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="327">
+      <span class="c_name"><a href="http://outoftime.github.com">Mat Brown</a></span>
+      <span class="c_date">October 2nd, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_327">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><blockquote>
+<p>If Ruby didn't have <code>eval()</code> at all, what (rational) things couldn't you do with eval-less Ruby that could be done with Ruby as it exists today?</p>
+</blockquote>
+
+<p>The answer is metaprogramming without closures (the latter being potentially costly both in terms of namespace resolution and efficient garbage collection, as well as semantically undesirable and occasionally productive of hard-to-track-down bugs).</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_314">
+    <div class="avatar"><img alt="Bradly Feeley" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="314">
+      <span class="c_name"><a href="http://www.twitter.com/bradly">Bradly Feeley</a></span>
+      <span class="c_date">September 9th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_314">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Whenever I come across <code>eval</code> in Rails code it is usually a method call where either the class, method, or arguments are some variable. I don't like <code>eval</code> in that use case and prefer using <code>send</code>. Personally, I find <code>String</code> programming harder to read, which makes it harder to maintain.</p>
+
+<p>Also, while it isn't a wise to write code based on limitations of your editor, there may be an argument to be made on the cost of losing out on syntax highlighting on a chunk of code.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_315">
+    <div class="avatar"><img alt="Wyatt" height="70" src="http://www.gravatar.com/avatar/b2fccce6e171b354505947238fed5675?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="315">
+      <span class="c_name"><a href="mailto:greenewm@yahoo.com">Wyatt</a></span>
+      <span class="c_date">September 9th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_315">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I'm usually not one to go all Eval Knieval on my code, but there was one case where <code>eval</code> seemed to be my only viable option.  I was doing some metaprogramming and needed to choose a class on the fly.  <code>Object.const_get</code> does not work with namespaced classes, so the quickest way was to use <code>eval("Namespace::ClassName")</code>.</p></div>
+    <ol>
+      
+        <li id="comment_316">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="316">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">September 9th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_316">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Wyatt:  It may have been possible to use code like the following in your case:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="s2">"Namespace::ClassName"</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"::"</span><span class="p">)</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="no">Object</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">a</span><span class="p">,</span> <span class="n">c</span><span class="o">|</span> <span class="n">a</span><span class="o">.</span><span class="n">const_get</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="p">}</span>
+</pre></div></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_317">
+    <div class="avatar"><img alt="Nathan Powell" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="317">
+      <span class="c_name">Nathan Powell</span>
+      <span class="c_date">September 10th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_317">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I think you are correct.  I think that often times as technologists we want shortcuts since there are so many things to remember day to day.    However as technical people we ought to find out <em>why</em> we repeat a mantra, not simply repeat it.</p>
+
+<p>Thanks for the reminder.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_318">
+    <div class="avatar"><img alt="Matthew Bennett" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="318">
+      <span class="c_name">Matthew Bennett</span>
+      <span class="c_date">September 10th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_318">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>It reminds me of a story a friend once told. A girl is watching her mother cook leg of (something), and noticed that before she put it in the oven, the mother always cut off both the ends. Asked why, the mother replies "That's what my mother always did". So she goes to the grandmother, and she gets the same response. So she goes to her great grandmother, and she explains "Well, it was during the war and money was tight. We didn't have an oven, and I could never fit it into the saucepan, so I always had to chop the ends off"</p>
+
+<p>The moral of the story: Always ask why. Otherwise you're wasting useful parts of the (meat|language) based on effectively superstition. In this case, if <code>eval</code> does what you need and you are aware of the possible dangers, never feel pressured into doing the same thing in a more convoluted way based on someone else's superstitions. </p></div>
+    <ol>
+      
+        <li id="comment_332">
+    <div class="avatar"><img alt="Colin Bartlett" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="332">
+      <span class="c_name">Colin Bartlett</span>
+      <span class="c_date">October 14th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_332">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I can't resist adding that in Primo Levi's wonderful book "The Periodic Table" there is a section called "Chrome" which is essentially a more literary (and true—it actually happened to Primo Levi when he was an industrial chemist working for a paint factory) version of the story in Matthew Bennett's post.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_319">
+    <div class="avatar"><img alt="Shane" height="70" src="http://www.gravatar.com/avatar/ee49971e902cb938916279b1902b0756?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="319">
+      <span class="c_name"><a href="mailto:shane.hanna@gmail.com">Shane</a></span>
+      <span class="c_date">September 14th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_319">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>If you feel your audience wouldn't understand that <code>super()</code> call then you probably shouldn't use <code>eval</code> in front of them. They may not understand when to ignore the <code>eval</code> mantra.</p>
+
+<p>I'd argue this is the beauty of a mantra. By the time you question it you know enough about the pros/cons to safely make your own judgment calls.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_322">
+    <div class="avatar"><img alt="Sarah Vessels" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="322">
+      <span class="c_name"><a href="http://www.3till7.net/">Sarah Vessels</a></span>
+      <span class="c_date">September 16th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_322">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I recently asked a <a href="http://stackoverflow.com/questions/1412620/use-of-goto-versus-runtime-code-evaluation">question on StackOverflow</a> about why using <code>goto</code> would be preferable to runtime code evaluation with <code>eval</code>, in the context of a programming assignment in a graduate class.  In amongst everyone trying to tell me to use recursion, there were some good points made about why <code>eval</code> can be bad:</p>
+
+<ul>
+<li>Syntax errors in Ruby strings to be <code>eval</code>ed will not be found by your IDE.</li>
+<li>Code in strings to be <code>eval</code>ed can be harder to read than more complicated code that is not in strings.</li>
+</ul></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_330">
+    <div class="avatar"><img alt="David Masover" height="70" src="http://www.gravatar.com/avatar/1bc63d01bd3fcccc36fb030a62039352?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="330">
+      <span class="c_name"><a href="mailto:ninja@slaphack.com">David Masover</a></span>
+      <span class="c_date">October 11th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_330">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>There are two main reasons I dislike <code>eval</code> in that situation, and prefer the closure solution.</p>
+
+<p>First, eval breaks syntax highlighting in my editor. For this reason alone, I find the closure logic easier to follow.</p>
+
+<p>And second, it's not only dangerous for security reasons, it's dangerous in <em>any</em> case the developer (or a user) might pass something into those variables other than what you intended, including a typo. In an example like that, suppose the <code>name</code> variable somehow had a double quote or a <code>#{</code> in it… Contrived, sure, but when things like that do happen, <code>eval</code> makes them that much more difficult to debug, whereas it might have not even been an issue with <code>define_method</code>.</p>
+
+<p>I agree it's not always evil—for example, I'd already have guessed that appropriate use of <code>eval</code> can improve performance, just as inappropriate use can destroy performance. But premature optimization is the root of all evil—once I've narrowed it down to a <code>define_method</code> being a bottleneck, I'll consider <code>eval</code>, but not before.</p>
+
+<p>And there are at least two things which could not be done in an <code>eval</code>-less ruby, last I checked:</p>
+
+<p>Access to local variables through bindings. (I'm not sure if 1.9 fixed this...) This is one example of what I think is an appropriate use of <code>eval</code>, even disregarding performance—find some feature the language doesn't provide, implement it, tuck the <code>eval</code> deep inside some library where no one has to see it again, and be done with it.</p>
+
+<p>And development tools—irb, debuggers, IDEs, etc. This goes back to Lisp's read-eval-print-loop, and whenever I'm forced to use a language without an interactive prompt of some kind, I always feel crippled.</p>
+
+<p>They do make templates more convenient, but technically aren't required—you <em>could</em> write a "compiler" which translates a template into Ruby, but I'd argue this is a legitimate use for <code>eval</code>, at least if you want to allow Ruby code in the template.</p></div>
+    <ol>
+      
+        <li id="comment_456">
+    <div class="avatar"><img alt="Rob Gleeson" height="70" src="http://www.gravatar.com/avatar/22ca530c1db575f0a62b68c1900d8399?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="456">
+      <span class="c_name"><a href="mailto:rob@flowof.info">Rob Gleeson</a></span>
+      <span class="c_date">August 23rd, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_456">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p><code>eval</code> isn't always evil though, I think it's mis-used and misunderstood.</p>
+
+<p><code>Binding#eval</code> is <em>extremely</em> useful for prying inside the scope of a <code>Proc</code> to gain access to the value of a variable, and obviously, for a REPL it is essential too ;-)</p>
+
+<p><code>eval</code> is beat on a lot but only because people mistakenly use it for something you shouldn't use it for, it does have some valid use cases, though. </p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_1628">
+    <div class="avatar"><img alt="Douglas G. Allen" height="70" src="https://avatars.githubusercontent.com/u/887598?v=3" width="70" /></div>
+    <div class="comment-info" data-comment-id="1628">
+      <span class="c_name"><a href="https://github.com/DouglasAllen">Douglas G. Allen</a></span>
+      <span class="c_date">December 31st, 2016</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_1628">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Your code James Edward Gray II</p>
+
+<p>is evil</p>
+
+<div class="highlight highlight-ruby"><pre>    <span class="n">ruby_lang</span><span class="o">/</span><span class="n">programs</span><span class="o">/</span><span class="n">see</span><span class="o">-</span><span class="n">no</span><span class="o">-</span><span class="nb">eval</span><span class="o">.</span><span class="n">rb</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span> <span class="ss">warning</span><span class="p">:</span> <span class="n">already</span> <span class="n">initialized</span> <span class="n">constant</span> <span class="n">B</span>
+    <span class="p">(</span><span class="nb">eval</span><span class="p">):</span><span class="mi">1</span><span class="p">:</span> <span class="ss">warning</span><span class="p">:</span> <span class="n">previous</span> <span class="n">definition</span> <span class="n">of</span> <span class="n">B</span> <span class="n">was</span> <span class="n">here</span>
+    <span class="n">ruby_lang</span><span class="o">/</span><span class="n">programs</span><span class="o">/</span><span class="n">see</span><span class="o">-</span><span class="n">no</span><span class="o">-</span><span class="nb">eval</span><span class="o">.</span><span class="n">rb</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span> <span class="ss">warning</span><span class="p">:</span> <span class="n">already</span> <span class="n">initialized</span> <span class="n">constant</span> <span class="n">C</span>
+    <span class="p">(</span><span class="nb">eval</span><span class="p">):</span><span class="mi">1</span><span class="p">:</span> <span class="ss">warning</span><span class="p">:</span> <span class="n">previous</span> <span class="n">definition</span> <span class="n">of</span> <span class="n">C</span> <span class="n">was</span> <span class="n">here</span>
+    <span class="n">ruby_lang</span><span class="o">/</span><span class="n">programs</span><span class="o">/</span><span class="n">see</span><span class="o">-</span><span class="n">no</span><span class="o">-</span><span class="nb">eval</span><span class="o">.</span><span class="n">rb</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span> <span class="ss">warning</span><span class="p">:</span> <span class="n">already</span> <span class="n">initialized</span> <span class="n">constant</span> <span class="n">D</span>
+    <span class="p">(</span><span class="nb">eval</span><span class="p">):</span><span class="mi">1</span><span class="p">:</span> <span class="ss">warning</span><span class="p">:</span> <span class="n">previous</span> <span class="n">definition</span> <span class="n">of</span> <span class="n">D</span> <span class="n">was</span> <span class="n">here</span>
+</pre></div>
+
+<p>But oh no don't show us things like that. Blog on brother.<br>
+But if you could just stick to ERB you'll be fine.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s1">'erb'</span>
+
+<span class="c1"># Create template.</span>
+<span class="n">template</span> <span class="o">=</span> <span class="sx">%q(</span>
+<span class="sx">  From:  James Edward Gray II &lt;james@grayproductions.net&gt;</span>
+<span class="sx">  To:  &lt;%= to %&gt;</span>
+<span class="sx">  Subject:  Addressing Needs</span>
+
+<span class="sx">  &lt;%= to[/\w+/] %&gt;:</span>
+
+<span class="sx">  Just wanted to send a quick note assuring that your needs are being</span>
+<span class="sx">  addressed.</span>
+
+<span class="sx">  I want you to know that my team will keep working on the issues,</span>
+<span class="sx">  especially:</span>
+
+<span class="sx">  &lt;%# ignore numerous minor requests -- focus on priorities %&gt;</span>
+<span class="sx">  % priorities.each do |priority|</span>
+<span class="sx">    * &lt;%= priority %&gt;</span>
+<span class="sx">  % end</span>
+
+<span class="sx">  Thanks for your patience.</span>
+
+<span class="sx">  James Edward Gray II</span>
+<span class="sx">)</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="sr">/^  /</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span>
+
+<span class="n">message</span> <span class="o">=</span> <span class="no">ERB</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">'%&lt;&gt;'</span><span class="p">)</span>
+
+<span class="c1"># Set up template data.</span>
+<span class="n">to</span> <span class="o">=</span> <span class="s1">'Community Spokesman &lt;spokesman@ruby_community.org&gt;'</span>
+<span class="n">priorities</span> <span class="o">=</span> <span class="o">[</span><span class="s1">'Run Ruby Quiz'</span><span class="p">,</span>
+              <span class="s1">'Document Modules'</span><span class="p">,</span>
+              <span class="s1">'Answer Questions on Ruby Talk'</span><span class="o">]</span>
+
+<span class="c1"># Produce result.</span>
+<span class="n">email</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">result</span>
+<span class="nb">puts</span> <span class="n">email</span>
+</pre></div>
+
+<p>I guess that you were just trying to document your M0dules?<br>
+Thanks! But what was your talk all about?<br>
+Practicing Ruby? There's good articles there about method lookup and Modules. I think he even mentions you James.<br>
+P.S. HEREDOCS are evil</p></div>
+    <ol>
+      
+        <li id="comment_1632">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="https://avatars.githubusercontent.com/u/5639?v=4" width="70" /></div>
+    <div class="comment-info" data-comment-id="1632">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">December 31st, 2016</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_1632">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><blockquote>
+<p>But oh no don't show us things like that.</p>
+</blockquote>
+
+<p>Sorry, but I don't really understand the complaint or how you got these warnings.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_1629">
+    <div class="avatar"><img alt="Douglas G. Allen" height="70" src="https://avatars.githubusercontent.com/u/887598?v=3" width="70" /></div>
+    <div class="comment-info" data-comment-id="1629">
+      <span class="c_name"><a href="https://github.com/DouglasAllen">Douglas G. Allen</a></span>
+      <span class="c_date">December 31st, 2016</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_1629">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>This is all you would need in the mean time.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#</span>
+<span class="k">module</span> <span class="nn">B</span>
+  <span class="k">def</span> <span class="nf">call</span>
+    <span class="nb">puts</span> <span class="s1">'B'</span>
+    <span class="k">super</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="c1">#</span>
+<span class="k">module</span> <span class="nn">C</span>
+  <span class="k">def</span> <span class="nf">call</span>
+    <span class="nb">puts</span> <span class="s1">'C'</span>
+    <span class="k">super</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="c1">#</span>
+<span class="k">module</span> <span class="nn">D</span>
+  <span class="k">def</span> <span class="nf">call</span>
+    <span class="nb">puts</span> <span class="s1">'D'</span>
+    <span class="k">super</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>According to Rubocop.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_1630">
+    <div class="avatar"><img alt="Douglas G. Allen" height="70" src="https://avatars.githubusercontent.com/u/887598?v=3" width="70" /></div>
+    <div class="comment-info" data-comment-id="1630">
+      <span class="c_name"><a href="https://github.com/DouglasAllen">Douglas G. Allen</a></span>
+      <span class="c_date">December 31st, 2016</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_1630">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Now back to the topic. Doesn't IRB use eval() extensively?<br>
+Have you considered integrating something like that into you testing? <br>
+Perhaps even Pry would work too.<br>
+I just don't know enough to go about doing so myself.<br>
+Perhaps you do James. <br>
+Any way it would be an interesting article and I know that Rack has a middleware<br>
+that I've seen some rails apps use.</p></div>
+    <ol>
+      
+        <li id="comment_1631">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="https://avatars.githubusercontent.com/u/5639?v=4" width="70" /></div>
+    <div class="comment-info" data-comment-id="1631">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">December 31st, 2016</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/ruby-tutorials/eval-isnt-quite-pure-evil#comment_1631">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><blockquote>
+<p>Now back to the topic. Doesn't IRB use eval() extensively?</p>
+</blockquote>
+
+<p>Yes.</p>
+
+<blockquote>
+<p>Have you considered integrating something like that into you testing?</p>
+</blockquote>
+
+<p>Some languages do this, like <a href="https://docs.python.org/2/library/doctest.html">Python</a> and <a href="http://elixir-lang.org/getting-started/mix-otp/docs-tests-and-with.html#doctests">Elixir</a>.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

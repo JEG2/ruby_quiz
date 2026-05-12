@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Throwing Darts / How to Avoid Taking a Dart to the Knee</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="An enumeration of the major mistakes I&#39;ve made as a Dart newbie.">
+    <meta name="keywords"    content="Dart, Iterators, Syntax, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/throwing-darts/how-to-avoid-taking-a-dart-to-the-knee/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/throwing-darts">Throwing Darts</a></h1>
+            <span>Front end development for the rest of us.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>31</h4>
+    <span>
+      OCT<br>
+      2014
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">How to Avoid Taking a Dart to the Knee</h3>
+        
+        <p>I've been playing with <a href="https://www.dartlang.org/">Dart</a> quite a bit lately.  I really enjoy the language, but there are always snags that trip up those coming from other backgrounds.  Here are the top three issues that have bit me in Dart, in the hopes of saving others some pain:</p>
+
+<h4>The Truth and Nothing But the Truth… Literally!</h4>
+
+<p>One of the challenges of any language is figuring out what it considers to be truthy in conditional expressions.  Each system has its twists, but I find Dart to be extra strict in this case.</p>
+
+<p>Here's some code illustrating the rule:</p>
+
+<div class="highlight highlight-dart"><pre><span class="kt">bool</span> <span class="n">isTruthy</span><span class="p">(</span><span class="kt">Object</span> <span class="n">condition</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="o">!!</span><span class="n">condition</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="n">tests</span> <span class="o">=</span> <span class="p">[</span><span class="kc">true</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="kc">null</span><span class="p">,</span> <span class="m">42</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="p">[</span> <span class="p">],</span> <span class="k">new</span> <span class="kt">Object</span><span class="p">()];</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="n">test</span> <span class="k">in</span> <span class="n">tests</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">print</span><span class="p">(</span><span class="s2">"</span><span class="si">$</span><span class="n">test</span><span class="s2"> is </span><span class="si">${</span><span class="n">isTruthy</span><span class="p">(</span><span class="n">test</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>That outputs:</p>
+
+<pre><code>$ dart truthiness.dart
+true is true
+false is false
+null is false
+42 is false
+0 is false
+ is false
+[] is false
+Instance of 'Object' is false
+</code></pre>
+
+<p>As you can see the literal <code>true</code> (just that <strong>one</strong> object) is truthy in Dart and <strong>everything</strong> else is considered <code>false</code>.  I'm in the habit of playing pretty fast and loose with truthiness from all of my time working with Ruby, so this has surprised me a few times.</p>
+
+<p>The best defense, in my opinion, is to be really strict with the return values in places where you are expecting booleans (<code>bool</code> in Dart).  I recommend using <strong>only</strong> <code>true</code> and <code>false</code>.</p>
+
+<p>Dart itself has the same recommendation, by the way.  If you run the code above in <em>checked</em> mode, Dart errors out on the first non-<code>bool</code> value:</p>
+
+<pre><code>$ dart -c truthiness.dart
+true is true
+false is false
+Unhandled exception:
+type 'Null' is not a subtype of type 'bool' of 'boolean expression'.
+#0      isTruthy (file:///Users/jeg2/Desktop/truthiness.dart:2:12)
+#1      main (file:///Users/jeg2/Desktop/truthiness.dart:8:31)
+#2      _startIsolate (dart:isolate-patch/isolate_patch.dart:239)
+#3      _startMainIsolate.&lt;anonymous closure&gt; (dart:isolate-patch/isolate_patch.dart:192)
+#4      _RawReceivePortImpl._handleMessage (dart:isolate-patch/isolate_patch.dart:130)
+</code></pre>
+
+<p>There are two things you should notice here:</p>
+
+<ul>
+<li>Checked mode, like <a href="http://devblog.avdi.org/2011/06/23/how-ruby-helps-you-fix-your-broken-code/">Ruby's warnings</a>, gives you free debugging help!</li>
+<li>Even <code>null</code> failed to qualify as a <code>bool</code> in conditionals.  (Don't get too excited yet, until you read the next gotcha…)</li>
+</ul><h4>Escaping From Alcatraz and <code>null</code> are Equally Hard</h4>
+
+<p>If you love how <code>null</code> triggered an error in my last example and/or you've spent any time playing Rust's crazy elegant type system, you're almost surely about to be disappointed.</p>
+
+<p>Here's a seemingly harmless chunk of code:</p>
+
+<div class="highlight highlight-dart"><pre><span class="kt">bool</span> <span class="n">liesDamnLiesAndNull</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">print</span><span class="p">(</span><span class="s2">"liesDamnLiesAndNull() returned </span><span class="si">${</span><span class="n">liesDamnLiesAndNull</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>That prints:</p>
+
+<pre><code>$ dart null_returns.dart
+liesDamnLiesAndNull() returned true
+</code></pre>
+
+<p>I assume we're fine with this exercise so far.  But let's tweak that function a few ways and watch the surprises roll in.  Here's the first experiment:</p>
+
+<div class="highlight highlight-dart"><pre><span class="kt">bool</span> <span class="n">liesDamnLiesAndNull</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="p">[</span> <span class="p">];</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Dart kind of allows this:</p>
+
+<pre><code>$ dart null_returns.dart
+liesDamnLiesAndNull() returned []
+</code></pre>
+
+<p>Don't fret though!  "Mind what you have learned.  Save you it can."  Checked mode to the rescue:</p>
+
+<pre><code>$ dart -c null_returns.dart
+Unhandled exception:
+type 'List' is not a subtype of type 'bool' of 'function result'.
+#0      liesDamnLiesAndNull (file:///Users/jeg2/Desktop/null_returns.dart:2:10)
+#1      main (file:///Users/jeg2/Desktop/null_returns.dart:7:62)
+#2      _startIsolate (dart:isolate-patch/isolate_patch.dart:239)
+#3      _startMainIsolate.&lt;anonymous closure&gt; (dart:isolate-patch/isolate_patch.dart:192)
+#4      _RawReceivePortImpl._handleMessage (dart:isolate-patch/isolate_patch.dart:130)
+</code></pre>
+
+<p>So we're still OK, right?  Well, here comes the bad news:</p>
+
+<div class="highlight highlight-dart"><pre><span class="kt">bool</span> <span class="n">liesDamnLiesAndNull</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>That gets a pass, even in checked mode:</p>
+
+<pre><code>$ dart -c null_returns.dart
+liesDamnLiesAndNull() returned null
+</code></pre>
+
+<p>I guess the logic is that a <code>bool</code> variable can hold a <code>null</code> (makes sense to me as it might not have been initialized), so a <code>bool</code> return value has to mean <code>true</code>, <code>false</code>, or <code>null</code> (makes <strong>no</strong> sense to me).  This isn't just about the <code>bool</code> type either.  All return values include <code>null</code>.</p>
+
+<p>Now, I hate to kick a reader while they're down, but… well… brace for impact:</p>
+
+<div class="highlight highlight-dart"><pre><span class="kt">bool</span> <span class="n">liesDamnLiesAndNull</span><span class="p">()</span> <span class="p">{</span>
+  <span class="kc">true</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Again, we're still in checked mode:</p>
+
+<pre><code>$ dart -c null_returns.dart
+liesDamnLiesAndNull() returned null
+</code></pre>
+
+<p>Ouch.  Am I right?</p>
+
+<p>Obviously, the last expression is not automatically returned for you in this language.  Worse, if a statement of the form <code>return whatever;</code> is not executed by your code, Dart will add a <code>return null;</code> as the last thing the function does.</p>
+
+<p>This is the biggest item I have disagreed with in the design of Dart so far.  I would much prefer it just throw errors as it did for the conditional earlier.  It could do so in checked mode, at the very least.  <code>null</code> bugs are just too insidious as <a href="http://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare">even their creator knows</a>.</p>
+
+<p>OK, we did the bad surprise.  It's time for the good surprise.</p>
+
+<h4>Can You Die of Laziness?</h4>
+
+<p>In a word:  yes.  Here's the code:</p>
+
+<div class="highlight highlight-dart"><pre><span class="kt">void</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="n">current_list</span> <span class="o">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">.</span><span class="n">generate</span><span class="p">(</span><span class="m">100</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="n">i</span><span class="p">);</span>
+  <span class="k">while</span> <span class="p">(</span><span class="kc">true</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">current_list</span> <span class="o">=</span> <span class="n">current_list</span><span class="p">.</span><span class="n">where</span><span class="p">((</span><span class="n">_</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="kc">true</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Here's the proof of death:</p>
+
+<pre><code>$ dart -c lazy_iteration.dart
+Exhausted heap space, trying to allocate 32 bytes.
+Exhausted heap space, trying to allocate 32 bytes.
+Exhausted heap space, trying to allocate 32 bytes.
+…
+</code></pre>
+
+<p>I ran into this issue in a Web page where I had a simple list of items that I was tracking.  Each time through the event loop, I would filter out the items I no longer needed to track, using code like you see above.  In a browser, this eventually generated stack overflow errors.</p>
+
+<p>The good news is that it's:</p>
+
+<ul>
+<li>All my fault</li>
+<li>Easy to fix</li>
+<li>And for a good cause, in my opinion</li>
+</ul><p>Again I'm use to Ruby where iterators are immediate, unless you explicitly make them lazy.  In Dart it's often the opposite.  Many iterators, like <code>where()</code> above, are just lazy by default.  (Rust works this way too.)</p>
+
+<p>I'm a big fan of the lazy-by-default behavior, so don't take this point as a complaint.  You just need to remember to force the iterator to be evaluated when needed, which is easy to do:</p>
+
+<div class="highlight highlight-dart"><pre><span class="kt">void</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="n">current_list</span> <span class="o">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">.</span><span class="n">generate</span><span class="p">(</span><span class="m">100</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="n">i</span><span class="p">);</span>
+  <span class="k">while</span> <span class="p">(</span><span class="kc">true</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">current_list</span> <span class="o">=</span> <span class="n">current_list</span><span class="p">.</span><span class="n">where</span><span class="p">((</span><span class="n">_</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="kc">true</span><span class="p">).</span><span class="n">toList</span><span class="p">();</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>That code can run forever.</p>
+
+<h4>It's Not All Bad</h4>
+
+<p>I'm kind of sad that my first post about Dart ended up being kind of a downer.  I'm having fun playing with the language.  It's good stuff, if you ask me.  You'll just have to wait for the followup articles where I show off the good parts…</p>
+        
+      </div>
+      <div class="meta-info" data-slug="throwing-darts/how-to-avoid-taking-a-dart-to-the-knee">
+  In: <a href="/throwing-darts">Throwing Darts</a>
+  <span>|</span>
+  Tags: <a href="/tags/Dart">Dart</a>, <a href="/tags/Iterators">Iterators</a> &amp; <a href="/tags/Syntax">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/throwing-darts/how-to-avoid-taking-a-dart-to-the-knee#comments">0 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (0)</span></h5>
+
+    <ol>
+      
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/throwing-darts/how-to-avoid-taking-a-dart-to-the-knee/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="8ZiTUsNfekHCorOyxNLefu5hbYP9Q1BDspMrIn26Iks=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthrowing-darts%2Fhow-to-avoid-taking-a-dart-to-the-knee" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fthrowing-darts%2Fhow-to-avoid-taking-a-dart-to-the-knee" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

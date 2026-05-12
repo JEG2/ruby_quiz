@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="The Ruby programming blog of James Edward Gray II (JEG2).  Any content of interest to Rubyists specifically, or developers in general, is fair game.">
+    <meta name="keywords"    content="Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1>Gray Soft</h1>
+            <span>The Ruby programming blog of James Edward Gray II (JEG2).</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+            <ul class="blog-list">
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      APR<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/a-stylish-critique"><h3 class="blog-title">A Stylish Critique</h3></a>
+          <p><em>Before getting started, I feel compelled to point out that my dictionary defines a critique as "a detailed analysis and assessment of something."  It seems like we often assume the worst of that word, but that's not how I intend it here.</em></p>
+
+<p>The Ruby community seems to be talking about style guides lately.  So let's talk about them.</p>
+
+<p>The fact is that you will have many choices if you go looking for style guides for our favorite language.  You can pick from:</p>
+
+<ul>
+<li><a href="http://www.zenspider.com/Languages/Ruby/QuickRef.html#general-tips">The old stuff</a></li>
+<li><a href="http://www.caliban.org/ruby/rubyguide.shtml#style">Google's way</a></li>
+<li><a href="https://github.com/styleguide/ruby">GitHub's popular guide</a></li>
+<li>Guides from respected Rubyists, like <a href="https://github.com/dkubb/styleguide/blob/master/RUBY-STYLE">Dan Kubb</a>
+</li>
+<li>One of the <a href="https://github.com/chneukirchen/styleguide/network">many</a> <a href="https://github.com/bbatsov/ruby-style-guide/network">forks</a> of the popular guides on GitHub</li>
+<li>And many <a href="http://www.google.com/search?rls=en&amp;q=ruby+style+guide&amp;ie=UTF-8&amp;oe=UTF-8">more</a>
+</li>
+</ul><p>It's obvious that Rubyists care about this topic.  Let's see what's out there and consider what really is and is not useful from these guides.</p>
+
+<h4>What is a style guide really, and why do we even have them?</h4>
+
+<p>Defining style guides is surprisingly tough.  I suspect they started out as formatting rules for code, but they have evolved pretty far beyond that now.</p>
+
+<p>Most guides include general conventions that the author feels are important when writing the language in question.  This can go all the way down to how to use certain constructs, opinions on what the author considers idiomatic, and syntax to outright avoid.</p><p><a href="/rubies-in-the-rough/a-stylish-critique">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/a-stylish-critique">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Style">Style</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/a-stylish-critique#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      MAR<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/learn-to-love-mix-ins"><h3 class="blog-title">Learn to Love Mix-ins</h3></a>
+          <p>The road to mastering Ruby is paved with understanding some key Ruby concepts.  Mix-ins are one of those concepts.  I'm sure everyone reading this knows the mechanics of how mix-ins work, but it pays to spend some time really thinking about all that mix-ins imply.  Let's do just that.</p>
+
+<h4>Adding a Type</h4>
+
+<p>One of the primary reasons that Ruby needs mix-ins is that it does not support multiple inheritance.  That leaves mix-ins as our only option for modeling hybrid objects.  It's the way Ruby programmers can add another type.</p>
+
+<p>That's a good way to think about it too:  adding a type.</p>
+
+<p>Take pagination, for example.  Pagination methods are usually defined to return an object like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">PaginatedCollection</span> <span class="o">&lt;</span> <span class="nb">Array</span>
+  <span class="c1"># ... paginated helpers defined here ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That's never really felt right to me though.</p>
+
+<p>First, inheriting from Ruby's core classes can come back to bite you in some scenarios.  The reason is that Ruby makes some performance tradeoffs to keep the core classes fast, but those tradeoffs mean that those classes don't always perfectly follow Ruby's rules.</p><p><a href="/rubies-in-the-rough/learn-to-love-mix-ins">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/learn-to-love-mix-ins">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Mix-ins">Mix-ins</a> &amp; <a href="/tags/Object%20Orientation">Object Orientation</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/learn-to-love-mix-ins#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>11</h4>
+    <span>
+      MAR<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/when-passion-goes-wrong"><h3 class="blog-title">When Passion Goes Wrong</h3></a>
+          <p>I usually stick to pretty code heavy topics in these articles, but please allow me to take a detour this time.  Our industry struggles with a problem that we don't discuss enough and I want to give it some air time.</p>
+
+<p>The fact is, we're pretty lousy at controlling stress.</p>
+
+<p>Let's look at why that is and some of the ways this problem manifests.  Remember, the first step is admitting that we have a problem.</p>
+
+<h4>We are a Passionate People</h4>
+
+<p>I really believe good programmers are passionate about what we do.  Our job can be pretty mentally taxing and, if you don't love it, it would be pretty rough to endure that day in and day out.</p>
+
+<p>Because of that, we generally find that the programmers who survive the climb are passionate folks.  Really think about that for a minute.  I'll give some examples.</p>
+
+<p>Kent Beck is a name I bet most of us know.  One of his great successes was actually writing a book of guidelines for how individual lines of code should be structured.  He had to care about the individual lines.  That's how far he had to go to manage his programming.  He's also done a ton for testing, for similar reasons.</p><p><a href="/rubies-in-the-rough/when-passion-goes-wrong">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/when-passion-goes-wrong">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Process">Process</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/when-passion-goes-wrong#comments">4 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      MAR<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/the-right-ruby-mix"><h3 class="blog-title">The Right Ruby Mix</h3></a>
+          <p>Ruby is a melting pot language.  It borrows ideas from many things that came before.  It combines several different programming philosophies.</p>
+
+<p>This aspect of the language can be a plus.  It means that Ruby is suited to multiple applications.  It also opens up some pragmatic shortcuts.  Even better, it sometimes encourages us to think about problems using a different lens of thought.</p>
+
+<p>Of course, this cuts both ways.  Ruby living at the intersection of many ideas does have some downsides.  First, there's more to learn than you find with some simpler languages.  There's a cost for the extra knowledge we have to track.  Even worse though, in my opinion, is that it's sometimes hard to know exactly what Ruby's style really is.</p>
+
+<h4>Going Off Script</h4>
+
+<p>One culture Ruby borrowed heavily from is that of the so called "Scripting Languages."  The main source of these features was Perl, in my opinion, but you can also find influences from Bash and other sources.  I found this comforting since I came to Ruby from Perl, but the truth is that <a href="https://twitter.com/#!/garybernhardt/status/172080693021655040">it bothers some people</a>.</p><p><a href="/rubies-in-the-rough/the-right-ruby-mix">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/the-right-ruby-mix">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Functional%20Programming">Functional Programming</a>, <a href="/tags/Object%20Orientation">Object Orientation</a> &amp; <a href="/tags/Scripting">Scripting</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/the-right-ruby-mix#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>22</h4>
+    <span>
+      FEB<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/refactoring-the-gilded-rose"><h3 class="blog-title">Refactoring:  The Gilded Rose</h3></a>
+          <p>It's time for another refactoring challenge.  This time we will attempt a fun problem called <a href="http://iamnotmyself.com/2011/02/13/refactor-this-the-gilded-rose-kata/">The Gilded Rose Code Kata</a>.</p>
+
+<p>That original description of the problem was for C# developers and it didn't have things us Rubyists love, like tests.  Luckily for us though, Jim Weirich <a href="https://github.com/jimweirich/gilded_rose_kata">ported the code to Ruby</a> and added the tests as he did so.  Let's use that version of the challenge.</p>
+
+<p>As always, I recommend you try the refactoring before you read what I have to say about it.  Being familiar with the problem will help you understand what we are dealing with below.</p>
+
+<h4>Setup</h4>
+
+<p>The first step in this problem is to get the code running locally.  I started by pulling down Jim's code from GitHub:</p>
+
+<pre><code>$ git clone https://github.com/jimweirich/gilded_rose_kata.git
+Cloning into gilded_rose_kata...
+remote: Counting objects: 114, done.
+remote: Compressing objects: 100% (46/46), done.
+remote: Total 114 (delta 71), reused 109 (delta 66)
+Receiving objects: 100% (114/114), 15.38 KiB | 13 KiB/s, done.
+Resolving deltas: 100% (71/71), done.
+$ cd gilded_rose_kata
+</code></pre><p><a href="/rubies-in-the-rough/refactoring-the-gilded-rose">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/refactoring-the-gilded-rose">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Refactoring">Refactoring</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/refactoring-the-gilded-rose#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>11</h4>
+    <span>
+      FEB<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/test-driving-an-algorithm-part-2"><h3 class="blog-title">Test Driving an Algorithm (Part 2)</h3></a>
+          <p>In the last article, I built a quick and dirty solution to PuzzleNode's <a href="http://puzzlenode.com/puzzles/11-hitting-rock-bottom">Hitting Rock Bottom</a> puzzle.  I didn't use specs, objects, or even multiple files.  In this article, I'll repeat the exercise but using all of those elements.  Let's see how that affects the results.</p>
+
+<h4>The Disciplined Approach</h4>
+
+<p>This time, I'll reign in my desire to push forward and solve the problem more carefully, without having to build a fully formed algorithm all at once.</p>
+
+<p>I still think the input is the right place to start.  I need to read in the units.  Let's add a spec for that in <code>spec/parser_spec.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"minitest/autorun"</span>
+<span class="nb">require</span> <span class="s2">"stringio"</span>
+
+<span class="nb">require</span> <span class="s2">"hitting_rock_bottom/parser"</span>
+
+<span class="n">describe</span> <span class="no">HittingRockBottom</span><span class="o">::</span><span class="no">Parser</span> <span class="k">do</span>
+  <span class="n">let</span><span class="p">(</span><span class="ss">:units</span><span class="p">)</span>  <span class="p">{</span> <span class="mi">42</span> <span class="p">}</span>
+  <span class="n">let</span><span class="p">(</span><span class="ss">:io</span><span class="p">)</span>     <span class="p">{</span> <span class="no">StringIO</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">to_s</span><span class="p">)</span> <span class="p">}</span>
+  <span class="n">let</span><span class="p">(</span><span class="ss">:parser</span><span class="p">)</span> <span class="p">{</span> <span class="no">HittingRockBottom</span><span class="o">::</span><span class="no">Parser</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">io</span><span class="p">)</span> <span class="p">}</span>
+
+  <span class="n">it</span> <span class="s2">"reads the units number from the beginning of the stream"</span> <span class="k">do</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">units</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="n">units</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>If you haven't seen the standard <code>stringio</code> library before, it simply wraps a <code>String</code> with an <code>IO</code> interface.  That's will allow me to call <code>gets()</code> and other <code>IO</code> methods on it in my implementation.  It's perfect for tests like this.</p><p><a href="/rubies-in-the-rough/test-driving-an-algorithm-part-2">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/test-driving-an-algorithm-part-2">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Iterators">Iterators</a>, <a href="/tags/Test-Driven%20Development">Test-Driven Development</a> &amp; <a href="/tags/Syntax">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/test-driving-an-algorithm-part-2#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      FEB<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/test-driving-an-algorithm-part-1"><h3 class="blog-title">Test Driving an Algorithm (Part 1)</h3></a>
+          <p>I want to take a look at some of the differences between Cowboy Coding and Test-Driven Development.  To do that, let's solve a problem both ways and see what we can learn from the exercise.</p>
+
+<h4>A Puzzle</h4>
+
+<p>I needed some random problem to solve in this article and <a href="http://puzzlenode.com/">the PuzzleNode site</a> is pretty handy for that.  Two programmers I've been working with have recently experimented with problem number 11, <a href="http://puzzlenode.com/puzzles/11-hitting-rock-bottom">Hitting Rock Bottom</a>, so I am familiar with it.  Let's use that.</p>
+
+<p>You will probably want to read through the challenge before finishing this article.  You may even want to try solving it yourself, just so you'll be more familiar with what I am doing here.  The short, short story is that this problem is about simulating the flow of water into a cave for a fixed amount of time and then measuring the depth at each point.  It doesn't take too long to solve.</p>
+
+<h5>Setup</h5>
+
+<p>Let's setup a project.  I created a few directories and pulled down the data files given with the problem:</p>
+
+<pre><code>$ mkdir -p hitting_rock_bottom/{bin,data,lib,spec}
+$ cd hitting_rock_bottom/data/
+$ for f in simple_cave.txt simple_out.txt complex_cave.txt
+&gt; do
+&gt;   curl --silent -O \
+&gt;   "http://puzzlenode.com/puzzles/11-hitting-rock-bottom/attachments/$f"
+&gt; done
+$ cd ..
+</code></pre><p><a href="/rubies-in-the-rough/test-driving-an-algorithm-part-1">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/test-driving-an-algorithm-part-1">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Test-Driven%20Development">Test-Driven Development</a> &amp; <a href="/tags/Unix%20Shells">Unix Shells</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/test-driving-an-algorithm-part-1#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      JAN<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/iteration-patterns"><h3 class="blog-title">Iteration Patterns</h3></a>
+          <p>I love studying how the human brain works.  It's an amazing biological machine capable of impressive feats.  Of course, it also has its quirks.</p>
+
+<p>For example, the brain is a terrific pattern matcher.  That's probably one of its favorite activities.  It wants to do this so much that it will often even <a href="http://en.wikipedia.org/wiki/Pareidolia">find patterns that aren't there</a>.</p>
+
+<p>While this "feature" of your brain can get you into trouble, you can also make it work for you.  Some parts of programming really are about patterns.  If you prime your brain with the right data, it will just take over and do one of the things it does best.</p>
+
+<h4>How I Teach Iterators</h4>
+
+<p>One evening, at a post Ruby conference dinner, Glenn Vanderburg and I had a lengthy discussion about iterators and patterns.  During this discussion we nailed down a plan for how the iterators could be taught.</p>
+
+<p>I know that we've both used the strategy we came up with in multiple Ruby trainings and we have both seen it work wonders.  This is hands down the best way to learn the iterators, in my opinion.</p><p><a href="/rubies-in-the-rough/iteration-patterns">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/iteration-patterns">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Iterators">Iterators</a> &amp; <a href="/tags/Patterns">Patterns</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/iteration-patterns#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>13</h4>
+    <span>
+      JAN<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/about-this-blog/rubies-in-the-rough"><h3 class="blog-title">Rubies in the Rough</h3></a>
+          <p><em>[<strong>Update</strong>:  the Rubies in the Rough articles were originally available by subscription, but they are now free <a href="/rubies-in-the-rough">on this blog</a>.]</em></p>
+
+<p>I know this blog has been quiet for quite some time now, but I'm still writing about Ruby.  In fact, I'm very excited about a new series of articles I am producing called <a href="/rubies-in-the-rough">Rubies in the Rough</a>.</p>
+
+<p>In that series, I am working hard not to teach the language or syntax or anything else that's trivial, but the thought processes behind how I program Ruby.  I think this is some of the most important work I've ever done for Ruby.  Anyone can learn a few keywords, but understanding how to think about problems and the solutions we code for them is key, in my opinion.</p>
+
+<p>This new series isn't free, but it is a steal.  It works out to two bucks an article and I often write close to 20 printed pages.  This is some serious content.</p>
+
+<p>If you want to learn how I think about programming, do yourself a favor and subscribe to <a href="/rubies-in-the-rough">Rubies in the Rough</a>.  It can teach you to see programming challenges as I see them and loan you my confidence as you solve them.</p>
+        </div>
+        <div class="meta-info" data-slug="about-this-blog/rubies-in-the-rough">
+  In: <a href="/about-this-blog">About This Blog</a>
+  <span>|</span>
+  Tags: <a href="/tags/Blogging">Blogging</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/about-this-blog/rubies-in-the-rough#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>11</h4>
+    <span>
+      JAN<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/experimenting-with-data"><h3 class="blog-title">Experimenting With DATA</h3></a>
+          <p>In the last article, I talked about the importance of a culture that encourages experimentation.  It's hard to fiddle with something and not gain a better understanding of how it works.  That knowledge is valuable to us programmers.  I mentioned though that the way Perl programmers experiment is not the same way us Rubyists do it.  Let me show you some actual Ruby experimentation I've witnessed over the years…</p>
+
+<h4>Executing Your Email</h4>
+
+<p>Some of Ruby's features are fairly obscure.  Even worse, some of us who use those obscure features try to bend them to even stranger purposes.  This is one way Rubyists like to experiment.  Ironically, the features I'm going to talk about in this article are inherited from Perl.</p>
+
+<p>Ruby can literally use your email as an executable program.  Assume I have the following saved in a file called <code>email.txt</code>:</p>
+
+<pre><code>Dear Nuby:
+
+I just thought you would like to know what the Hello World program looks
+like in Ruby.  Here's the code:
+
+#!/usr/bin/env ruby -w
+
+puts "Hello world!"
+
+__END__
+
+I hope the simplicity of that inspires you to learn more.
+
+May Ruby Be With You,
+Ruby Jedi
+</code></pre><p><a href="/rubies-in-the-rough/experimenting-with-data">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/experimenting-with-data">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Experimentation">Experimentation</a> &amp; <a href="/tags/Scripting">Scripting</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/experimenting-with-data#comments">0 Comments</a>
+</div>
+
+      </li>
+</ul>
+
+<div class="pagination text-center"><ul><li class="previous_page"><a class="previous_page" rel="prev" href="/?page=3">&#8592; Previous</a></li> <li><a rel="start" href="/?page=1">1</a></li> <li><a href="/?page=2">2</a></li> <li><a rel="prev" href="/?page=3">3</a></li> <li class="active"><a class="active">4</a></li> <li><a rel="next" href="/?page=5">5</a></li> <li><a href="/?page=6">6</a></li> <li><a href="/?page=7">7</a></li> <li><a href="/?page=8">8</a></li> <li><a href="/?page=9">9</a></li> <li class="disabled"><a>&hellip;</a></li> <li><a href="/?page=13">13</a></li> <li><a href="/?page=14">14</a></li> <li class="next"><a class="next" rel="next" href="/?page=5">Next &#8594;</a></li></ul></div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

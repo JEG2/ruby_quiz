@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rusting / Which Types to Type</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Just a quick note about how much Rust knows about my code without me even telling it.">
+    <meta name="keywords"    content="Rust, Style, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rusting/which-types-to-type/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rusting">Rusting</a></h1>
+            <span>The section where I examine what I am learning when compiling Rust code.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>27</h4>
+    <span>
+      AUG<br>
+      2014
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Which Types to Type</h3>
+        
+        <p>I've mentioned before that I'm writing some Rust code, specifically an RPN calculator as a simple exercise.  I'm going to dump the code here so we can discuss one aspect of it, but do remember that I'm very new to Rust and this code could surely be better:</p>
+
+<div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">fmt</span><span class="p">;</span>
+<span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">os</span><span class="p">;</span>
+
+<span class="k">struct</span> <span class="n">Stack</span> <span class="p">{</span>
+    <span class="n">numbers</span><span class="o">:</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="k">f64</span><span class="o">&gt;</span>
+<span class="p">}</span>
+<span class="k">impl</span> <span class="n">Stack</span> <span class="p">{</span>
+    <span class="k">fn</span> <span class="n">new</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Stack</span> <span class="p">{</span>
+        <span class="n">Stack</span><span class="p">{</span><span class="n">numbers</span><span class="o">:</span> <span class="n">vec</span><span class="o">!</span><span class="p">[]}</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">is_empty</span><span class="p">(</span><span class="o">&amp;</span><span class="n">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">bool</span> <span class="p">{</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">is_empty</span><span class="p">()</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">push</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">,</span> <span class="n">number</span><span class="o">:</span> <span class="k">f64</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">number</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">f64</span> <span class="p">{</span>
+        <span class="o">*</span><span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">last</span><span class="p">().</span><span class="n">expect</span><span class="p">(</span><span class="s">"Stack empty."</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">add</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">)</span>      <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">_do_binary_operation</span><span class="p">(</span><span class="o">|</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="o">|</span> <span class="n">l</span> <span class="o">+</span> <span class="n">r</span><span class="p">);</span> <span class="p">}</span>
+    <span class="k">fn</span> <span class="n">subtract</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">)</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">_do_binary_operation</span><span class="p">(</span><span class="o">|</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="o">|</span> <span class="n">l</span> <span class="o">-</span> <span class="n">r</span><span class="p">);</span> <span class="p">}</span>
+    <span class="k">fn</span> <span class="n">multiply</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">)</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">_do_binary_operation</span><span class="p">(</span><span class="o">|</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="o">|</span> <span class="n">l</span> <span class="o">*</span> <span class="n">r</span><span class="p">);</span> <span class="p">}</span>
+    <span class="k">fn</span> <span class="n">divide</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">)</span>   <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">_do_binary_operation</span><span class="p">(</span><span class="o">|</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="o">|</span> <span class="n">l</span> <span class="o">/</span> <span class="n">r</span><span class="p">);</span> <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">_do_binary_operation</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">,</span> <span class="n">operation</span><span class="o">:</span> <span class="o">|</span><span class="k">f64</span><span class="p">,</span> <span class="k">f64</span><span class="o">|</span> <span class="o">-&gt;</span> <span class="k">f64</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="n">r</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">pop</span><span class="p">().</span><span class="n">expect</span><span class="p">(</span><span class="s">"Stack underflow."</span><span class="p">);</span>
+        <span class="k">let</span> <span class="n">l</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">pop</span><span class="p">().</span><span class="n">expect</span><span class="p">(</span><span class="s">"Stack underflow."</span><span class="p">);</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">operation</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="k">impl</span> <span class="n">fmt</span><span class="o">::</span><span class="n">Show</span> <span class="k">for</span> <span class="n">Stack</span> <span class="p">{</span>
+    <span class="k">fn</span> <span class="n">fmt</span><span class="p">(</span><span class="o">&amp;</span><span class="n">self</span><span class="p">,</span> <span class="n">f</span><span class="o">:</span> <span class="o">&amp;</span><span class="k">mut</span> <span class="n">fmt</span><span class="o">::</span><span class="n">Formatter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmt</span><span class="o">::</span><span class="n">Result</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="k">mut</span> <span class="n">s</span> <span class="o">=</span> <span class="n">String</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+        <span class="k">let</span> <span class="k">mut</span> <span class="n">i</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">len</span><span class="p">();</span>
+        <span class="k">for</span> <span class="n">number</span> <span class="n">in</span> <span class="n">self</span><span class="p">.</span><span class="n">numbers</span><span class="p">.</span><span class="n">iter</span><span class="p">()</span> <span class="p">{</span>
+            <span class="n">i</span> <span class="o">-=</span> <span class="m">1</span><span class="p">;</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="o">&amp;</span><span class="n">format</span><span class="o">!</span><span class="p">(</span><span class="s">"{}: {}</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">number</span><span class="p">));</span>
+        <span class="p">}</span>
+        <span class="n">s</span><span class="p">.</span><span class="n">pop_char</span><span class="p">();</span>
+        <span class="n">write</span><span class="o">!</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s">"{}"</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="n">Tokenizer</span> <span class="p">{</span>
+    <span class="n">tokens</span><span class="o">:</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="n">i</span><span class="o">:</span>      <span class="k">uint</span>
+<span class="p">}</span>
+<span class="k">impl</span> <span class="n">Tokenizer</span> <span class="p">{</span>
+    <span class="k">fn</span> <span class="n">new</span><span class="p">(</span><span class="n">expression</span><span class="o">:</span> <span class="o">&amp;</span><span class="k">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tokenizer</span> <span class="p">{</span>
+        <span class="n">Tokenizer</span><span class="p">{</span>
+          <span class="n">tokens</span><span class="o">:</span> <span class="n">expression</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="o">|</span><span class="n">c</span><span class="o">:</span> <span class="n">char</span><span class="o">|</span> <span class="n">c</span><span class="p">.</span><span class="n">is_whitespace</span><span class="p">())</span>
+                            <span class="p">.</span><span class="n">map</span><span class="p">(</span><span class="o">|</span><span class="n">s</span><span class="o">|</span> <span class="n">s</span><span class="p">.</span><span class="n">to_string</span><span class="p">())</span>
+                            <span class="p">.</span><span class="n">collect</span><span class="p">(),</span>
+          <span class="n">i</span><span class="o">:</span>      <span class="m">0</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">has_next_token</span><span class="p">(</span><span class="o">&amp;</span><span class="n">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">bool</span> <span class="p">{</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">self</span><span class="p">.</span><span class="n">tokens</span><span class="p">.</span><span class="n">len</span><span class="p">()</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">next_token</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="o">&amp;</span><span class="k">str</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="o">!</span><span class="n">self</span><span class="p">.</span><span class="n">has_next_token</span><span class="p">()</span> <span class="p">{</span> <span class="k">fail</span><span class="o">!</span><span class="p">(</span><span class="s">"Tokens exhausted."</span><span class="p">)</span> <span class="p">}</span>
+
+        <span class="k">let</span> <span class="n">token</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">tokens</span><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">i</span><span class="p">].</span><span class="n">as_slice</span><span class="p">();</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">i</span>   <span class="o">+=</span> <span class="m">1</span><span class="p">;</span>
+        <span class="n">token</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="n">RPNCalculator</span> <span class="p">{</span>
+    <span class="n">stack</span><span class="o">:</span>  <span class="n">Stack</span><span class="p">,</span>
+    <span class="n">tokens</span><span class="o">:</span> <span class="n">Tokenizer</span>
+<span class="p">}</span>
+<span class="k">impl</span> <span class="n">RPNCalculator</span> <span class="p">{</span>
+    <span class="k">fn</span> <span class="n">new</span><span class="p">(</span><span class="n">stack</span><span class="o">:</span> <span class="n">Stack</span><span class="p">,</span> <span class="n">tokens</span><span class="o">:</span> <span class="n">Tokenizer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RPNCalculator</span> <span class="p">{</span>
+        <span class="n">RPNCalculator</span><span class="p">{</span><span class="n">stack</span><span class="o">:</span> <span class="n">stack</span><span class="p">,</span> <span class="n">tokens</span><span class="o">:</span> <span class="n">tokens</span><span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">fn</span> <span class="n">calculate</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">f64</span> <span class="p">{</span>
+        <span class="k">while</span> <span class="n">self</span><span class="p">.</span><span class="n">tokens</span><span class="p">.</span><span class="n">has_next_token</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">let</span> <span class="n">token</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">tokens</span><span class="p">.</span><span class="n">next_token</span><span class="p">();</span>
+            <span class="k">if</span> <span class="o">!</span><span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">is_empty</span><span class="p">()</span> <span class="p">{</span>
+                <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"{}"</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"T: {}</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">token</span><span class="p">);</span>
+            <span class="k">match</span> <span class="n">token</span> <span class="p">{</span>
+                <span class="s">"+"</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">add</span><span class="p">();</span> <span class="p">}</span>
+                <span class="s">"-"</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">subtract</span><span class="p">();</span> <span class="p">}</span>
+                <span class="s">"*"</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">multiply</span><span class="p">();</span> <span class="p">}</span>
+                <span class="s">"/"</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">divide</span><span class="p">();</span> <span class="p">}</span>
+                <span class="n">n</span>   <span class="o">=&gt;</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">from_str</span><span class="p">(</span><span class="n">n</span><span class="p">).</span><span class="n">expect</span><span class="p">(</span><span class="s">"Not a number."</span><span class="p">));</span> <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="o">!</span><span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">is_empty</span><span class="p">()</span> <span class="p">{</span>
+            <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"{}</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">result</span><span class="p">()</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">let</span>     <span class="n">expression</span> <span class="o">=</span> <span class="n">os</span><span class="o">::</span><span class="n">args</span><span class="p">();</span>
+    <span class="k">let</span>     <span class="n">stack</span>      <span class="o">=</span> <span class="n">Stack</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+    <span class="k">let</span>     <span class="n">tokenizer</span>  <span class="o">=</span> <span class="n">Tokenizer</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="n">expression</span><span class="p">[</span><span class="m">1</span><span class="p">].</span><span class="n">as_slice</span><span class="p">());</span>
+    <span class="k">let</span> <span class="k">mut</span> <span class="n">calculator</span> <span class="o">=</span> <span class="n">RPNCalculator</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">);</span>
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"{}"</span><span class="p">,</span> <span class="n">calculator</span><span class="p">.</span><span class="n">calculate</span><span class="p">());</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Rust has <a href="http://en.wikipedia.org/wiki/Type_inference">type inference</a> meaning that it can often guess which type a given variable will hold.  I haven't used many languages with this feature, so I'm not sure just how good Rust's implementation is compared to others, but it sure seems dynamite to me so far.</p>
+
+<p>Just counting bare <code>let</code> statements, I'm using at least 10 variables that have no explicit type specification.  There are many more in closures and passed values.  Consider this line:</p>
+
+<div class="highlight highlight-rust"><pre><span class="n">n</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="n">self</span><span class="p">.</span><span class="n">stack</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">from_str</span><span class="p">(</span><span class="n">n</span><span class="p">).</span><span class="n">expect</span><span class="p">(</span><span class="s">"Not a number."</span><span class="p">));</span> <span class="p">}</span>
+</pre></div>
+
+<p>The function <code>from_str()</code> returns something like <code>Option&lt;&amp;N&gt;</code>, where <code>N</code> is a primitive numeric type.  Then <code>expect()</code> reduces that to <code>N</code> (from <code>Some(N)</code>) and I guess Rust figured out <code>N</code> had to be a float because it's handed off to this method definition:</p>
+
+<div class="highlight highlight-rust"><pre><span class="k">fn</span> <span class="n">push</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span> <span class="n">self</span><span class="p">,</span> <span class="n">number</span><span class="o">:</span> <span class="k">f64</span><span class="p">)</span> <span class="p">{</span>
+</pre></div>
+
+<p>I may have exactly how it figured all of that out wrong, but the end result is still awesome to me.</p>
+
+<p>So which types do you really need?  I've played around a little and here's what seems to work for me:  declare the types of parameters and return values in function definitions.  The rest mostly seems to take care of itself.</p>
+
+<p>There are exceptions of course.  You don't seem to need types on the <code>self</code> used in a method definition.  The documentation is written without those and I've just copied that style.  Also, occasionally the compiler will insist your clarify the type of a closure variable or <code>let</code> assignment.  I add those only when prodded though and that seems quite rare so far.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="rusting/which-types-to-type">
+  In: <a href="/rusting/">Rusting</a>
+  <span>|</span>
+  Tags: <a href="/tags/Rust/">Rust</a> &amp; <a href="/tags/Style/">Style</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rusting/which-types-to-type#comments">0 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (0)</span></h5>
+
+    <ol>
+      
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

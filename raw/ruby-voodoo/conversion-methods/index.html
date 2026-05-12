@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Ruby Voodoo / Conversion Methods</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="There are quite a few things to know about the simple type conversion methods in Ruby.">
+    <meta name="keywords"    content="tips and tricks, APIs, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/ruby-voodoo/conversion-methods/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/ruby-voodoo">Ruby Voodoo</a></h1>
+            <span>Deep dives into random corners of my favorite programming language.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>6</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Conversion Methods</h3>
+        
+        <p>I want to take a step back from all the syntax I've been covering lately and just talk about some simple methods in Ruby's core.  Ruby ships with so many great helpers, it's often hard to keep track of what everything can do.  Specifically, let's talk about the type conversion methods.</p>
+
+<p>I assume we all make calls to <code>to_s()</code> and <code>to_i()</code> regularly:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="mi">255</span><span class="o">.</span><span class="n">to_s</span>    <span class="c1"># =&gt; "255"</span>
+<span class="s2">"255"</span><span class="o">.</span><span class="n">to_i</span>  <span class="c1"># =&gt; 255</span>
+</pre></div>
+
+<p>There shouldn't be any surprises there.  Even these two simple methods can do more though.  They make it possible to convert to and from various numeric bases.  For example, here are the same conversions into and out of base 16 (hexadecimal):</p>
+
+<div class="highlight highlight-ruby"><pre><span class="mi">255</span><span class="o">.</span><span class="n">to_s</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>   <span class="c1"># =&gt; "ff"</span>
+<span class="s2">"ff"</span><span class="o">.</span><span class="n">to_i</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>  <span class="c1"># =&gt; 255</span>
+</pre></div>
+
+<p>Ruby has other ways to do these same conversions.  Here are two unusual methods (beginning with capital letters) that are similar:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">String</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>     <span class="c1"># =&gt; "255"</span>
+<span class="nb">Integer</span><span class="p">(</span><span class="s2">"255"</span><span class="p">)</span>  <span class="c1"># =&gt; 255</span>
+</pre></div>
+
+<p>I'll be honest and tell you that I don't really find <code>String()</code> useful as it just calls <code>to_s()</code> for you, but <code>Integer()</code> is a different story.  First of all, <code>to_i()</code> is very lenient about what it converts while <code>Integer()</code> is more strict:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">p</span> <span class="s2">"C#"</span><span class="o">.</span><span class="n">to_i</span>
+<span class="c1"># &gt;&gt; 0</span>
+<span class="nb">Integer</span><span class="p">(</span><span class="s2">"C#"</span><span class="p">)</span>
+<span class="c1"># ~&gt; -:5:in `Integer': invalid value for Integer: "C#" (ArgumentError)</span>
+</pre></div>
+
+<p>That can be handy when you want to be sure you you have a number.</p>
+
+<p>Now while <code>Integer()</code> must be passed a number, it understands numbers in all of the native formats Ruby does:  decimal, octal, hexadecimal, and binary.  In comparison, <code>to_i()</code> just understands decimal integers:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="mi">255</span>                    <span class="c1"># =&gt; 255</span>
+<span class="mo">0377</span>                   <span class="c1"># =&gt; 255</span>
+<span class="mh">0xFF</span>                   <span class="c1"># =&gt; 255</span>
+<span class="m-Bin">0b11111111</span>             <span class="c1"># =&gt; 255</span>
+
+<span class="nb">Integer</span><span class="p">(</span><span class="s2">"255"</span><span class="p">)</span>         <span class="c1"># =&gt; 255</span>
+<span class="nb">Integer</span><span class="p">(</span><span class="s2">"0377"</span><span class="p">)</span>        <span class="c1"># =&gt; 255</span>
+<span class="nb">Integer</span><span class="p">(</span><span class="s2">"0xFF"</span><span class="p">)</span>        <span class="c1"># =&gt; 255</span>
+<span class="nb">Integer</span><span class="p">(</span><span class="s2">"0b11111111"</span><span class="p">)</span>  <span class="c1"># =&gt; 255</span>
+
+<span class="s2">"255"</span><span class="o">.</span><span class="n">to_i</span>             <span class="c1"># =&gt; 255</span>
+<span class="s2">"0377"</span><span class="o">.</span><span class="n">to_i</span>            <span class="c1"># =&gt; 377</span>
+<span class="s2">"0xFF"</span><span class="o">.</span><span class="n">to_i</span>            <span class="c1"># =&gt; 0</span>
+<span class="s2">"0b11111111"</span><span class="o">.</span><span class="n">to_i</span>      <span class="c1"># =&gt; 0</span>
+</pre></div>
+
+<p>If you want to be sure you are passing in safe content to either method, you should probably verify the <code>String</code> contents with a regular expression before you make the call.</p>
+
+<p>There is a <code>Float()</code> method as well, but it doesn't give you much over <code>to_f()</code>.  The only significant difference is how they handle <code>nil</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">p</span> <span class="kp">nil</span><span class="o">.</span><span class="n">to_f</span>
+<span class="c1"># &gt;&gt; 0.0</span>
+<span class="nb">Float</span><span class="p">(</span><span class="kp">nil</span><span class="p">)</span>
+<span class="c1"># ~&gt; -:10:in `Float': can't convert nil into Float (TypeError)</span>
+</pre></div>
+
+<p>Numbers aren't the only thing we can convert in Ruby though.  Let's talk about <code>Array()</code>.  Ruby use to have a direct <code>to_a()</code> method on all objects, but it has been deprecated in Ruby 1.8:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="err">$</span> <span class="n">ruby</span> <span class="o">-</span><span class="n">ve</span> <span class="s1">'p 5.to_a'</span>
+<span class="n">ruby</span> <span class="mi">1</span><span class="o">.</span><span class="mi">8</span><span class="o">.</span><span class="mi">6</span> <span class="p">(</span><span class="mi">2008</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">11</span> <span class="n">patchlevel</span> <span class="mi">287</span><span class="p">)</span> <span class="o">[</span><span class="n">i686</span><span class="o">-</span><span class="n">darwin9</span><span class="o">.</span><span class="mi">4</span><span class="o">.</span><span class="mi">0</span><span class="o">]</span>
+<span class="o">-</span><span class="ss">e</span><span class="p">:</span><span class="mi">1</span><span class="p">:</span> <span class="ss">warning</span><span class="p">:</span> <span class="n">default</span> <span class="sb">`to_a' will be obsolete</span>
+<span class="sb">[5]</span>
+</pre></div>
+
+<p>And it's finally gone in Ruby 1.9:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="err">$</span> <span class="n">ruby_dev</span> <span class="o">-</span><span class="n">ve</span> <span class="s1">'p 5.to_a'</span>
+<span class="n">ruby</span> <span class="mi">1</span><span class="o">.</span><span class="mi">9</span><span class="o">.</span><span class="mi">0</span> <span class="p">(</span><span class="mi">2008</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">27</span> <span class="n">revision</span> <span class="mi">0</span><span class="p">)</span> <span class="o">[</span><span class="n">i386</span><span class="o">-</span><span class="n">darwin9</span><span class="o">.</span><span class="mi">5</span><span class="o">.</span><span class="mi">0</span><span class="o">]</span>
+<span class="o">-</span><span class="ss">e</span><span class="p">:</span><span class="mi">1</span><span class="ss">:in</span> <span class="sb">`&lt;main&gt;': undefined method `</span><span class="nb">to_a</span><span class="err">'</span> <span class="k">for</span> <span class="mi">5</span><span class="ss">:Fixnum</span> <span class="p">(</span><span class="no">NoMethodError</span><span class="p">)</span>
+</pre></div>
+
+<p>That leaves us with just <code>Array()</code>, but that's not a bad thing at all since it is very handy.  What makes <code>Array()</code> great is the three different behaviors it has on the objects you pass:</p>
+
+<ul>
+<li>It has no effect on an <code>Array</code> which is return unchanged</li>
+<li>It returns an empty <code>Array</code> when passed <code>nil</code>
+</li>
+<li>All other objects are returned wrapped in an <code>Array</code>
+</li>
+</ul><p>Here are examples of each of those:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">Array</span><span class="p">(</span><span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="o">]</span><span class="p">)</span>  <span class="c1"># =&gt; [1, 2, 3]</span>
+<span class="nb">Array</span><span class="p">(</span><span class="kp">nil</span><span class="p">)</span>        <span class="c1"># =&gt; []</span>
+<span class="nb">Array</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>          <span class="c1"># =&gt; [5]</span>
+</pre></div>
+
+<p>These simple rules mean that you can count on an <code>Array</code> being returned from <code>Array()</code>, no matter what you pass it.  Thus it is safe to call any <code>Array</code> methods on the result, including iterators.</p>
+
+<p>To give a more practical example, let's say you have some parameter your Rails application is prepared to receive.  You may receive any number of items in this parameter:  zero, one, or many.  You can process them with a simple:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">Array</span><span class="p">(</span><span class="n">params</span><span class="o">[</span><span class="ss">:choices</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">choice</span><span class="o">|</span>
+  <span class="c1"># process choice here...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>There's one last conversion method that I make regular use of and it is <code>Hash[]</code>.  Note the brackets there as they aren't parentheses like the other methods we've been talking about.  This one is a class method on <code>Hash</code>.</p>
+
+<p>This method is very simple in function.  It takes an even number of arguments and creates a <code>Hash</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">Hash</span><span class="o">[</span><span class="s2">"a"</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"b"</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span>  <span class="c1"># =&gt; {"a"=&gt;1, "b"=&gt;2}</span>
+</pre></div>
+
+<p>At first glance, that doesn't seem to gain us much over the normal <code>Hash</code> literal syntax of <code>{ … }</code>.  However, this is a method call we can use to build a <code>Hash</code> and that means we can apply the normal tricks of method calls to it, like splatting an <code>Array</code> of arguments:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">Hash</span><span class="o">[*</span><span class="sx">%w[a 1 b 2]</span><span class="o">]</span>  <span class="c1"># =&gt; {"a"=&gt;"1", "b"=&gt;"2"}</span>
+</pre></div>
+
+<p>That opens up all kinds of possibilities for converting from <code>Array</code> objects to <code>Hash</code> objects or for building iterations that result in a <code>Hash</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">h</span> <span class="o">=</span> <span class="no">Hash</span><span class="o">[*</span><span class="sx">%w[a 1 b 2 c 3]</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span> <span class="nb">Integer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">rescue</span> <span class="n">f</span> <span class="p">}</span><span class="o">]</span>
+<span class="nb">p</span> <span class="n">h</span>
+<span class="c1"># &gt;&gt; {"a"=&gt;1, "b"=&gt;2, "c"=&gt;3}</span>
+<span class="nb">p</span> <span class="no">Hash</span><span class="o">[*</span><span class="n">h</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="n">_</span><span class="p">,</span> <span class="n">n</span><span class="o">|</span> <span class="p">(</span><span class="n">n</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero?</span> <span class="p">}</span><span class="o">.</span><span class="n">flatten</span><span class="o">]</span>
+<span class="c1"># &gt;&gt; {"a"=&gt;1, "c"=&gt;3}</span>
+</pre></div>
+
+<p>Notice how we get a <code>Hash</code> out of the last line there when Ruby 1.8 would usually give us an <code>Array</code> of <code>Array</code> objects.  Ruby 1.9 modifies most <code>Hash</code> iterators to return a <code>Hash</code> though:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="err">$</span> <span class="n">ruby_dev</span> <span class="o">-</span><span class="n">ve</span> <span class="s1">'p({"a"=&gt;1, "b"=&gt;2, "c"=&gt;3}.select { |_, n| (n % 2).nonzero? })'</span>
+<span class="n">ruby</span> <span class="mi">1</span><span class="o">.</span><span class="mi">9</span><span class="o">.</span><span class="mi">0</span> <span class="p">(</span><span class="mi">2008</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">27</span> <span class="n">revision</span> <span class="mi">0</span><span class="p">)</span> <span class="o">[</span><span class="n">i386</span><span class="o">-</span><span class="n">darwin9</span><span class="o">.</span><span class="mi">5</span><span class="o">.</span><span class="mi">0</span><span class="o">]</span>
+<span class="p">{</span><span class="s2">"a"</span><span class="o">=&gt;</span><span class="mi">1</span><span class="p">,</span> <span class="s2">"c"</span><span class="o">=&gt;</span><span class="mi">3</span><span class="p">}</span>
+</pre></div>
+
+<p>Hopefully that gives you some fresh ideas about how you might handle simple conversions in the future.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="ruby-voodoo/conversion-methods">
+  In: <a href="/ruby-voodoo">Ruby Voodoo</a>
+  <span>|</span>
+  Tags: <a href="/tags/APIs">APIs</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-voodoo/conversion-methods#comments">0 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (0)</span></h5>
+
+    <ol>
+      
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/ruby-voodoo/conversion-methods/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="7rjFgqSKWOto13JMRThYyOuf84ZJ/wj9ntF8WLkU+pw=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fruby-voodoo%2Fconversion-methods" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fruby-voodoo%2Fconversion-methods" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

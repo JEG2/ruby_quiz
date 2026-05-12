@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / Decorators Verses the Mix-in</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="In this article I dig into a topic of recent interest to the Ruby object geeks to see if I can suss out the tradeoffs from both sides.">
+    <meta name="keywords"    content="thinking about code, software design, Mix-ins, Object Orientation, Patterns, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/decorators-verses-the-mix-in/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      MAY<br>
+      2012
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Decorators Verses the Mix-in</h3>
+        
+        <p>It is a neat time to be involved in the Ruby community, if you ask me.  A large portion of us are currently studying the techniques for doing good object oriented development.  We are looking at the ideas that have come before and trying to decide the best ways to apply those ideas to our favorite language.  This leads to blog posts, forum threads, and conference talks about what we are learning.  No matter what, we all gain from explorations like this.  Everybody wins as our collective knowledge grows.  We all deserve gold stars.</p>
+
+<p>So far, there's one point pretty much everyone agrees on:  composition should typically be preferred to inheritance.  The trickier part of that discussion though is deciding what composition looks like in Ruby.  Generally you see Rubyists comparing the merits of <a href="http://en.wikipedia.org/wiki/Decorator_pattern">decorators</a> and mix-ins.  <em>[<strong>Note</strong>:  the comments correctly pointed out that this was a bad use of the word "composition" on my part, to describe mix-ins.]</em>  There's <a href="https://groups.google.com/forum/?fromgroups#!topic/objects-on-rails/0-GTFdgPTLc">a very representative thread</a> on the excellent Objects on Rails mailing list.</p>
+
+<p>Much of time, decorators seem to come out ahead, but comparing the two is pretty complex.  In this article I want to add my opinions to the discussion.  Let's start by looking at some examples.</p>
+
+<h4>Decoration</h4>
+
+<p>Let's say that I have a simple server that just receives messages and displays what was sent:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"socket"</span>
+
+<span class="n">server</span> <span class="o">=</span> <span class="no">TCPServer</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"127.0.0.1"</span><span class="p">,</span> <span class="mi">61676</span><span class="p">)</span>
+<span class="no">Socket</span><span class="o">.</span><span class="n">accept_loop</span><span class="p">(</span><span class="n">server</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">connection</span><span class="p">,</span> <span class="n">_</span><span class="o">|</span>
+  <span class="k">while</span> <span class="p">(</span><span class="n">object_sent</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">gets</span><span class="p">)</span>
+    <span class="nb">puts</span> <span class="s2">"Received:  %p"</span> <span class="o">%</span> <span class="o">[</span><span class="n">object_sent</span><span class="o">]</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This is pretty crude.  It doesn't even handle concurrent connections, but it will work fine for the purposes of this example.</p>
+
+<p>We also need a simple client to send some messages to our server:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"socket"</span>
+
+<span class="n">server</span>         <span class="o">=</span> <span class="no">TCPSocket</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"127.0.0.1"</span><span class="p">,</span> <span class="mi">61676</span><span class="p">)</span>
+<span class="n">object_to_send</span> <span class="o">=</span> <span class="s2">"A message."</span>
+<span class="n">server</span><span class="o">.</span><span class="n">puts</span> <span class="n">object_to_send</span>
+</pre></div>
+
+<p>At this point I can:</p>
+
+<ol>
+<li>Start the server in one shell</li>
+<li>Run the client in a separate shell</li>
+<li>See output in the server's shell</li>
+</ol><p>The end result looks like this from the server's shell:</p>
+
+<pre><code>$ ruby server.rb
+Received:  "A message.\n"
+</code></pre>
+
+<p>That's nice, but let's say it's not quite what I want.  I can really just send <code>String</code> messages using this simple setup, but perhaps I would prefer to be able to send other Ruby objects, like an <code>Array</code> or <code>Hash</code>.</p>
+
+<p>Let's add that capability to our client and server.  I'll start that process by creating a <code>serialization.rb</code> file and defining a couple of decorators in there:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Serializer</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">socket</span><span class="p">)</span>
+    <span class="vi">@socket</span> <span class="o">=</span> <span class="n">socket</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">puts</span><span class="p">(</span><span class="o">*</span><span class="n">objects</span><span class="p">)</span>
+    <span class="n">objects</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">object</span><span class="o">|</span>
+      <span class="n">serialized</span> <span class="o">=</span> <span class="no">Marshal</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">object</span><span class="p">)</span>
+      <span class="vi">@socket</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="o">[</span><span class="n">serialized</span><span class="o">.</span><span class="n">length</span><span class="p">,</span> <span class="n">serialized</span><span class="o">].</span><span class="n">pack</span><span class="p">(</span><span class="s2">"NA*"</span><span class="p">))</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">class</span> <span class="nc">Deserializer</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">socket</span><span class="p">)</span>
+    <span class="vi">@socket</span> <span class="o">=</span> <span class="n">socket</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">gets</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">message</span> <span class="o">=</span> <span class="vi">@socket</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+      <span class="n">object_size</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">"N"</span><span class="p">)</span><span class="o">.</span><span class="n">first</span>
+      <span class="no">Marshal</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="vi">@socket</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">object_size</span><span class="p">))</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Both of these objects take a <code>Socket</code>, store it away for later use, then wrap the simple <code>IO</code> methods that my client and server are using to communicate.  The wrappers manage a very simple serialization process where we convert a Ruby object to a binary representation and then send the length in bytes followed by those bytes.  The other end can peek at the length, read that many bytes, and rehydrate the object.</p>
+
+<p>I've skimped on the error handling here to keep the code simple.  A more robust version of this code would need to make sure the serialized object length doesn't overflow the size of the number we're sending and handle the various networking errors that can occur.</p>
+
+<p>Now let's update the client to support serialization:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"socket"</span>
+
+<span class="n">require_relative</span> <span class="s2">"serialization"</span>
+
+<span class="n">server</span>         <span class="o">=</span> <span class="no">TCPSocket</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"127.0.0.1"</span><span class="p">,</span> <span class="mi">61676</span><span class="p">)</span>
+<span class="n">server</span>         <span class="o">=</span> <span class="no">Serializer</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">server</span><span class="p">)</span>  <span class="c1"># decorate the socket</span>
+<span class="n">object_to_send</span> <span class="o">=</span> <span class="sx">%w[A more complex message.]</span>
+<span class="n">server</span><span class="o">.</span><span class="n">puts</span> <span class="n">object_to_send</span>
+</pre></div>
+
+<p>Notice that, aside from the added <code>require_relative()</code> call and the switch to a more complex object to show off serialization, there's really just one new line here.  That line wraps the socket connection to the server in our decorator.  This replaces the default <code>puts()</code> logic with our more involved process.  That change actually takes effect on the last line of the client, but we didn't need to modify that code.  That's the whole idea behind decoration.</p>
+
+<p>The server is just as easy to update:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"socket"</span>
+
+<span class="n">require_relative</span> <span class="s2">"serialization"</span>
+
+<span class="n">server</span> <span class="o">=</span> <span class="no">TCPServer</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"127.0.0.1"</span><span class="p">,</span> <span class="mi">61676</span><span class="p">)</span>
+<span class="no">Socket</span><span class="o">.</span><span class="n">accept_loop</span><span class="p">(</span><span class="n">server</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">connection</span><span class="p">,</span> <span class="n">_</span><span class="o">|</span>
+  <span class="n">connection</span> <span class="o">=</span> <span class="no">Deserializer</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>  <span class="c1"># decorate the socket</span>
+  <span class="k">while</span> <span class="p">(</span><span class="n">object_sent</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">gets</span><span class="p">)</span>
+    <span class="nb">puts</span> <span class="s2">"Received:  %p"</span> <span class="o">%</span> <span class="o">[</span><span class="n">object_sent</span><span class="o">]</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Again, all we need to do is wrap the connection to our client with the decorator.  That replaces the <code>gets()</code> operation and we still didn't need to touch that code.</p>
+
+<p>If I run the server and client again, we can see that the <code>Array</code> does come through:</p>
+
+<pre><code>$ ruby server.rb
+Received:  ["A", "more", "complex", "message."]
+</code></pre>
+
+<p>It's time to admit that I purposefully selected this example to be something decorators are just perfect for.  They really excel at these layering-on-functionality tasks.  <a href="http://www.javaworld.com/javaworld/jw-12-2001/jw-1214-designpatterns.html">Java's IO class hierarchy</a> is built much like the code I just showed for exactly this reason.</p>
+
+<p>For comparison's sake though, let's switch to an example where I don't think decorators are as good of a fit, at least in Ruby.</p>
+
+<h4>Mixing It Up</h4>
+
+<p>I've shown an example very similar to this next one before, in <a href="/rubies-in-the-rough/learn-to-love-mix-ins">an article about mix-ins</a>, but let me flesh it out a bit more this time so we can really discuss why I handle it the way I do.</p>
+
+<p>Let's say that I have some not-quite-CSV data in a file:</p>
+
+<pre><code>"Name (last, first)",Job
+"Gray, James \"JEG2\"",Developer
+"Gray, Dana",Full-time Mommy
+"Gray, Summer","\"Cutie Pie\""
+</code></pre>
+
+<p>That data isn't really valid, according to the CSV standard.  It should be doubling quotes to escape them (<code>""</code>), not using backslashes (<code>\"</code>).</p>
+
+<p>I would like to read that data with the standard <code>CSV</code> library so I can take advantage of the things it can do for me, like parsing out the headers.  I want to use some code like the following:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"csv"</span>
+
+<span class="no">CSV</span><span class="o">.</span><span class="n">foreach</span><span class="p">(</span><span class="s2">"not_quite_csv.csv"</span><span class="p">,</span> <span class="ss">headers</span><span class="p">:</span> <span class="kp">true</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">row</span><span class="o">|</span>
+  <span class="nb">p</span> <span class="n">row</span><span class="o">.</span><span class="n">to_hash</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>But the <code>CSV</code> library doesn't recognize this format:</p>
+
+<pre><code>$ ruby read_csv.rb
+…: Missing or stray quote in line 2 (CSV::MalformedCSVError)
+…
+</code></pre>
+
+<p>To handle that, I would use a mix-in that fixes the data between the time when it is read and the time when <code>CSV</code> tries to parse it.  Let's code that up:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"csv"</span>
+
+<span class="k">module</span> <span class="nn">CSVNormalizer</span>
+  <span class="k">def</span> <span class="nf">gets</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="k">super</span>
+    <span class="k">if</span> <span class="n">line</span>
+      <span class="n">line</span><span class="o">.</span><span class="n">gsub!</span><span class="p">(</span><span class="sr">/"(?:\\\\|\\"|[^"])*"/</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">field</span><span class="o">|</span>
+        <span class="n">field</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="sr">/(?&lt;!\\)\\"/</span><span class="p">)</span> <span class="p">{</span> <span class="s1">'""'</span> <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="k">end</span>
+    <span class="n">line</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="nb">open</span><span class="p">(</span><span class="s2">"not_quite_csv.csv"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">file</span><span class="o">|</span>
+  <span class="n">file</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">CSVNormalizer</span><span class="p">)</span>
+  <span class="n">csv</span> <span class="o">=</span> <span class="no">CSV</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="ss">headers</span><span class="p">:</span> <span class="kp">true</span><span class="p">)</span>
+  <span class="n">csv</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">row</span><span class="o">|</span>
+    <span class="nb">p</span> <span class="n">row</span><span class="o">.</span><span class="n">to_hash</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p><code>CSVNormalizer</code> is pretty straight forward.  It just wraps <code>gets()</code> and gives me a place to do a few simple substitutions.</p>
+
+<p>Don't lose too much sleep over understanding the regular expressions I used there.  They just replace the escapes with the format CSV expects.</p>
+
+<p>In the lower chunk of code, I switched how I do the hand-off to <code>CSV</code>.  This lets me get a hold of the <code>File</code> object and <code>extend()</code> it before <code>CSV</code> tries to read from it.</p>
+
+<p>This solution isn't really complete, because it doesn't yet handle the multi-line fields that real CSV data can contain.  It does work for the data in my example though:</p>
+
+<pre><code>$ ruby read_csv.rb
+{"Name (last, first)"=&gt;"Gray, James \"JEG2\"", "Job"=&gt;"Developer"}
+{"Name (last, first)"=&gt;"Gray, Dana", "Job"=&gt;"Full-time Mommy"}
+{"Name (last, first)"=&gt;"Gray, Summer", "Job"=&gt;"\"Cutie Pie\""}
+</code></pre>
+
+<h4>The Decision</h4>
+
+<p>I said that the second example is better as a mix-in.  But why?</p>
+
+<p>I mean you could choose to solve it with a decorator, right?  Of course.  Let's do that to see how it goes.</p>
+
+<p>At first glance, it looks like we could get away with a few minor changes:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"csv"</span>
+
+<span class="k">class</span> <span class="nc">CSVNormalizer</span>  <span class="c1"># switch to a class</span>
+  <span class="c1"># store the IO for later use</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">io</span><span class="p">)</span>
+    <span class="vi">@io</span> <span class="o">=</span> <span class="n">io</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">gets</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="vi">@io</span><span class="o">.</span><span class="n">gets</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>  <span class="c1"># forward to the IO</span>
+    <span class="k">if</span> <span class="n">line</span>
+      <span class="n">line</span><span class="o">.</span><span class="n">gsub!</span><span class="p">(</span><span class="sr">/"(?:\\\\|\\"|[^"])*"/</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">field</span><span class="o">|</span>
+        <span class="n">field</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="sr">/(?&lt;!\\)\\"/</span><span class="p">)</span> <span class="p">{</span> <span class="s1">'""'</span> <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="k">end</span>
+    <span class="n">line</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="nb">open</span><span class="p">(</span><span class="s2">"not_quite_csv.csv"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">file</span><span class="o">|</span>
+  <span class="n">file</span> <span class="o">=</span> <span class="no">CSVNormalizer</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>  <span class="c1"># decorate</span>
+  <span class="n">csv</span>  <span class="o">=</span> <span class="no">CSV</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="ss">headers</span><span class="p">:</span> <span class="kp">true</span><span class="p">)</span>
+  <span class="n">csv</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">row</span><span class="o">|</span>
+    <span class="nb">p</span> <span class="n">row</span><span class="o">.</span><span class="n">to_hash</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>If you run that code, it will probably seem to run the same.  But it's not equivalent.  In order to show you why, I need to modify my data to use different line endings:</p>
+
+<pre><code>$ ruby -pi -e 'gsub "\n", "\r\n"' not_quite_csv.csv
+</code></pre>
+
+<p>I'm on Unix, so I've switched the line endings to something I might have received from a Windows machine.  You would need to go the other way if you are on Windows, but the end result is that our decorator is now broken:</p>
+
+<pre><code>$ ruby read_csv.rb  # using the decorator
+…: Unquoted fields do not allow \r or \n (line 1). (CSV::MalformedCSVError)
+…
+</code></pre>
+
+<p>That's interesting, because when I switch to the mix-in, it can read this data just fine:</p>
+
+<pre><code>$ ruby read_csv.rb  # using the mix-in
+{"Name (last, first)"=&gt;"Gray, James \"JEG2\"", "Job"=&gt;"Developer"}
+{"Name (last, first)"=&gt;"Gray, Dana", "Job"=&gt;"Full-time Mommy"}
+{"Name (last, first)"=&gt;"Gray, Summer", "Job"=&gt;"\"Cutie Pie\""}
+</code></pre>
+
+<p>To know why this happens, you have to understand a little about how <code>CSV</code> works internally.  As you can see, this whole line ending issue is kind of annoying.  <code>CSV</code> tries to save you from needing to worry about that.  By default, it will attempt to guess your line endings.  You can always specify the ending manually if you need to, but a lot of times the guessing means that your program will just work without you taking any action.</p>
+
+<p>That's what's happening with the mix-in version.  No matter which line endings I feed it, <code>CSV</code> correctly guesses them and adapts.  It just works.</p>
+
+<p>Obviously we broke that in the decorator version, but how?  Well, under the hood, <code>CSV</code> has to peek ahead at the data to guess the endings.  It expects to be passed an <code>IO</code> object, so it calls on some <code>IO</code> methods to fetch some data and then reset the position pointer to where it was.</p>
+
+<p>Of course, this feature doesn't always work.  Sometimes you can't skip around in a stream like this.  Consider <code>STDIN</code> or a <code>Socket</code> for example.  So, if <code>CSV</code> cannot guess, it just defaults to the normal line endings for the current platform.  That's the best we can do with no information to go on and the user can always specify the line ending manually as needed.</p>
+
+<p>Now you can probably deduce why the decorator broken.  It's not a full <code>IO</code> stand-in.  We wrapped the method <code>CSV</code> needs to read data, but not the methods it uses to do the line ending guessing.  That means it has to give up a go with the platform default.</p>
+
+<p>All of this leads to the question:  could we fix that?  Sure.  One option is that we could delegate the needed methods manually.  Multiple methods are needed though, and if I wasn't the guy who wrote <code>CSV</code>, I wouldn't really know what they are.  Plus, they could change some day.  (That has actually happened.  The algorithm was changed at one point to use different methods so it would work with more <code>IO</code>-like objects.)  Given that, it's probably better to just forward any messages I don't want to wrap to the underlying <code>IO</code> object.  That's easy enough to do:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"csv"</span>
+
+<span class="k">class</span> <span class="nc">CSVNormalizer</span> <span class="o">&lt;</span> <span class="no">BasicObject</span>  <span class="c1"># make sure we delegate most calls</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">io</span><span class="p">)</span>
+    <span class="vi">@io</span> <span class="o">=</span> <span class="n">io</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">gets</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="vi">@io</span><span class="o">.</span><span class="n">gets</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">line</span>
+      <span class="n">line</span><span class="o">.</span><span class="n">gsub!</span><span class="p">(</span><span class="sr">/"(?:\\\\|\\"|[^"])*"/</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">field</span><span class="o">|</span>
+        <span class="n">field</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="sr">/(?&lt;!\\)\\"/</span><span class="p">)</span> <span class="p">{</span> <span class="s1">'""'</span> <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="k">end</span>
+    <span class="n">line</span>
+  <span class="k">end</span>
+
+  <span class="c1"># forward all other messages to the IO object</span>
+  <span class="k">def</span> <span class="nf">method_missing</span><span class="p">(</span><span class="nb">method</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+    <span class="vi">@io</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">method</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="nb">open</span><span class="p">(</span><span class="s2">"not_quite_csv.csv"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">file</span><span class="o">|</span>
+  <span class="n">file</span> <span class="o">=</span> <span class="no">CSVNormalizer</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+  <span class="n">csv</span>  <span class="o">=</span> <span class="no">CSV</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="ss">headers</span><span class="p">:</span> <span class="kp">true</span><span class="p">)</span>
+  <span class="n">csv</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">row</span><span class="o">|</span>
+    <span class="nb">p</span> <span class="n">row</span><span class="o">.</span><span class="n">to_hash</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>As the comments show, I only made two changes.  First, I explicitly inherited from <code>BasicObject</code> instead of accepting the default <code>Object</code> parent.  This means that my decorator responds to very few messages.  Almost all incoming messages will hit <code>method_missing()</code> because of that change.  The second change was to provide that <code>method_missing()</code> and have it push everything down to the underlying <code>IO</code>.  This does restore the line ending guessing functionality and get the decorator fully working:</p>
+
+<pre><code>$ ruby read_csv.rb  # using the decorator again with tricky line endings
+{"Name (last, first)"=&gt;"Gray, James \"JEG2\"", "Job"=&gt;"Developer"}
+{"Name (last, first)"=&gt;"Gray, Dana", "Job"=&gt;"Full-time Mommy"}
+{"Name (last, first)"=&gt;"Gray, Summer", "Job"=&gt;"\"Cutie Pie\""}
+</code></pre>
+
+<p>We now know what it takes build the equivalent decorator.  If we compare the two, I say the mix-in is superior in this case.  Here are my reasons:</p>
+
+<ul>
+<li>The whole point of the <code>BasicObject</code> and <code>method_missing()</code> trick is to do our own method dispatching here.  Why do that?  Ruby is better at that kind of thing than we are, so I would rather leave that task to the language whenever we can.  What do I mean by "better?"  Well, for one thing, we can use <code>super</code> when Ruby is doing the job.  For another, Ruby is going to be much faster when dispatching.  Rack (another good example of decorators) has a little of this latter problem.  As frameworks that use Rack, like Rails, move more and more functionality into middleware, the call stack just gets longer and longer.  This is the primary reason that they filter backtraces in Rails and it has slowed things down a little as incoming requests must pass through all of the layers.</li>
+<li>The decorator object I ended up creating lies about what it really is.  Consider methods like <code>class()</code>, <code>is_a?()</code>, and <code>ancestors()</code>.  These are all going to tell me that I have a <code>File</code> object in the case above.  That's only sort of accurate though.  I could probably drop <code>BasicObject</code>, in this case, but then the lies just change to leave out any mention of the hidden <code>File</code> object.  Compare that with the mix-in version which is fully reflection compliant.  It can tell you all about its "types" no matter how many there are.</li>
+</ul><p>Because of this, I tend to prefer mix-ins for cases where I am going to delegate an entire API.  I feel like the advantages are pretty clear for those cases.</p>
+
+<h4>Arguments for and Against Decorators</h4>
+
+<p>I'm not trying to say there's no good uses for decorators.  I've already provided some in this article.  Greg Brown gives an even more spirited defense of them in <a href="https://practicingruby.com/articles/disciplined-inheritance-1">Practicing Ruby 3.7</a>, which is probably the most detailed, Ruby focused discussion of these issues to date.  Greg is discussing higher level inheritance concepts in that article, but his examples largely boil down to an analysis of mix-ins and decorators.</p>
+
+<p>I think Greg has some good and not-so-good points.</p>
+
+<p>The best argument in favor of decorators, by far in my opinion, is the encapsulation issue.  I think we normally envision encapsulation as hiding our data from the outside world, but in this case we're talking more about hiding it from ourselves.  When you have some object with several mix-ins, how do we know that none of those methods have instance variable conflicts?  Heck, the methods could even be accidentally overriding each other with unrelated functionality if we're not careful with naming.  This could create some maddening bugs where things like the load order matter.  These are very real and tough issues.</p>
+
+<p>How often are we bitten by this encapsulation issue?  I wish I knew.  I think a strong test suite can help to reduce it.  I also imagine it's less of a problem when most of the API is written by a single team.  I'm guessing they would be more likely to catch misuses or impose naming conventions the protect themselves from these issues.  But in the world where we embrace the value of sending Pull Requests on GitHub to fix most problems, I'm not sure how much of this safety we can count on.</p>
+
+<p>I am less sold on the "bloated contracts" or "too many entry points" arguments that I see in many places, including Greg's post and the Objects on Rails thread I mentioned earlier.  The example everyone throws around is <code>ActiveRecord::Base</code> which does have a ton of mix-ins.  However, languages, libraries, and frameworks (like ActiveRecord) have different goals than we do for our application code.</p>
+
+<p>We want to keep application code as minimal as possible and expose even less than we write whenever possible.  This helps with many, many aspects of application development.</p>
+
+<p>As I mentioned though, languages, libraries, and frameworks have almost the opposite goals.  They want to cast their nets far and wide.  They expose a lot and let your code decide which pieces it needs to do its work.</p>
+
+<p>This makes sense when you think about it.  The more a library does for us, the less application code we end up writing.  That satisfies both aims.</p>
+
+<p>Even if you sympathize with the bloated contract argument, I'm not convinced that decorators do much for it.  Each individual object may respond to less messages, but is that going to save you from reading the documentation of all of those decorator classes?  It didn't save me a ton of memorization when I passed the Java certification, I can tell you that much.  The big API is still there, even if we do a better job of hiding it.</p>
+
+<p>Testability is another complaint I often see leveled at mix-ins that I'm skeptical of.  By way of example, let's test the mix-in I made earlier.  I created a <code>csv_spec.rb</code> file and added this code to it to get started:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">CSVNormalizer</span>
+  <span class="k">def</span> <span class="nf">gets</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="k">super</span>
+    <span class="k">if</span> <span class="n">line</span>
+      <span class="n">line</span><span class="o">.</span><span class="n">gsub!</span><span class="p">(</span><span class="sr">/"(?:\\\\|\\"|[^"])*"/</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">field</span><span class="o">|</span>
+        <span class="n">field</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="sr">/(?&lt;!\\)\\"/</span><span class="p">)</span> <span class="p">{</span> <span class="s1">'""'</span> <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="k">end</span>
+    <span class="n">line</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">describe</span> <span class="no">CSVNormalizer</span> <span class="k">do</span>
+  <span class="n">let</span><span class="p">(</span><span class="ss">:message_queue</span><span class="p">)</span> <span class="p">{</span> <span class="o">[</span> <span class="o">]</span> <span class="p">}</span>
+
+  <span class="k">def</span> <span class="nf">gets</span><span class="p">(</span><span class="o">*</span><span class="n">_</span><span class="p">)</span>
+    <span class="n">message_queue</span><span class="o">.</span><span class="n">shift</span>
+  <span class="k">end</span>
+
+  <span class="n">before</span> <span class="k">do</span>
+    <span class="kp">extend</span><span class="p">(</span><span class="no">CSVNormalizer</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="n">it</span> <span class="s2">"translates escaped quotes as they are read"</span> <span class="k">do</span>
+    <span class="n">message_queue</span> <span class="o">&lt;&lt;</span> <span class="s1">'"a \"quoted\" field"'</span>
+    <span class="nb">gets</span><span class="o">.</span><span class="n">should</span> <span class="n">eq</span><span class="p">(</span><span class="s1">'"a ""quoted"" field"'</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>As you can see, I just gave my example group the expected <code>gets()</code> method and then extended it with my <code>CSVNormalizer</code>.  From there I can test normally.  I don't feel like I'm jumping through a lot of extra hoops here compared to testing a normal object, but you be the judge.</p>
+
+<h4>The Winner Is…</h4>
+
+<p>I don't think we can definitively say that one approach is superior to the other in all cases.  I hope given compelling use cases for both in this article.</p>
+
+<p>Mix-ins seems to be the underdog in most of these discussions, but I'm not quite ready to write them off.  I hope I've shown that there are at least some things going for them.</p>
+
+<p>As with most things in programming, I think it pays to try to understand as many of these angles as we can and make the best choices we can on a case by case basis.</p>
+
+<p>The biggest question remaining for me is if we can do better at modeling large API's, like ActiveRecord, with the tools Ruby gives us.  Is there a good way to use composition there without the mix-ins?  I'm not sure.  Hopefully some Rubyist will improve on the formula and enlighten us.</p>
+
+<h4>Further Reading</h4>
+
+<p>If you really enjoy this kind of analysis about how to build objects, there are some terrific resources out there that you might want to take a deeper look at:</p>
+
+<ul>
+<li>
+<a href="http://www.pearsonhighered.com/educator/product/Smalltalk-Best-Practice-Patterns/9780134769042.page">Smalltalk Best Practice Patterns</a> can be expensive to pick up these days and you may need to learn a new language just to read it.  The truth is though that it's totally worth it.  I learned more about objects from this one book than probably all others combined.  While it doesn't cover these issues directly, it gave me a lot of the foundation that I use to think through these issues.</li>
+<li>
+<a href="https://groups.google.com/forum/#!forum/objects-on-rails">The Objects on Rails mailing list</a> started out as a place to give Avdi Grimm feedback for <a href="http://objectsonrails.com/">the ebook of the same name</a>.  Luckily, it seems to be sticking around even now that the book is out and, better yet, growing into the go-to source for these discussions in Rubyland.  Reading that list is pretty addictive for object geeks like me.</li>
+<li>
+<a href="http://designpatternsinruby.com/">Design Patterns in Ruby</a> does a great job of looking the various design patterns, like decorators, both in a traditional light and through Ruby colored glasses.  This can provide quite a bit of insight when it comes to adapting patterns from other languages.</li>
+</ul>
+        
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/decorators-verses-the-mix-in">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Mix-ins">Mix-ins</a>, <a href="/tags/Object%20Orientation">Object Orientation</a> &amp; <a href="/tags/Patterns">Patterns</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/decorators-verses-the-mix-in#comments">7 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (7)</span></h5>
+
+    <ol>
+        <li id="comment_522">
+    <div class="avatar"><img alt="Gregory Brown" height="70" src="http://www.gravatar.com/avatar/31e038e4e9330f6c75ccfd1fca8010ee?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="522">
+      <span class="c_name"><a href="https://github.com/sandal">Gregory Brown</a></span>
+      <span class="c_date">May 22nd, 2012</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/decorators-verses-the-mix-in#comment_522">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Hi James,</p>
+
+<p>Very interesting article. I'm sure I'll have more comments for you later, but for now I wanted to drop a link to an article I wrote back in 2009 which attempts to use BOTH decorators and mixins together :)</p>
+
+<p><a href="http://blog.rubybestpractices.com/posts/gregory/008-decorator-delegator-disco.html">http://blog.rubybestpractices.com/posts/gregory/008-decorator-delegator-disco.html</a></p>
+
+<p>I never really ended up using this pattern in production, which is a sign that it was probably overkill. But it attempts a middle of the road solution to this problem.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/decorators-verses-the-mix-in/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="LLrDXk/7EHx6JDCl6I9vjEX/xUgLuuoV0KfF7Toy6BQ=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="522" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_522" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_523">
+    <div class="avatar"><img alt="Gregory Brown" height="70" src="http://www.gravatar.com/avatar/31e038e4e9330f6c75ccfd1fca8010ee?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="523">
+      <span class="c_name"><a href="https://github.com/sandal">Gregory Brown</a></span>
+      <span class="c_date">May 22nd, 2012</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/decorators-verses-the-mix-in#comment_523">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Oh also, one important point:</p>
+
+<blockquote>
+<p>So far, there's one point pretty much everyone agrees on: composition should typically be preferred to inheritance. The trickier part of that discussion though is deciding what composition looks like in Ruby. Generally you see Rubyists comparing the merits of decorators and mix-ins. </p>
+</blockquote>
+
+<p>I would strongly suggest here that mixins should not be considered a form of composition at all. I would say that a couple defining characteristics of composition are the following:</p>
+
+<ol>
+<li>A composite object achieves code reuse through delegation (automatic or manual) to well-encapsulated sub-objects.</li>
+<li>Methods defined by the composite are invisible to its sub-objects (unless the composite explicitly passes a self-reference to its sub-objects). In other words, composite objects cannot affect sub-object behavior through late binding.</li>
+</ol><p>These two points are what separate composition from inheritance conceptually. Everything else is a matter of language semantics (i.e. different ways to model the same thing). With these points in mind, it's easy to see that mixins behave much more like class inheritance than they do composition.</p>
+
+<p>In fact, it is almost fair to say that mixins are a limited form of multiple inheritance which cannot exist within a hierarchy and cannot be directly instantiated. Since calling mixins inheritance sounds a bit weird, I think maybe the term "implementation sharing" is a good one to use. Both class inheritance and mixins rely on implementation sharing, but composition CANNOT, otherwise it would not be composition. That forces composite objects to be written against interfaces only and not implementation details, which is arguably one of their benefits (of course, nothing says that mixins/class inheritance can't be used in the same way with a bit of care).</p>
+
+<p>Anyway, this doesn't affect the validity of the rest of your article in any way, but I wanted to point out that at least from my point of view, it seems like if you are willing to consider mixins a form of composition, the distinction between composition and class based inheritance blurs too much.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/decorators-verses-the-mix-in/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="LLrDXk/7EHx6JDCl6I9vjEX/xUgLuuoV0KfF7Toy6BQ=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="523" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_523" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_525">
+    <div class="avatar"><img alt="Ryan LeCompte" height="70" src="http://www.gravatar.com/avatar/ff8d752bc77d9b25e4b457401ea0f84c?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="525">
+      <span class="c_name"><a href="https://twitter.com/ryanlecompte">Ryan LeCompte</a></span>
+      <span class="c_date">May 22nd, 2012</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/decorators-verses-the-mix-in#comment_525">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Really great article, thanks for sharing your thoughts. I think it's a bit weird to talk about mixins as being a form of composition, because at the Ruby language-level it's clearly implemented as inheritance. When a module is included in a class, Ruby just creates a new "wrapper/proxy class" and inserts it right above the including class. So if <code>A</code> includes module <code>B</code>, then module <code>B</code>'s wrapper/proxy class is inserted directly above <code>A</code>. This means that <code>B</code> essentially becomes <code>A</code>'s superclass, just as if <code>B</code> were a class and we did <code>class A &lt; B</code>. To me, composition is one object that holds a reference to an instance of another object, which is orthogonal to including a mixin. All of these concepts are well articulated in <a href="http://pragprog.com/book/ppmetr/metaprogramming-ruby">Paolo Perrotta's Metaprogramming Ruby book</a>.</p>
+
+<p>I was recently looking at a new queueing Ruby library called Qless yesterday. They recently added middleware support for your workers. They describe that you can add custom middleware to the queueing system by opening up the Worker class directly and injecting middleware:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s1">'qless/worker'</span>
+<span class="no">Qless</span><span class="o">::</span><span class="no">Worker</span><span class="o">.</span><span class="n">class_eval</span> <span class="k">do</span>
+  <span class="kp">include</span> <span class="no">ReEstablishDBConnection</span>
+  <span class="kp">include</span> <span class="no">SomeOtherAwesomeMiddleware</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Then, in your middleware, you would do this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">MyMiddleware1</span>
+  <span class="k">def</span> <span class="nf">around_perform</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+    <span class="c1"># do something with the job</span>
+    <span class="c1"># invoke the next guy with "super"</span>
+    <span class="k">super</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>What do you guys think about using mixins for this type of architecture? This makes heavy use of the fact that Ruby's method lookup is a straight line, as JEG2 loves to say. :) However, once you start creating complex middleware that introduce other methods, you end up having a worker (the guy that includes the middleware) that has the potential to have namespace clashes with methods/state. Also, if you start including middleware that was created by other people, you can't really control which methods you're adding into your worker's method lookup path and avoid collisions.</p>
+
+<p>How would the composition-style version of this look? Sidekiq uses a more composition approach for adding middleware:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">Sidekiq</span><span class="o">.</span><span class="n">configure_server</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+  <span class="n">config</span><span class="o">.</span><span class="n">server_middleware</span> <span class="k">do</span> <span class="o">|</span><span class="n">chain</span><span class="o">|</span>
+    <span class="n">chain</span><span class="o">.</span><span class="n">add</span> <span class="no">MyServerHook</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>An example middleware is not a module, but instead a simple class that is instantiated and invoked:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">MyMiddleware</span>
+  <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="c1"># do something fun</span>
+    <span class="c1"># ....</span>
+    <span class="c1"># invoke yield to move forward in the middleware chain</span>
+    <span class="k">yield</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I thought this was another interesting concrete example to compare mixins/inheritance vs. composition.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/decorators-verses-the-mix-in/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="LLrDXk/7EHx6JDCl6I9vjEX/xUgLuuoV0KfF7Toy6BQ=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="525" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_525" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_526">
+    <div class="avatar"><img alt="Gregory Brown" height="70" src="http://www.gravatar.com/avatar/31e038e4e9330f6c75ccfd1fca8010ee?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="526">
+      <span class="c_name"><a href="https://github.com/sandal">Gregory Brown</a></span>
+      <span class="c_date">May 22nd, 2012</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/decorators-verses-the-mix-in#comment_526">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Ryan, </p>
+
+<p>I prefer the Sidekiq style, and that's how Newman works. In fact, the preferred method for building <a href="http://mendicant-university.github.com/newman/lib/newman/application.html">applications</a> in Newman (which are essentially middleware) is to use Newman::Application.new which actually defines the whole application at the instance level! The newman <a href="http://mendicant-university.github.com/newman/lib/newman/server.html">server</a> just expects a list of objects responding to call(), and runs them in sequence.</p>
+
+<p>That said, ActiveRecord plugins have taken the "just mix them all into one object" approach for quite some time and though I'm sure clashes happen, they are impressively more rare than we might expect!</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/decorators-verses-the-mix-in/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="LLrDXk/7EHx6JDCl6I9vjEX/xUgLuuoV0KfF7Toy6BQ=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="526" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_526" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_527">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="527">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">May 22nd, 2012</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/decorators-verses-the-mix-in#comment_527">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Greg and Ryan:  good point about my use of the word composition.  It's not really appropriate there as you note.</p>
+
+<p>As for the queuing example, we're essentially talking about Rack's design.  I agree that it's preferred for that case, but beware that it does have tradeoffs.  I mentioned the effects of the lengthened call stack (like speed) in my article.  Aaron has also talked many times about how Rack's design sort of pushes all manner of extensions into one pipe.  It could be much more efficient, at least in the case of Rails, to have separate concepts for areas like output filters, resource managers, etc.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/decorators-verses-the-mix-in/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="LLrDXk/7EHx6JDCl6I9vjEX/xUgLuuoV0KfF7Toy6BQ=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="527" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_527" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_528">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="528">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">May 22nd, 2012</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/decorators-verses-the-mix-in#comment_528">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Also, it's worth noting that Avdi Grimm wrote a similar article to mine before I did, called <a href="http://devblog.avdi.org/2012/01/31/decoration-is-best-except-when-it-isnt/">Decoration is best, except when it isn't</a>.  He has some great examples in there and talks about the connascence it can push us into.  Be sure to check it out as well.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/decorators-verses-the-mix-in/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="LLrDXk/7EHx6JDCl6I9vjEX/xUgLuuoV0KfF7Toy6BQ=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="528" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_528" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_529">
+    <div class="avatar"><img alt="Gregory Brown" height="70" src="http://www.gravatar.com/avatar/31e038e4e9330f6c75ccfd1fca8010ee?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="529">
+      <span class="c_name"><a href="https://github.com/sandal">Gregory Brown</a></span>
+      <span class="c_date">May 22nd, 2012</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/decorators-verses-the-mix-in#comment_529">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Yeah, you don't want an infinitely growing chain of middleware, for sure. I liked Aaron's suggestion of keeping the same basic API (chains of objects that respond to call), but introducing diversity at the top level, so rather than having one chain, you have one per common extension point.</p>
+
+<p>It looks like Avdi's main point in that article was that some designs depend on late binding, and composition prohibits it. I may not have the time to get to it soon, but I wonder if that's a sign that a design which does not depend on late binding might make composition easier here. That's a question I plan to dig much deeper into via composingruby.com, so I'm glad to see a practical example of when it can be a problem.</p>
+
+<p>The more I read about (and try to write about) composition vs. inheritance, the more I am thinking that it's not fair to simply translate examples without changing their overall design. Designs that are well suited for composition will make inheritance (both mixins and classes) look bad, and vice-versa. So I think instead we should seek to come up with a common scenario and then implement it in two very different ways if necessary, to allow each technique to put its best foot forward.</p>
+
+<p>Of course, that's a tricky thing to do, and I think that I'm going to try to let these ideas stew in my mind for a while before discussing all of this further. I'm really glad we're working through these issues though!</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/decorators-verses-the-mix-in/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="LLrDXk/7EHx6JDCl6I9vjEX/xUgLuuoV0KfF7Toy6BQ=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="529" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_529" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/rubies-in-the-rough/decorators-verses-the-mix-in/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="LLrDXk/7EHx6JDCl6I9vjEX/xUgLuuoV0KfF7Toy6BQ=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdecorators-verses-the-mix-in" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

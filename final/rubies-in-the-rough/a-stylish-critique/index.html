@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / A Stylish Critique</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This article takes a detailed look at very style guides for the Ruby language and attempts to divine what we can learn from them, both good and bad.">
+    <meta name="keywords"    content="thinking about code, software design, Style, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/a-stylish-critique/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      APR<br>
+      2012
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">A Stylish Critique</h3>
+        
+        <p><em>Before getting started, I feel compelled to point out that my dictionary defines a critique as "a detailed analysis and assessment of something."  It seems like we often assume the worst of that word, but that's not how I intend it here.</em></p>
+
+<p>The Ruby community seems to be talking about style guides lately.  So let's talk about them.</p>
+
+<p>The fact is that you will have many choices if you go looking for style guides for our favorite language.  You can pick from:</p>
+
+<ul>
+<li><a href="http://www.zenspider.com/Languages/Ruby/QuickRef.html#general-tips">The old stuff</a></li>
+<li><a href="http://www.caliban.org/ruby/rubyguide.shtml#style">Google's way</a></li>
+<li><a href="https://github.com/styleguide/ruby">GitHub's popular guide</a></li>
+<li>Guides from respected Rubyists, like <a href="https://github.com/dkubb/styleguide/blob/master/RUBY-STYLE">Dan Kubb</a>
+</li>
+<li>One of the <a href="https://github.com/chneukirchen/styleguide/network">many</a> <a href="https://github.com/bbatsov/ruby-style-guide/network">forks</a> of the popular guides on GitHub</li>
+<li>And many <a href="http://www.google.com/search?rls=en&amp;q=ruby+style+guide&amp;ie=UTF-8&amp;oe=UTF-8">more</a>
+</li>
+</ul><p>It's obvious that Rubyists care about this topic.  Let's see what's out there and consider what really is and is not useful from these guides.</p>
+
+<h4>What is a style guide really, and why do we even have them?</h4>
+
+<p>Defining style guides is surprisingly tough.  I suspect they started out as formatting rules for code, but they have evolved pretty far beyond that now.</p>
+
+<p>Most guides include general conventions that the author feels are important when writing the language in question.  This can go all the way down to how to use certain constructs, opinions on what the author considers idiomatic, and syntax to outright avoid.</p>
+
+<p>To sum it up, a style guide is often a "How I Write Language X" opinion piece from the author.</p>
+
+<p>Style guides do exist for pretty good reasons.  First, most programmers put some effort into making sure that their code looks a certain way.  Generally this is to make it easier to read.  However, you may not see the code as intended if you are using a different indent size or tabs instead of the spaces they intended.</p>
+
+<p>With teams, these conventions become even more important.  Teams are trying to work in concert, so they need to be able to understand code not written by them.  A set of conventions the team follows can really help this along.</p>
+
+<p>And when you think about it, who isn't on a team these days?  Aren't open source developers a team?  The entire Ruby community might even be a team with the way we interact online.</p>
+
+<p>It seems like this is a topic we should all care about, at least a little.</p>
+
+<h4>The Rules for the Rules</h4>
+
+<p>Even though we have decided this topic is important, we must never forget how careful we have to be when imposing rules on others.  The goal is to make communication between us easier, not to restrict creativity.</p>
+
+<p>In my experience, one rule seems to hold sway over all other rules in life whether those rules are for parenting, laws, or programming style guides:</p>
+
+<p><strong>Use the fewest amount of rules you can possibly get away with.</strong></p>
+
+<p>If there are more rules than I can easily internalize, the entire point is defeated.  Odds are that the authors don't even consistently follow their own long lists.</p>
+
+<p>Now, it is worth noting that some list size variation make sense.  For example, GitHub needs to keep their rules minimal for the reasons I have just mentioned.  However, <a href="http://rubyrogues.com/047-rr-coding-disciplines/">Dan Kubb talked to us on the Ruby Rogues</a> about how he uses his style guide to try and restrict himself into being more aware as a programmer.  It makes sense that he would have more rules for that.</p>
+
+<p>That said, Dan's list is still probably a little long, in my opinion.  It's just too much.  Some of his rules actually encourage me to tune out what he's saying, like:</p>
+
+<ul>
+<li>Avoid bugs.</li>
+<li>Use common sense.</li>
+</ul><p>Again, if you lose your audience, the whole point is lost.</p>
+
+<p>The classic book that describes itself as a style guide, <a href="http://www.pearsonhighered.com/educator/product/Smalltalk-Best-Practice-Patterns/9780134769042.page"><em>Smalltalk Best Practice Patterns</em></a>, includes ten "Formatting" patterns.  That strikes me as a pretty common sense upper limit.</p>
+
+<p>Another rule that's key is one that most parents know:</p>
+
+<p><strong>Have a good reason for the rule.</strong></p>
+
+<p>If your kid hits you with, "But why?," and you have to counter with, "Because I said so!," you lose.  Rules need to be important.  Important things have a reason for their existence.  The reason needs to be a good one too.</p>
+
+<p>If you are just cargo culting some rules, I would recommend actively breaking them for a time.  You'll figure out pretty quick if they are important or not.  If they are, you'll have the reason.  If they aren't, you'll be free of a useless constraint.</p>
+
+<p>For example, Ryan Davis's old rules say, "Use parens to disambiguate, otherwise avoid them."  Ultimately, that leads to the <a href="http://heartmindcode.com/2013/09/05/parentheses-in-ruby/">"Seattle Style" of method definitions</a>.  GitHub's newer rules say, "Use <code>def</code> with parentheses when there are arguments."  Both sides will tell you that it reads better.</p>
+
+<p>I personally find that my eye seems to drift more without the parentheses, so I prefer GitHub's style in particular this case.  However, the Seattle group does have a significant following.</p>
+
+<p>To me, this implies that it isn't likely worth a rule.  The reason doesn't seem to hold in enough cases to be considered good.  Both of these groups seem to be able to coexist in our community without creating two versions of every gem, just to rewrite the method definitions.  I say let it go.</p>
+
+<p>Now, both sides do agree to leave parentheses off of argument-less definitions and calls.  Perhaps that means that one is rule worthy.  It's definitely gray area though.</p>
+
+<p>Finally, with style guides, I think it's critical that we remember the most important thing I learned from <em>Smalltalk Best Practice Patterns</em>:</p>
+
+<p><strong>Code's primary purpose is to communicate with the reader.</strong></p>
+
+<p>If you make a rule that violates that, it's instantly very suspect.  For example, GitHub's guide has this rule:</p>
+
+<ul>
+<li>The <code>and</code> and <code>or</code> keywords are banned. It's just not worth it. Always use <code>&amp;&amp;</code> and <code>||</code> instead.</li>
+</ul><p>Of course, <a href="http://mislav.uniqpath.com/2012/03/unless-else/">not everyone agrees</a>.  The problem with this rule is that is that it makes Ruby less expressive.  Those operators actually <a href="http://devblog.avdi.org/2010/08/02/using-and-and-or-in-ruby/">have a purpose</a>.  Though it's not popular, I even use them in conditionals, because I think they read better.  <em>[<strong>Update</strong>:  I was eventually swayed by Avdi's argument so I no longer do this.]</em></p>
+
+<p>GitHub is likely worried about how these operators interact with assignment statements.  It can trip up new Rubyists.  If you read Avdi's post though, you'll see that the precedence of these operators is actually why they exist.  Even my usage of them in conditionals is rarely a problem, since assignments are not common in conditionals.  Plus, if you do assign in a conditional, GitHub has a rule that fixes the precedence even with an <code>and</code>/<code>or</code>:</p>
+
+<ul>
+<li>Using the return value of <code>=</code> (an assignment) is ok, but surround the assignment with parenthesis.</li>
+</ul><p>That's a neat rule, if you ask me, because it allows for what I consider to be a natural programming construct in Ruby:  run this code if I can assign this variable.  For example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">if</span> <span class="p">(</span><span class="n">message</span> <span class="o">=</span> <span class="n">inbox</span><span class="o">.</span><span class="n">find</span> <span class="p">{</span> <span class="o">|</span><span class="n">m</span><span class="o">|</span> <span class="n">m</span><span class="o">.</span><span class="n">unread?</span> <span class="p">})</span>
+  <span class="c1"># ... work with message here...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>But, the parentheses flag the reader that you haven't made the common bug of confusing <code>=</code> with <code>==</code>.</p>
+
+<p>Getting back to the <code>and</code>/<code>or</code> case, I think education about these operators beats forbidding them.</p>
+
+<h4>What's Our Style?</h4>
+
+<p>Enough blathering on about how to make rules and why they exist.  Let's take a look at what's actually out there for us Rubyists.</p>
+
+<h5>We Agree About</h5>
+
+<p>I think it's safe to say that the majority of Ruby style guides agree about at least these points:</p>
+
+<ul>
+<li>An indent should be two spaces.</li>
+<li>Use spaces, not tabs.</li>
+<li>Keep lines at 80 characters in length or less.</li>
+</ul><p>A lot of communities fight pretty heavily over these points, but the Ruby community seems to pretty universally agree.  The reasoning is also sound:  two spaces is enough to notice, but it leaves you plenty of room on the line.  Spaces make sure I see what you see, even if our editors have different settings.</p>
+
+<p>The last one surprises me a little.  I strongly believe in it, but I see a lot of Ruby code that doesn't.  Still almost all of the guides I checked had it in there.</p>
+
+<p>There were many more rules about spacing in the guides.  While I agreed with a lot of them, I'm not sure everyone would.  Are we certain sure it's <code>select { |arg| arg }</code> instead of <code>select {|arg| arg }</code>?  I use the former, but I see some of the latter and it doesn't throw me into a rage.  I'm just not sure I'm willing to burn a rule on stuff like that.</p>
+
+<p>We also seem to agree on how to name things:</p>
+
+<ul>
+<li>Use <code>snake_case</code> for variable and method names, <code>CamelCase</code> for classes and modules, and <code>ALL_CAPS_SNAKE_CASE</code> for other constants.</li>
+</ul><p>The reasoning is pretty obvious.  This helps you tell what you are looking at right away.  It makes it much easier to read code.</p>
+
+<p>What else do most of the style guides care about?  How you indent your <code>case</code> statements.  They definitely prefer this style:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">case</span> <span class="n">age</span>
+<span class="k">when</span> <span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="mi">10</span>
+  <span class="nb">puts</span> <span class="s2">"Too young."</span>
+<span class="k">when</span> <span class="mi">11</span><span class="o">.</span><span class="n">.</span><span class="mi">65</span>
+  <span class="nb">puts</span> <span class="s2">"Access granted."</span>
+<span class="k">when</span> <span class="mi">66</span><span class="o">.</span><span class="n">.</span><span class="mi">110</span>
+  <span class="nb">puts</span> <span class="s2">"Too old."</span>
+<span class="k">else</span>
+  <span class="nb">puts</span> <span class="s2">"Malformed age."</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Or even:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">response</span> <span class="o">=</span> <span class="k">case</span> <span class="n">age</span>
+           <span class="k">when</span> <span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="mi">10</span>   <span class="k">then</span> <span class="s2">"Too young."</span>
+           <span class="k">when</span> <span class="mi">11</span><span class="o">.</span><span class="n">.</span><span class="mi">65</span>  <span class="k">then</span> <span class="s2">"Access granted."</span>
+           <span class="k">when</span> <span class="mi">66</span><span class="o">.</span><span class="n">.</span><span class="mi">110</span> <span class="k">then</span> <span class="s2">"Too old."</span>
+           <span class="k">else</span>              <span class="s2">"Malformed age."</span>
+           <span class="k">end</span>
+</pre></div>
+
+<p>But never:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">case</span> <span class="n">age</span>
+  <span class="k">when</span> <span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="mi">10</span>
+    <span class="nb">puts</span> <span class="s2">"Too young."</span>
+  <span class="k">when</span> <span class="mi">11</span><span class="o">.</span><span class="n">.</span><span class="mi">65</span>
+    <span class="nb">puts</span> <span class="s2">"Access granted."</span>
+  <span class="k">when</span> <span class="mi">66</span><span class="o">.</span><span class="n">.</span><span class="mi">110</span>
+    <span class="nb">puts</span> <span class="s2">"Too old."</span>
+  <span class="k">else</span>
+    <span class="nb">puts</span> <span class="s2">"Malformed age."</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Or:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">response</span> <span class="o">=</span> <span class="k">case</span> <span class="n">age</span>
+             <span class="k">when</span> <span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="mi">10</span>   <span class="k">then</span> <span class="s2">"Too young."</span>
+             <span class="k">when</span> <span class="mi">11</span><span class="o">.</span><span class="n">.</span><span class="mi">65</span>  <span class="k">then</span> <span class="s2">"Access granted."</span>
+             <span class="k">when</span> <span class="mi">66</span><span class="o">.</span><span class="n">.</span><span class="mi">110</span> <span class="k">then</span> <span class="s2">"Too old."</span>
+             <span class="k">else</span>              <span class="s2">"Malformed age."</span>
+           <span class="k">end</span>
+</pre></div>
+
+<p>The <code>when</code> statements need to line up with the <code>case</code>.  The reasoning?  I have no idea, but it looks right to me!</p>
+
+<h5>The Parts I Found Interesting</h5>
+
+<p>The Google style guide mentioned using Ruby's block comments to hide headers and footers in your code.  For example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="cm">=begin</span>
+<span class="cm">  * Name:</span>
+<span class="cm">  * Description:</span>
+<span class="cm">  * Author:</span>
+<span class="cm">  * Date:</span>
+<span class="cm">  * License:</span>
+<span class="cm">=end</span>
+</pre></div>
+
+<p>I'm not sure how I feel about that.  I worry about programming constructs that can go off-screen.  To give an example, I don't like this method of declaring class methods:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Whatever</span>
+  <span class="k">class</span> <span class="o">&lt;&lt;</span> <span class="nb">self</span>
+    <span class="k">def</span> <span class="nf">class_method</span>
+      <span class="c1"># ...</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The reason is that you could end up facing something line this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Whatever</span>
+  <span class="k">class</span> <span class="o">&lt;&lt;</span> <span class="nb">self</span>
+    <span class="c1"># a page of definitions here...</span>
+    <span class="k">def</span> <span class="nf">what_am_i</span>
+      <span class="c1"># ...</span>
+    <span class="k">end</span>
+    <span class="c1"># another page of definitions here...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>If you are centered on the definition of <code>what_am_i</code>, the only way you can know it's defined as a class method is if you pick up on the extra indentation.  I don't think that communicates well, so I prefer the following technique, even if it does introduce some mild duplication:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Whatever</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">class_method_1</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">class_method_2</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Block comments are subject to the same off-screen issue, but a smart editor is going to save you with them.  It should syntax highlight the entire chunk as a comment, so you would still know what you are in the middle of.</p>
+
+<p>I doubt this is rule worthy in either case, but it's interesting to think about.</p>
+
+<p>I found the following rule from GitHub's guide interesting mainly because it nails my bad habit:</p>
+
+<ul>
+<li>Prefer single-quoted <code>String</code>s when you don't need string interpolation or special symbols such as <code>\t</code>, <code>\n</code>, <code>'</code>, etc.</li>
+</ul><p>I don't do this.  Instead I use double-quoted <code>String</code>s most of the time.  I switch to single-quoting only in rare cases where it reduces some escaping.  Even then, I'm just as likely to switch to a special <code>String</code> form, like <code>%Q{...}</code>.</p>
+
+<p>My reasons are pretty weak.  It's mainly that I too often found myself having to switch a single-quoted <code>String</code> to double-quotes so I could introduce some interpolation.  It also helps in my editor, since I can have it always pair double-quotes while never pairing singles.  I'll be typing the former to make <code>String</code>s but the latter for things like apostrophes, so this is generally perfect.</p>
+
+<p>The guide's rule is probably superior though, because it communicates with the reader that they are looking at a simple <code>String</code>.</p>
+
+<p>Dan Kubb's guide led me to read about a couple of interesting concepts that I hadn't thought about enough:</p>
+
+<ul>
+<li>
+<p>Try to have methods either return the state of the object and have no side effects, or return <code>self</code> and have side effects. This is otherwise known as Command-query separation (CQS):</p>
+
+<p><a href="http://en.wikipedia.org/wiki/Command-query_separation">http://en.wikipedia.org/wiki/Command-query_separation</a></p>
+</li>
+<li><p>Do not program defensively.  (See <a href="http://www.erlang.se/doc/programming_rules.shtml#HDR11">http://www.erlang.se/doc/programming_rules.shtml#HDR11</a>.)</p></li>
+</ul><p>GitHub has a rule I doubt is common:</p>
+
+<ul>
+<li>Indent the <code>public</code>, <code>protected</code>, and <code>private</code> methods as much the method definitions they apply to. Leave one blank line above them.</li>
+</ul><p>Here's the sample code they give for that:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">SomeClass</span>
+  <span class="k">def</span> <span class="nf">public_method</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+
+  <span class="kp">private</span>
+  <span class="k">def</span> <span class="nf">private_method</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I think it's more common to see a blank line below it as well:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">SomeClass</span>
+  <span class="k">def</span> <span class="nf">public_method</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+
+  <span class="kp">private</span>
+
+  <span class="k">def</span> <span class="nf">private_method</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I have also seen it "outdented" like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">SomeClass</span>
+  <span class="k">def</span> <span class="nf">public_method</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+
+<span class="kp">private</span>
+
+  <span class="k">def</span> <span class="nf">private_method</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That doesn't feel right to me though, since we indent other inline class method calls.  I do see how it kind of delimits a section though, much like <code>rescue</code> would inside a method definition.  I think you can make the argument either way.</p>
+
+<p>There was another variant that you use to see a lot, but <a href="https://github.com/rails/rails/commit/b88a181b7f296d89237bdb727ecc15cbfdf13b65">even Rails has decided it's wrong now</a>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">SomeClass</span>
+  <span class="k">def</span> <span class="nf">public_method</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+
+  <span class="kp">private</span>
+
+    <span class="k">def</span> <span class="nf">private_method</span>
+      <span class="c1"># ...</span>
+    <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Aaron Patterson says this is wrong because it's not how Emacs indents it.  I think he was joking at the time, but it turns out that <a href="http://www.slideshare.net/yukihiro_matz/how-emacs-changed-my-life">he may be more right</a> about that than we could have guessed.</p>
+
+<p>The first rule in Bozhidar Batsov's "Comments" section was:</p>
+
+<ul>
+<li>Write self-documenting code and ignore the rest of this section. Seriously!</li>
+</ul><p>I really like that.  The more programming experience I get the less respect I have for comments.  I do use annotations, like <code>TODO</code> and <code>FIXME</code> (and Bozhidar has rules for those too), but most other comments are suspect, in my opinion.</p>
+
+<p>The guides definitely disagreed heavily about which documentation scheme we should be using or if we should even be using one at all.</p>
+
+<p>I also learned a neat trick from Bozhidar's guide that I hadn't encountered before:</p>
+
+<ul>
+<li>
+<p>When using <code>class_eval</code> (or other <code>eval</code>) with <code>String</code> interpolation, add a comment block showing its appearance if interpolated (a practice I learned from the Rails code):</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># from activesupport/lib/active_support/core_ext/string/output_safety.rb</span>
+<span class="no">UNSAFE_STRING_METHODS</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">unsafe_method</span><span class="o">|</span>
+  <span class="k">if</span> <span class="s1">'String'</span><span class="o">.</span><span class="n">respond_to?</span><span class="p">(</span><span class="n">unsafe_method</span><span class="p">)</span>
+    <span class="nb">class_eval</span> <span class="o">&lt;&lt;-</span><span class="no">EOT</span><span class="p">,</span> <span class="bp">__FILE__</span><span class="p">,</span> <span class="bp">__LINE__</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="sh">      # ...</span>
+
+<span class="sh">      def #{unsafe_method}!(*args)  # def capitalize!(*args)</span>
+<span class="sh">        @dirty = true               #   @dirty = true</span>
+<span class="sh">        super                       #   super</span>
+<span class="sh">      end                           # end</span>
+<span class="no">    EOT</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+</li>
+</ul><p>But the most entertaining rule award definitely goes to Ryan Davis for this gem:</p>
+
+<ul>
+<li>Don’t <code>rescue Exception</code>.  EVER.  Or I will stab you.</li>
+</ul><h5>What Are They Just Wrong About?</h5>
+
+<p>I hate to say it, but some rules were just bad.  Let's look at a handful that bugged me.  First, I submit:</p>
+
+<ul>
+<li>Do not use single letter variable names.  Avoid uncommunicative names.</li>
+</ul><p>I don't even think the first half of that rule agrees with the second half of that rule.  Consider this code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">ary</span><span class="o">.</span><span class="n">each_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>There's nothing wrong with that code.  <code>i</code> is kind of the universal variable name for an index and as such it's even more communicative than a longer name, like <code>index</code>.</p>
+
+<ul>
+<li>Avoid multi-line <code>?:</code> (the ternary operator), use <code>if</code>/<code>unless</code> instead.</li>
+</ul><p>While I understand where this rule is coming from, it's just a bad idea to draw hard lines in the sand like this.  You're sure this is always wrong?  I'm not.</p>
+
+<p>Ruby 1.9 even supports a nice new syntax for this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">result</span> <span class="o">=</span> <span class="n">o</span><span class="o">.</span><span class="n">test?</span> <span class="p">?</span> <span class="n">o</span><span class="o">.</span><span class="n">calc_true_result</span>
+                 <span class="p">:</span> <span class="n">o</span><span class="o">.</span><span class="n">calc_false_result</span>
+</pre></div>
+
+<p>Now that Ruby allows those operators to line up, this can be a very readable construct, in my opinion.</p>
+
+<ul>
+<li>Avoid using <code>$1-9</code> as it can be hard to track what they contain.  Named groups can be used instead.</li>
+</ul><p>Almost all of the guides did contain a rule like this, but I see a lot of Ruby code and variables like <code>$1</code> are extremely common.  The issue is that the <code>MatchData</code> methods aren't all that more expressive and it can be awkward to get a hold of the object to use them on.</p>
+
+<p>I do like the named variables that this rule recommends (added in Ruby 1.9), but they can make a simple regex quite a bit wordier and introduce local variables in the recommended usage.  I don't think I'm comfortable saying that's always OK.</p>
+
+<p>I'm not really sure what the perceived problem is with <code>$1</code> and friends either.  Programmers seem to understand them just fine.  Some may worry that they are evil globals, but the fact is that they are magic <code>Thread</code> local variables that just do the right thing.</p>
+
+<p>Until I see a good reason for this rule, I'm not buying it.</p>
+
+<ul>
+<li>Do not use <code>inject</code> in library code.  In app code it is ok.</li>
+</ul><p>I saw this rule on Dan Kubb's guide earlier this week, but it was already removed before I published this article.  I'm glad to see he's over this one.</p>
+
+<p>I think this stems from a fear of <code>inject()</code> being a little slower.  It's true that it is.  Here's a benchmark that shows the problem:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"benchmark"</span>
+
+<span class="k">def</span> <span class="nf">each_sum</span><span class="p">(</span><span class="n">numbers</span><span class="p">)</span>
+  <span class="n">sum</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="n">numbers</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span>
+    <span class="n">sum</span> <span class="o">+=</span> <span class="n">n</span>
+  <span class="k">end</span>
+  <span class="n">sum</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">inject_sum</span><span class="p">(</span><span class="n">numbers</span><span class="p">)</span>
+  <span class="n">numbers</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">sum</span><span class="p">,</span> <span class="n">n</span><span class="o">|</span> <span class="n">sum</span> <span class="o">+</span> <span class="n">n</span> <span class="p">}</span>
+<span class="k">end</span>
+
+<span class="no">TESTS</span>   <span class="o">=</span> <span class="mi">10_000_000</span>
+<span class="no">NUMBERS</span> <span class="o">=</span> <span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">10</span>
+
+<span class="no">Benchmark</span><span class="o">.</span><span class="n">bmbm</span> <span class="k">do</span> <span class="o">|</span><span class="n">bench</span><span class="o">|</span>
+  <span class="n">bench</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="s2">"each_sum"</span><span class="p">)</span> <span class="k">do</span>
+    <span class="no">TESTS</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+      <span class="n">each_sum</span><span class="p">(</span><span class="no">NUMBERS</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="n">bench</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="s2">"inject_sum"</span><span class="p">)</span> <span class="k">do</span>
+    <span class="no">TESTS</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+      <span class="n">inject_sum</span><span class="p">(</span><span class="no">NUMBERS</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That shows the following on Ruby 1.9.3:</p>
+
+<pre><code>Rehearsal ----------------------------------------------
+each_sum     7.440000   0.000000   7.440000 (  7.442971)
+inject_sum  10.170000   0.010000  10.180000 ( 10.177593)
+------------------------------------ total: 17.620000sec
+
+                 user     system      total        real
+each_sum     7.540000   0.000000   7.540000 (  7.546324)
+inject_sum  10.220000   0.000000  10.220000 ( 10.217871)
+</code></pre>
+
+<p>As you can see, it's not that slow.  Many iterators have a similar penalty.  I had to use ten million iterations to get it to show up well.</p>
+
+<p>The situation use to be worse though.  It's more than twice as slow as <code>each</code> on Ruby 1.8.7:</p>
+
+<pre><code>Rehearsal ----------------------------------------------
+each_sum    23.340000   0.010000  23.350000 ( 23.354953)
+inject_sum  51.260000   0.020000  51.280000 ( 51.279145)
+------------------------------------ total: 74.630000sec
+
+                 user     system      total        real
+each_sum    23.730000   0.010000  23.740000 ( 23.734525)
+inject_sum  52.320000   0.010000  52.330000 ( 52.323466)
+</code></pre>
+
+<p>So perhaps that's where this fear came from.</p>
+
+<p>In any event, don't avoid the iterators.  Use them for what they are for.  Remember, expressive code is always the first goal.</p>
+
+<p>If you find something to be too slow, you can always refactor for performance.  That should only be needed in extremely rare edge cases though.  Go for readability first.</p>
+
+<p>Hopefully this section reminds us all that we always need to treat these style guides as suggestions, not laws.  You're the programmer, so you're in charge.  No exceptions.</p>
+
+<h4>Worth a Read</h4>
+
+<p>I've dropped a ton of links in this article, but it really is worth taking a little time to read through at least some of these style guides.  They cover a ton of ideas, good and bad, that I didn't choose to rehash here.  If nothing else, I promise that they will get you thinking.</p>
+
+<p>If you are pressed for time, start with the GitHub guide.  It seems to reflect a lot of current thinking.  Some of it is controversial though, as I've noted.  If you have time for a second source, check out Dan Kubb's guide.  It is a good representation of the various forks and it contains some neat ideas, even if it does probably go a little too far in some areas.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/a-stylish-critique">
+  In: <a href="/rubies-in-the-rough/">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Style/">Style</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/a-stylish-critique#comments">1 Comment</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (1)</span></h5>
+
+    <ol>
+        <li id="comment_516">
+    <div class="avatar"><img alt="Adam Weller" height="70" src="http://www.gravatar.com/avatar/cbb3bd1d04811a35b5ee8e1840b16263?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="516">
+      <span class="c_name"><a href="https://twitter.com/minch">Adam Weller</a></span>
+      <span class="c_date">April 2nd, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/a-stylish-critique#comment_516">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Great article, really like the wisdom in this:</p>
+
+<blockquote>
+<p>If you are just cargo culting some rules, I would recommend actively breaking them for a time. You'll figure out pretty quick if they are important or not. If they are, you'll have the reason. If they aren't, you'll be free of a useless constraint.</p>
+</blockquote></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

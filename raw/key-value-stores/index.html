@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Key-Value Stores</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Notes from my learning about simple NoSQL storage solutions.">
+    <meta name="keywords"    content="key-value stores, NoSQL, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/key-value-stores/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/key-value-stores">Key-Value Stores</a></h1>
+            <span>Notes from my learning about simple NoSQL storage solutions.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+            <ul class="blog-list">
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>10</h4>
+    <span>
+      JAN<br>
+      2010
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/key-value-stores/tokyo-cabinets-key-value-database-types"><h3 class="blog-title">Tokyo Cabinet&#39;s Key-Value Database Types</h3></a>
+          <p>We've taken a good look at Tokyo Cabinet's Hash Database, but there's a lot more to the library than just that.  Tokyo Cabinet supports three other kinds of databases.  In addition, each database type accepts various tuning parameters that can be used to change its behavior.  Each database type and setting involves different tradeoffs so you really have a lot of options for turning Tokyo Cabinet into exactly what you need.  Let's look into some of those options now.</p>
+
+<h4>The B+Tree Database</h4>
+
+<p>Tokyo Cabinet's B+Tree Database is a little slower than the Hash Database we looked at before.  That's its downside.  However, giving up a little speed gains you several extra features that may just allow you to work smarter instead of faster.</p>
+
+<p>The B+Tree Database is a more advanced form of the Hash Database.  What that means is that all of the stuff I showed you in the last article still applies.  You can set, read, and remove values by keys, iteration is supported, and you still have access to the neat options like adding to counters.  With a B+Tree Database you get all of that and more.</p><p><a href="/key-value-stores/tokyo-cabinets-key-value-database-types">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="key-value-stores/tokyo-cabinets-key-value-database-types">
+  In: <a href="/key-value-stores">Key-Value Stores</a>
+  <span>|</span>
+  Tags: <a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/key-value-stores/tokyo-cabinets-key-value-database-types#comments">4 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      JAN<br>
+      2010
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/key-value-stores/tokyo-cabinet-as-a-key-value-store"><h3 class="blog-title">Tokyo Cabinet as a Key-Value Store</h3></a>
+          <p>Like most key-value stores, Tokyo Cabinet has a very <code>Hash</code>-like interface from Ruby (assuming you use Oklahoma Mixer).  You can almost think of a Tokyo Cabinet database as a <code>Hash</code> that just happens to be stored in a file instead of memory.  The advantage of that is that your data doesn't have to fit into memory.  Luckily, you don't have to pay a big speed penalty to get this disk-backed storage.  Tokyo Cabinet is pretty darn fast.</p>
+
+<h4>Getting and Setting Keys</h4>
+
+<p>Let's have a look at the normal <code>Hash</code>-like methods as well as the file storage aspect:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -KU</span>
+
+<span class="nb">require</span> <span class="s2">"oklahoma_mixer"</span>
+
+<span class="no">OklahomaMixer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"data.tch"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">db</span><span class="o">|</span>
+  <span class="k">if</span> <span class="n">db</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">zero?</span>
+    <span class="nb">puts</span> <span class="s2">"Loading the database.  Rerun to read back the data."</span>
+    <span class="n">db</span><span class="o">[</span><span class="ss">:one</span><span class="o">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">db</span><span class="o">[</span><span class="ss">:two</span><span class="o">]</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="ss">:three</span> <span class="o">=&gt;</span> <span class="mi">3</span><span class="p">,</span> <span class="ss">:four</span> <span class="o">=&gt;</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">db</span><span class="o">[</span><span class="s2">"users:1"</span><span class="o">]</span> <span class="o">=</span> <span class="s2">"James"</span>
+    <span class="n">db</span><span class="o">[</span><span class="s2">"users:2"</span><span class="o">]</span> <span class="o">=</span> <span class="s2">"Ruby"</span>
+  <span class="k">else</span>
+    <span class="nb">puts</span> <span class="s2">"Reading data."</span>
+    <span class="sx">%w[ db[:one]</span>
+<span class="sx">        db["users:2"]</span>
+<span class="sx">        -</span>
+<span class="sx">        db.keys</span>
+<span class="sx">        db.keys(:prefix\ =&gt;\ "users:")</span>
+<span class="sx">        db.keys(:limit\ =&gt;\ 2)</span>
+<span class="sx">        db.values</span>
+<span class="sx">        -</span>
+<span class="sx">        db.values_at(:one,\ :two) ]</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">command</span><span class="o">|</span>
+      <span class="nb">puts</span><span class="p">(</span><span class="n">command</span> <span class="o">==</span> <span class="s2">"-"</span> <span class="p">?</span> <span class="s2">""</span> <span class="p">:</span> <span class="s2">"</span><span class="si">#{</span><span class="n">command</span><span class="si">}</span><span class="s2"> = %p"</span> <span class="o">%</span> <span class="o">[</span><span class="nb">eval</span><span class="p">(</span><span class="n">command</span><span class="p">)</span><span class="o">]</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div><p><a href="/key-value-stores/tokyo-cabinet-as-a-key-value-store">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="key-value-stores/tokyo-cabinet-as-a-key-value-store">
+  In: <a href="/key-value-stores">Key-Value Stores</a>
+  <span>|</span>
+  Tags: <a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/key-value-stores/tokyo-cabinet-as-a-key-value-store#comments">7 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>17</h4>
+    <span>
+      SEP<br>
+      2009
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/key-value-stores/where-redis-is-a-good-fit"><h3 class="blog-title">Where Redis is a Good Fit</h3></a>
+          <p>Like any system, Redis has strengths and weaknesses.  Some of the biggest positives with Redis are:</p>
+
+<ul>
+<li>It's wicked fast.  In fact, it may just be the fastest key-value store.</li>
+<li>The collection types and the atomic operations that work on them allow you to model some moderately complex data scenarios.  This makes Redis fit some higher order problems where a simple key-value store wouldn't quite be enough.</li>
+<li>The snapshot data dumping model can be an asset.  You get persistence with Redis, but you pay a minimal penalty for it.</li>
+</ul><p>Of course, there are always some minuses.  These are the two I consider the most important:</p>
+
+<ul>
+<li>Redis is an in-memory data store, first and foremost.  That means your entire dataset must fit completely in RAM and leave enough breathing room for anything else the server must do.</li>
+<li>Snapshot backups are not perfect.  If Redis fails between snapshots, you can lose data.  You need to make sure that's acceptable for any application you use it in.</li>
+</ul><p>It may seem weird to call snapshots both a pro and a con, but it does work for you in some ways and against you in others.  You have to decide where the trade-off is worth it.</p><p><a href="/key-value-stores/where-redis-is-a-good-fit">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="key-value-stores/where-redis-is-a-good-fit">
+  In: <a href="/key-value-stores">Key-Value Stores</a>
+  <span>|</span>
+  Tags: <a href="/tags/Redis">Redis</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/key-value-stores/where-redis-is-a-good-fit#comments">6 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>16</h4>
+    <span>
+      SEP<br>
+      2009
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/key-value-stores/lists-and-sets-in-redis"><h3 class="blog-title">Lists and Sets in Redis</h3></a>
+          <p><em>[<strong>Update</strong>:  though all of the techniques I show here still apply, many methods of the Redis gem have changed names to match the actual <a href="http://redis.io/commands">Redis commands</a> they call.  There are also easier and more powerful ways to do some of what I show in here, thanks to additions to Redis.]</em></p>
+
+<p>Redis adds one huge twist to traditional key-value storage:  collections.  Supporting both <em>lists</em> and <em>sets</em> through some very powerful atomic operations allows for advanced key-value usage.</p>
+
+<h4>Lists</h4>
+
+<p>Redis allows a single key to hold a list of values.  This is your typical ordered list with the operations you would expect:  appending, indexed access, and access to a range of values.</p>
+
+<p>This has many potential uses.  I'll cover two that I think will be very common.  First, if you are going to use Redis as a full database, you store things that are naturally a list of items, like comments, in a real list.  Let's look at some code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="no">CLEAR</span> <span class="o">=</span> <span class="sb">`clear`</span>
+
+<span class="c1"># create an article to comment on</span>
+<span class="n">db</span>                <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+<span class="n">article_id</span>        <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">incr</span><span class="p">(</span><span class="s2">"global:next_article_id"</span><span class="p">)</span>
+<span class="n">article</span>           <span class="o">=</span> <span class="s2">"article:</span><span class="si">#{</span><span class="n">article_id</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">class</span> <span class="o">&lt;&lt;</span> <span class="n">article</span>
+  <span class="k">def</span> <span class="nf">method_missing</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">blk</span><span class="p">)</span>
+    <span class="k">return</span> <span class="k">super</span> <span class="k">unless</span> <span class="n">field</span><span class="o">.</span><span class="n">to_s</span> <span class="o">!~</span> <span class="sr">/[!?=]\z/</span> <span class="o">&amp;&amp;</span> <span class="n">args</span><span class="o">.</span><span class="n">empty?</span> <span class="o">&amp;&amp;</span> <span class="n">blk</span><span class="o">.</span><span class="n">nil?</span>
+    <span class="s2">"</span><span class="si">#{</span><span class="nb">self</span><span class="si">}</span><span class="s2">:</span><span class="si">#{</span><span class="n">field</span><span class="si">}</span><span class="s2">"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="n">db</span><span class="o">[</span><span class="n">article</span><span class="o">.</span><span class="n">title</span><span class="o">]</span> <span class="o">=</span> <span class="s2">"My Favorite Language"</span>
+<span class="n">db</span><span class="o">[</span><span class="n">article</span><span class="o">.</span><span class="n">body</span><span class="o">]</span>  <span class="o">=</span> <span class="s2">"I love Ruby!"</span>
+<span class="c1"># initialize some session details</span>
+<span class="n">comments_per_page</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">comment_page</span>      <span class="o">=</span> <span class="mi">1</span>
+<span class="n">login</span>             <span class="o">=</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">shift</span> <span class="o">||</span> <span class="s2">"JEG2"</span>
+
+<span class="kp">loop</span> <span class="k">do</span>
+  <span class="c1"># show article</span>
+  <span class="nb">print</span> <span class="no">CLEAR</span>
+  <span class="nb">puts</span> <span class="s2">"</span><span class="si">#{</span><span class="n">db</span><span class="o">[</span><span class="n">article</span><span class="o">.</span><span class="n">title</span><span class="o">]</span><span class="si">}</span><span class="s2">:"</span>
+  <span class="nb">puts</span> <span class="s2">"  </span><span class="si">#{</span><span class="n">db</span><span class="o">[</span><span class="n">article</span><span class="o">.</span><span class="n">body</span><span class="o">]</span><span class="si">}</span><span class="s2">"</span>
+
+  <span class="c1"># paginate comments</span>
+  <span class="n">start</span>      <span class="o">=</span>  <span class="n">comments_per_page</span> <span class="o">*</span> <span class="p">(</span><span class="n">comment_page</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="n">finish</span>     <span class="o">=</span>  <span class="n">start</span> <span class="o">+</span> <span class="n">comments_per_page</span> <span class="o">-</span> <span class="mi">1</span>
+  <span class="n">comments</span>   <span class="o">=</span>  <span class="n">db</span><span class="o">.</span><span class="n">list_range</span><span class="p">(</span><span class="n">article</span><span class="o">.</span><span class="n">comments</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">finish</span><span class="p">)</span>
+  <span class="n">pagination</span> <span class="o">=</span>  <span class="nb">Array</span><span class="p">(</span><span class="n">start</span><span class="o">.</span><span class="n">zero?</span> <span class="p">?</span> <span class="kp">nil</span> <span class="p">:</span> <span class="s2">"(p)revious"</span><span class="p">)</span>
+  <span class="n">pagination</span> <span class="o">&lt;&lt;</span> <span class="s2">"(n)ext"</span> <span class="k">if</span> <span class="n">db</span><span class="o">.</span><span class="n">list_length</span><span class="p">(</span><span class="n">article</span><span class="o">.</span><span class="n">comments</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">&gt;</span> <span class="n">finish</span>
+  <span class="c1"># show comments</span>
+  <span class="n">comments</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">comment</span><span class="o">|</span>
+    <span class="n">posted</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">body</span> <span class="o">=</span> <span class="n">comment</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"|"</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="nb">puts</span> <span class="s2">"----"</span>
+    <span class="nb">puts</span> <span class="s2">"  </span><span class="si">#{</span><span class="n">body</span><span class="si">}</span><span class="s2">"</span>
+    <span class="nb">puts</span> <span class="s2">"  posted by </span><span class="si">#{</span><span class="n">user</span><span class="si">}</span><span class="s2"> on </span><span class="si">#{</span><span class="n">posted</span><span class="si">}</span><span class="s2">"</span>
+  <span class="k">end</span>
+
+  <span class="c1"># handle commands</span>
+  <span class="nb">puts</span>
+  <span class="nb">print</span> <span class="s2">"Command? [</span><span class="si">#{</span><span class="p">(</span><span class="sx">%w[(c)omment (q)uit]</span> <span class="o">+</span> <span class="n">pagination</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">', '</span><span class="p">)</span><span class="si">}</span><span class="s2">]  "</span>
+  <span class="k">case</span> <span class="p">(</span><span class="n">command</span> <span class="o">=</span> <span class="nb">gets</span><span class="p">)</span>
+  <span class="k">when</span> <span class="sr">/\Ac(?:omment)?\Z/i</span>  <span class="c1"># add a comment</span>
+    <span class="nb">print</span> <span class="s2">"Your comment?  "</span>
+    <span class="n">comment</span> <span class="o">=</span> <span class="nb">gets</span> <span class="ow">or</span> <span class="k">break</span>
+    <span class="n">posted</span>  <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">'%m/%d/%Y at %H:%M:%S'</span><span class="p">)</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">push_tail</span><span class="p">(</span><span class="n">article</span><span class="o">.</span><span class="n">comments</span><span class="p">,</span> <span class="s2">"</span><span class="si">#{</span><span class="n">posted</span><span class="si">}</span><span class="s2">|</span><span class="si">#{</span><span class="n">login</span><span class="si">}</span><span class="s2">|</span><span class="si">#{</span><span class="n">comment</span><span class="o">.</span><span class="n">strip</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+  <span class="k">when</span> <span class="sr">/\Ap(?:revious)?\Z/i</span>  <span class="c1"># view previous page of comments</span>
+    <span class="k">if</span> <span class="n">pagination</span><span class="o">.</span><span class="n">first</span> <span class="o">=~</span> <span class="sr">/\A\(p\)/</span>
+      <span class="n">comment_page</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="k">else</span>
+      <span class="nb">puts</span> <span class="s2">"You are on the first page of comments."</span>
+      <span class="nb">gets</span> <span class="ow">or</span> <span class="k">break</span>
+    <span class="k">end</span>
+  <span class="k">when</span> <span class="sr">/\An(?:ext)?\Z/i</span>  <span class="c1"># view next page of comments</span>
+    <span class="k">if</span> <span class="n">pagination</span><span class="o">.</span><span class="n">last</span> <span class="o">=~</span> <span class="sr">/\A\(n\)/</span>
+      <span class="n">comment_page</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">else</span>
+      <span class="nb">puts</span> <span class="s2">"You are on the last page of comments."</span>
+      <span class="nb">gets</span> <span class="ow">or</span> <span class="k">break</span>
+    <span class="k">end</span>
+  <span class="k">when</span> <span class="sr">/\Aq(?:uit)?\Z/i</span><span class="p">,</span> <span class="kp">nil</span>  <span class="c1"># exit program</span>
+    <span class="k">break</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div><p><a href="/key-value-stores/lists-and-sets-in-redis">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="key-value-stores/lists-and-sets-in-redis">
+  In: <a href="/key-value-stores">Key-Value Stores</a>
+  <span>|</span>
+  Tags: <a href="/tags/Redis">Redis</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/key-value-stores/lists-and-sets-in-redis#comments">4 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>15</h4>
+    <span>
+      SEP<br>
+      2009
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/key-value-stores/using-redis-as-a-key-value-store"><h3 class="blog-title">Using Redis as a Key-Value Store</h3></a>
+          <p><em>[<strong>Update</strong>:  though all of the techniques I show here still apply, many methods of the Redis gem have changed names to match the actual <a href="http://redis.io/commands">Redis commands</a> they call.]</em></p>
+
+<p>Redis is a first and foremost a server providing key-value storage.  As such, the primary features of any client library are for connecting to the server and manipulating those key-value pairs.</p>
+
+<h4>Connecting to the Server</h4>
+
+<p>Connecting to the Redis server can be as simple as <code>Redis.new</code>, thanks to some defaults in both the server and Ezra's Ruby client library for talking to that server.  I won't pass any options to the constructor calls below, but you can use any of the following as needed:</p>
+
+<ul>
+<li>
+<code>:host</code> if you need to connect to an external host instead of the default 127.0.0.1</li>
+<li>
+<code>:port</code> if you need to use something other than the default port of 6379</li>
+<li>
+<code>:password</code> if you configured Redis to require a password on connection</li>
+<li>
+<code>:db</code> if you want to select one of the multiple configured databases, other than the default of 0 (databases are identified by a zero-based index)</li>
+<li>
+<code>:timeoeut</code> if you want a different timeout for Redis communication than the default of 5 seconds</li>
+<li>
+<code>:logger</code> if you want the library to log activity as it works</li>
+</ul><p><a href="/key-value-stores/using-redis-as-a-key-value-store">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="key-value-stores/using-redis-as-a-key-value-store">
+  In: <a href="/key-value-stores">Key-Value Stores</a>
+  <span>|</span>
+  Tags: <a href="/tags/Redis">Redis</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/key-value-stores/using-redis-as-a-key-value-store#comments">2 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>14</h4>
+    <span>
+      SEP<br>
+      2009
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/key-value-stores/setting-up-the-redis-server"><h3 class="blog-title">Setting up the Redis Server</h3></a>
+          <p>Before we can play with <a href="http://redis.io/">Redis</a>, you will need to get the server running locally.  Luckily, that's very easy.</p>
+
+<h4>Installing Redis</h4>
+
+<p>Building Redis is a simple matter of grabbing the code and compiling it.  Once built, you can place the executables in a convenient location in your <code>PATH</code>.  On my box, I can do all of that with these commands:</p>
+
+<pre><code>curl -O http://redis.googlecode.com/files/redis-1.0.tar.gz
+tar xzvf redis-1.0.tar.gz 
+cd redis-1.0
+make
+sudo cp redis-server redis-cli redis-benchmark /usr/local/bin
+</code></pre>
+
+<p>Those commands build version 1.0 of the server, which is the current stable release as of this writing.  You may need to adjust the version numbers down the road to get the latest releases though.</p>
+
+<p>I also copied the executables to where I prefer to have them:  <code>/usr/local/bin</code>.  Feel free to change that directory in the last command to whatever you prefer.</p>
+
+<p>If you will be talking to Redis from Ruby, as I will show in all of my examples, you are going to need a client library.  I recommend <a href="https://github.com/redis/redis-rb">Ezra Zygmuntowicz's redis-rb</a>.  You can install that gem with:</p><p><a href="/key-value-stores/setting-up-the-redis-server">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="key-value-stores/setting-up-the-redis-server">
+  In: <a href="/key-value-stores">Key-Value Stores</a>
+  <span>|</span>
+  Tags: <a href="/tags/Redis">Redis</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/key-value-stores/setting-up-the-redis-server#comments">11 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>14</h4>
+    <span>
+      SEP<br>
+      2009
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/key-value-stores/using-key-value-stores-from-ruby"><h3 class="blog-title">Using Key-Value Stores From Ruby</h3></a>
+          <p>I've been playing with a few different key-value stores recently.  My choices are pretty popular and you can find documentation for them.  However, it can still be a bit of work to relate everything to Ruby specific usage, which is what I care about.  Given that, here are my notes on the systems I've used.</p>
+
+<h4>Redis</h4>
+
+<ol>
+<li><a href="/key-value-stores/setting-up-the-redis-server">Setting up the Redis Server</a></li>
+<li><a href="/key-value-stores/using-redis-as-a-key-value-store">Using Redis as a Key-Value Store</a></li>
+<li><a href="/key-value-stores/lists-and-sets-in-redis">Lists and Sets in Redis</a></li>
+<li><a href="/key-value-stores/where-redis-is-a-good-fit">Where Redis is a Good Fit</a></li>
+</ol><h4>Tokyo Cabinet, Tokyo Tyrant, and Tokyo Dystopia</h4>
+
+<ol>
+<li>Installing the Tokyo Software</li>
+<li><a href="/key-value-stores/tokyo-cabinet-as-a-key-value-store">Tokyo Cabinet as a Key-Value Store</a></li>
+<li><a href="/key-value-stores/tokyo-cabinets-key-value-database-types">Tokyo Cabinet's Key-Value Database Types</a></li>
+<li>Tokyo Cabinet's Tables</li>
+<li>Threads and Multiprocessing With Tokyo Cabinet</li>
+<li>Tokyo Tyrant as a Network Interface</li>
+<li>The Strengths of Tokyo Cabinet</li>
+</ol>
+        </div>
+        <div class="meta-info" data-slug="key-value-stores/using-key-value-stores-from-ruby">
+  In: <a href="/key-value-stores">Key-Value Stores</a>
+  <span>|</span>
+  Tags: <a href="/tags/Redis">Redis</a> &amp; <a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/key-value-stores/using-key-value-stores-from-ruby#comments">0 Comments</a>
+</div>
+
+      </li>
+</ul>
+
+
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

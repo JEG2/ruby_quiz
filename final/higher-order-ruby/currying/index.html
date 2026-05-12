@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Higher-Order Ruby / Currying</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="In this sixth article of the Higher-Order Ruby series, I examine currying by building up a currying library.">
+    <meta name="keywords"    content="Perl, Functional Programming, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/higher-order-ruby/currying/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/higher-order-ruby">Higher-Order Ruby</a></h1>
+            <span>A Rubyification of the Perl book about functional programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>22</h4>
+    <span>
+      FEB<br>
+      2006
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Currying</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/higher-order-ruby/infinite-streams/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      &nbsp;
+  </div>
+</div>
+
+        <p>All the examples in this chapter are trivially translated (switch <code>sub { ... }</code> to <code>lambda { ... }</code>).  Ironically, I have never seen a chunk of idiomatic Ruby do anything like this.  Rubyists clearly favor blocks for this sort of work.  Have a look at the stream addition and multiplication examples of this chapter, for example.  You can also see this when MJD trying to create a suitable <code>inject()</code> for Perl (he calls it reduce/fold).</p>
+
+<p>Another interesting point about this chapter is how much of it is spent warring with Perl's syntax.  MJD really struggles to introduce a block-like syntax for curried methods and is outright defeated in a couple of attempts.  I really like how easily Ruby yields to our attempts to reprogram her, in sharp contrast to her sister language.</p>
+
+<p>Continuing that line of thought, here's my best effort at the Poor Man's Currying library:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+
+<span class="k">class</span> <span class="nc">Proc</span>
+  <span class="k">def</span> <span class="nf">curry</span><span class="p">(</span><span class="o">&amp;</span><span class="n">args_munger</span><span class="p">)</span>
+    <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|*</span><span class="n">args</span><span class="o">|</span> <span class="n">call</span><span class="p">(</span><span class="o">*</span><span class="n">args_munger</span><span class="o">[</span><span class="n">args</span><span class="o">]</span><span class="p">)</span> <span class="p">}</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">class</span> <span class="nc">Object</span>
+  <span class="k">def</span> <span class="nf">curry</span><span class="p">(</span><span class="n">new_name</span><span class="p">,</span> <span class="n">old_name</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">args_munger</span><span class="p">)</span>
+    <span class="p">(</span><span class="o">[</span><span class="no">Class</span><span class="p">,</span> <span class="no">Module</span><span class="o">].</span><span class="n">include?</span><span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="p">)</span> <span class="p">?</span> <span class="nb">self</span> <span class="p">:</span> <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="p">)</span><span class="o">.</span><span class="n">class_eval</span> <span class="k">do</span>
+      <span class="n">define_method</span><span class="p">(</span><span class="n">new_name</span><span class="p">)</span> <span class="p">{</span> <span class="o">|*</span><span class="n">args</span><span class="o">|</span> <span class="nb">send</span><span class="p">(</span><span class="n">old_name</span><span class="p">,</span> <span class="o">*</span><span class="n">args_munger</span><span class="o">[</span><span class="n">args</span><span class="o">]</span><span class="p">)</span> <span class="p">}</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Unlike the Perl, this feels like very natural Ruby to me.  You could argue that I struggle with Ruby's syntax because it's not easy to curry a block-taking method, but that seems like a minor issue.  (This is fixed in Ruby 1.9, which adds <code>Proc#curry</code>.)</p>
+
+<p>Here are examples of me playing with my toy:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"curry"</span>
+
+<span class="n">multiply</span> <span class="o">=</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="o">|</span> <span class="n">l</span> <span class="o">*</span> <span class="n">r</span> <span class="p">}</span>
+<span class="n">double</span>   <span class="o">=</span> <span class="n">multiply</span><span class="o">.</span><span class="n">curry</span> <span class="p">{</span> <span class="o">|</span><span class="n">args</span><span class="o">|</span> <span class="n">args</span> <span class="o">+</span> <span class="o">[</span><span class="mi">2</span><span class="o">]</span> <span class="p">}</span>
+<span class="n">triple</span>   <span class="o">=</span> <span class="n">multiply</span><span class="o">.</span><span class="n">curry</span> <span class="p">{</span> <span class="o">|</span><span class="n">args</span><span class="o">|</span> <span class="n">args</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span> <span class="p">}</span>
+
+<span class="n">multiply</span><span class="o">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span>    <span class="c1"># =&gt; 10</span>
+<span class="n">double</span><span class="o">[</span><span class="mi">5</span><span class="o">]</span>         <span class="c1"># =&gt; 10</span>
+<span class="n">triple</span><span class="o">[</span><span class="mi">5</span><span class="o">]</span>         <span class="c1"># =&gt; 15</span>
+<span class="n">triple</span><span class="o">[</span><span class="s2">"Howdy "</span><span class="o">]</span>  <span class="c1"># =&gt; "Howdy Howdy Howdy "</span>
+
+<span class="k">class</span> <span class="nc">Value</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="vi">@value</span> <span class="o">=</span> <span class="n">value</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">*</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+    <span class="vi">@value</span> <span class="o">*</span> <span class="n">other</span>
+  <span class="k">end</span>
+  <span class="n">curry</span><span class="p">(</span><span class="ss">:double</span><span class="p">,</span> <span class="ss">:*</span><span class="p">)</span> <span class="p">{</span> <span class="o">[</span><span class="mi">2</span><span class="o">]</span> <span class="p">}</span>
+  <span class="n">curry</span><span class="p">(</span><span class="ss">:triple</span><span class="p">,</span> <span class="ss">:*</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">args</span><span class="o">|</span> <span class="n">args</span><span class="o">.</span><span class="n">unshift</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="p">}</span>
+<span class="k">end</span>
+
+<span class="n">five</span><span class="p">,</span> <span class="n">howdy</span> <span class="o">=</span> <span class="no">Value</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span> <span class="no">Value</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"Howdy "</span><span class="p">)</span>
+<span class="n">five</span> <span class="o">*</span> <span class="mi">2</span>      <span class="c1"># =&gt; 10</span>
+<span class="n">five</span><span class="o">.</span><span class="n">double</span>   <span class="c1"># =&gt; 10</span>
+<span class="n">five</span><span class="o">.</span><span class="n">triple</span>   <span class="c1"># =&gt; 15</span>
+<span class="n">howdy</span><span class="o">.</span><span class="n">triple</span>  <span class="c1"># =&gt; "Howdy Howdy Howdy "</span>
+</pre></div>
+
+<p>I am purposefully trying to show the library's flexibility in these calls.  The version in the book only supports currying a single argument at the front of the list.  In 15 lines the Ruby version can completely rewrite arguments as it sees fit and it includes OO support.</p>
+
+<p>You be the final judge, but I stand by my claim that Higher-Order Perl is the quest to bring many Rubyisms to Perl.</p>
+
+<p>If you want to go deeper down the rabbit hole of currying in Ruby, I recommend you check out the Ruby library <a href="http://rubygems.org/gems/rubymurray">Murray</a>.  If you want to see a more Rubyish example of the <code>FlatDB</code> MJD builds in these pages, also see <a href="/ruby-tutorials/code-as-a-data-type/">my article on code blocks</a>.</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/higher-order-ruby/infinite-streams/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      &nbsp;
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="higher-order-ruby/currying">
+  In: <a href="/higher-order-ruby/">Higher-Order Ruby</a>
+  <span>|</span>
+  Tags: <a href="/tags/Functional%20Programming/">Functional Programming</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/higher-order-ruby/currying#comments">4 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (4)</span></h5>
+
+    <ol>
+        <li id="comment_79">
+    <div class="avatar"><img alt="Gregory" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="79">
+      <span class="c_name"><a href="http://stonecode.org/blog">Gregory</a></span>
+      <span class="c_date">November 22nd, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/currying#comment_79">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>The code is super clean, though i did need to get into 'functional<br>
+programming mode' to get it (took me about 5 minutes to understand<br>
+what was going on).</p>
+
+<p>Currying is academically super interesting, but I think it's more<br>
+useful in languages like Haskell.</p>
+
+<p>If I were to write a double lambda which curried a multiply lambda,<br>
+for instance, I'd just do this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">multiply</span> <span class="o">=</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="o">|</span> <span class="n">a</span> <span class="o">*</span> <span class="n">b</span> <span class="p">}</span>
+<span class="n">double</span>   <span class="o">=</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">a</span><span class="o">|</span> <span class="n">multiply</span><span class="o">[</span><span class="n">a</span><span class="p">,</span><span class="mi">2</span><span class="o">]</span> <span class="p">}</span>
+</pre></div>
+
+<p>I think this is a lot less scary than a generalized currying lib, and<br>
+just as powerful.</p>
+
+<p>Maybe I'm missing a killer use case though.  The method aliasing is<br>
+definitely cool:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">curry</span><span class="p">(</span><span class="ss">:double</span><span class="p">,</span> <span class="ss">:*</span><span class="p">)</span> <span class="p">{</span> <span class="o">[</span><span class="mi">2</span><span class="o">]</span> <span class="p">}</span>
+</pre></div>
+
+<p>But what does that get me over:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">double</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+  <span class="n">num</span> <span class="o">*</span> <span class="mi">2</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I think the problem with Ruby is it doesn't need stuff like this. :)</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_80">
+    <div class="avatar"><img alt="Paul" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="80">
+      <span class="c_name">Paul</span>
+      <span class="c_date">November 23rd, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/currying#comment_80">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>What I find strange is that the syntax for calling your curried function uses square brackets whereas the syntax for calling regular methods (like <code>puts</code> and <code>chop</code>) uses parens. It's an unfortunate aspect of Ruby's design. Python can do most of the same tricks but both the input and the output of the curry are Python "callables" called with parens.</p>
+
+<p><a href="http://www.python.org/dev/peps/pep-0309/">http://www.python.org/dev/peps/pep-0309/</a></p>
+
+<p><a href="http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52549">http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52549</a></p></div>
+    <ol>
+      
+        <li id="comment_81">
+    <div class="avatar"><img alt="Paul" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="81">
+      <span class="c_name">Paul</span>
+      <span class="c_date">November 23rd, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/currying#comment_81">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>In Python:</p>
+
+<div class="highlight highlight-python"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">functools</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">five_or_higher</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="nb">max</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">five_or_higher</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+<span class="mi">6</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">five_or_higher</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="mi">5</span>
+</pre></div>
+
+<p>According to the Python docs, partial could be implemented like this:</p>
+
+<div class="highlight highlight-python"><pre><span class="k">def</span> <span class="nf">partial</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">keywords</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">newfunc</span><span class="p">(</span><span class="o">*</span><span class="n">fargs</span><span class="p">,</span> <span class="o">**</span><span class="n">fkeywords</span><span class="p">):</span>
+        <span class="n">newkeywords</span> <span class="o">=</span> <span class="n">keywords</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">newkeywords</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fkeywords</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">args</span> <span class="o">+</span> <span class="n">fargs</span><span class="p">),</span> <span class="o">**</span><span class="n">newkeywords</span><span class="p">)</span>
+    <span class="n">newfunc</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+    <span class="n">newfunc</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+    <span class="n">newfunc</span><span class="o">.</span><span class="n">keywords</span> <span class="o">=</span> <span class="n">keywords</span>
+    <span class="k">return</span> <span class="n">newfunc</span>
+</pre></div>
+
+<p>Note that this partial function supports both positional and keyword arguments. </p>
+
+<p>Another interesting version looks like this:</p>
+
+<div class="highlight highlight-python"><pre><span class="o">&gt;&gt;</span> <span class="kn">from</span> <span class="nn">partial</span> <span class="kn">import</span> <span class="n">_</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">addWorld</span> <span class="o">=</span> <span class="n">_</span> <span class="o">+</span> <span class="s">" world!"</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">addWorld</span><span class="p">(</span><span class="s">"Hello,"</span><span class="p">)</span>
+<span class="s">"Hello, world"</span>
+</pre></div>
+
+<p><a href="http://www.xoltar.org/2003/jun/25/partialModule.html">http://www.xoltar.org/2003/jun/25/partialModule.html</a></p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_135">
+    <div class="avatar"><img alt="Suraj" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="135">
+      <span class="c_name">Suraj</span>
+      <span class="c_date">October 6th, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/currying#comment_135">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>He only used square brackets as a shortcut (i.e. <code>Proc#[]</code> is an alias to <code>Proc#call</code>).</p>
+
+<p>You can replace the square brackets <code>[...]</code> in his example with <code>.call(...)</code> and things will work just the same.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

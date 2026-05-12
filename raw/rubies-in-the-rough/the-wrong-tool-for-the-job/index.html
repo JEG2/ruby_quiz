@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / The Wrong Tool for the Job</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This is an article about the tradeoffs we make when programming and why you might want to go against the grain to learn new tricks.">
+    <meta name="keywords"    content="thinking about code, software design, Scripting, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/the-wrong-tool-for-the-job/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      NOV<br>
+      2011
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">The Wrong Tool for the Job</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/rubies-in-the-rough/doing-it-wrong">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p>I want to start our exploration of how to think about Ruby programming with a miniseries called <em>Breaking All of the Rules</em>.  As I'm sure you know, programmers have a lot of rules.  You can barely speak to a programmer for a few minutes without them quoting some axiom.  We have a huge collection of advice to hand out.</p>
+
+<p>Fortunately, I'm not just a programmer.  I'm also a tournament chess player.  Getting good at chess has really helped my programming.  That's because chess players also have a ton of rules.</p>
+
+<p>Perhaps you've seen our books of opening chess moves?  They are literally hundred of pages that just list the various moves that you can "start" a chess game with.  I use the word start very loosely there because some combinations can go 20 moves into the game or more.  Chess games generally only average about 60 moves, so the first third of what we do is often straight out of a book.  In fact, while you are playing a chess opening, we say that you are "in book."  That means you are following the rules.</p>
+
+<p>But here's the kicker:  it's very common for a player to "break book" at some point.  Yes, they choose to stop following the rules, on purpose.</p>
+
+<p>Don't get me wrong, the rules are great.  They exist to help us, literally.  In chess they are there to steer you away from traps players can fall into.  That's why we suffer through the rote memorization of so many openings.</p>
+
+<p>Why then do we break out of the pattern at some point?  Well, once we do we won't know exactly what comes next, but neither will our opponent.  From that point forward, it's just your ideas against theirs.  Given that, if you break book, you send the impression we're going to play the game your way.  That can give you a slight advantage with regard to initiative, assuming you manage to avoid the dangers the book openings protect your from.</p>
+
+<p>This pattern repeats over and over again in chess.  Learning the rules will make you good.  They protect you.  However, learning the right time to break them will make you great.</p>
+
+<p>Eventually, I realized that programming is much the same.  All those rules we drill into your head when you are learning to program, well, they are designed to protect you.  That's why we teach them, of course.  But, if you can learn the right times to break them, there are advantages to be had.</p>
+
+<p>Let's look at how and why we might choose to break a rule.</p>
+
+<h4>A First Rule</h4>
+
+<p>It's unlikely you can be a part of the programming world very long without hearing this rule:  use the right tool for the job.  The real question is, why do we say this?</p>
+
+<p>I assume the answers are fairly obvious in this case.  The right tool for the job is probably going to be easier to use.  It should also be more efficient at doing a job it is intended to accomplish.</p>
+
+<p>But what if those just aren't your main goals?</p>
+
+<p>For example, let's say you've set a goal for yourself to really learn some Ruby.  Maybe you came to the language via Ruby on Rails or another similar source and now you are ready to really get down to understanding the language underneath the surface.  Let's say that's your primary goal:  learn more Ruby.</p>
+
+<p>In a series of fantasy books I read, called the <em>The Wheel of Time</em>, there are two groups of magic users.  The women have been at it for a very long time now.  They find girls with the potential to use magic, take them to their school, and give them excellent, if very strict, training about how and even when they are allowed to use magic.  The men are a different story.  Magic was outlawed for them until very recently, so they are new to the game.  In order to catch up, they use their magic for everything they possibly can.  They make their beds and warm their tea using their magic.  Of course, their way is more dangerous and some of them do get hurt.  Those that avoid the dangers though learn very fast due to the copious practice.</p>
+
+<p>The same could work for Ruby.  If you really want to raise your skill, using it more will help.  Plus, you are less likely to burn your house down when you just want to make some tea.</p>
+
+<h4>The Command-line Frontier</h4>
+
+<p>Where could you use more Ruby?  One place that is often overlooked is at the command-line.  Programmers are pretty much always needing to do some task at the command-line.</p>
+
+<p>Let me give an example.  Just last week I received a bug report for a Rails application where the user got it into a bad state after some complex interactions.  I needed to know this user's exact path through the application to be able to reproduce what happened.</p>
+
+<p>That's a job for scanning through log files.  There's so much data in a log file though and I needed to get the right data.  Luckily, the user told me what they entered into one of the forms.  I used <code>grep</code> (with a small assist from <code>zcat</code>) to search for one of those exact parameters, like this:</p>
+
+<pre><code>$ zcat log/production.log.4.gz | grep 'EXACT_EMAIL'
+  Parameters: {…, "user"=&gt;{"email"=&gt;"EXACT_EMAIL", …}, "commit"=&gt;"Sign Up"}
+</code></pre>
+
+<p>That matched line is part of one of their requests.  If I can see how that request started, I can find the user.  I asked <code>grep</code> for a little <b>c</b>ontext:</p>
+
+<pre><code>$ zcat log/production.log.4.gz | grep -C 2 'EXACT_EMAIL'
+Started POST "/connect" for 0.0.0.0 at 2011-10-25 10:09:30 +0000
+  Processing by SessionsController#create as HTML
+  Parameters: {…, "user"=&gt;{"email"=&gt;"EXACT_EMAIL", …}, "commit"=&gt;"Sign Up"}
+Rendered user_mailer/validation.text.erb (0.6ms)
+…
+</code></pre>
+
+<p>Bingo, that got me an IP address, which we will say was 0.0.0.0 just for example purposes.  Now it's trivial to look at just the requests of that user:</p>
+
+<pre><code>$ zcat log/production.log.4.gz | grep 'for 0\.0\.0\.0'
+Started GET "/rubies-in-the-rough" for 0.0.0.0 at 2011-10-25 08:40:01 +0000
+Started GET "/connect?…" for 0.0.0.0 at 2011-10-25 10:08:53 +0000
+Started GET "/auth/github" for 0.0.0.0 at 2011-10-25 10:08:58 +0000
+Started GET "/auth/twitter" for 0.0.0.0 at 2011-10-25 10:09:04 +0000
+Started GET "/auth/twitter/callback?…" for 0.0.0.0 at …
+Started GET "/connect" for 0.0.0.0 at 2011-10-25 10:09:15 +0000
+Started POST "/connect" for 0.0.0.0 at 2011-10-25 10:09:30 +0000
+Started GET "/" for 0.0.0.0 at 2011-10-25 10:09:33 +0000
+Started GET "/rubies-in-the-rough" for 0.0.0.0 at 2011-10-25 10:14:02 +0000
+Started GET "/connect?…" for 0.0.0.0 at 2011-10-25 10:14:38 +0000
+Started GET "/auth/twitter" for 0.0.0.0 at 2011-10-25 10:14:46 +0000
+Started GET "/auth/twitter/callback?…" for 0.0.0.0 at …
+Started GET "/connect" for 0.0.0.0 at 2011-10-25 10:14:49 +0000
+Started GET "/validate/…" for 0.0.0.0 at 2011-10-25 10:15:02 +0000
+Started GET "/rubies-in-the-rough" for 0.0.0.0 at 2011-10-25 10:15:04 +0000
+Started GET "/" for 0.0.0.0 at 2011-10-25 10:15:08 +0000
+Started GET "/rubies-in-the-rough" for 0.0.0.0 at 2011-10-25 10:19:14 +0000
+</code></pre>
+
+<p>That tells me where they went, but it doesn't tell me how those requests turned out.  If I need to know that too, I can ask <code>grep</code> to add <b>a</b>fter context:</p>
+
+<pre><code>$ zcat log/production.log.4.gz | grep -A 10 'for 0\.0\.0\.0'
+Started GET "/rubies-in-the-rough" for 0.0.0.0 at 2011-10-25 08:40:01 +0000
+  Processing by InterestsController#show as HTML
+  Parameters: {"param"=&gt;"rubies-in-the-rough"}
+Rendered interests/_interest.html.erb (5.6ms)
+Rendered shared/_nav_links.html.erb (1.4ms)
+Rendered shared/_nav_links.html.erb (2.3ms)
+Rendered interests/show.html.erb within layouts/application (15.5ms)
+Completed 200 OK in 20ms (Views: 16.0ms | ActiveRecord: 1.5ms)
+
+
+Started GET "/rubies-in-the-rough" for 1.1.1.1 at 2011-10-25 08:41:45 +0000
+--
+Started GET "/connect?…" for 0.0.0.0 at 2011-10-25 10:08:53 +0000
+  Processing by SessionsController#create as HTML
+…
+</code></pre>
+
+<p>This approach isn't perfect.  I just guessed at the context number and you can see that I picked up some noise from other requests (1.1.1.1 in this example).  Still, it's fairly easy to follow where the requests I care about start, thanks to <code>grep</code> adding <code>--</code> dividing lines.  As it turns out, this was enough information to understand what had happened.</p>
+
+<p>Now for a twist:  what if I hadn't known <code>grep</code> well enough to do this?</p>
+
+<h4>Command-line Ruby</h4>
+
+<p>I call easily tell you what I would have done if I couldn't use <code>grep</code> for my log spelunking task, because I do it all the time.  I fallback on the one thing I know like crazy:  Ruby.</p>
+
+<p>Ruby has a surprising amount of command-line magic built into it that can turn it into a deadly weapon for those who know how to use it.  Let me walk you through some personal favorites.</p>
+
+<p>First, you have to learn <code>-e</code>.  It's the key to command-line Ruby.  It means, there's no script this time so just <b>e</b>xecute the following code.  To show a trivial example, let's generate some data that we can use in upcoming examples:</p>
+
+<pre><code>$ ruby -e 'puts((1..10).to_a)'
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</code></pre>
+
+<p>Did you know <code>puts()</code> will accept an <code>Array</code> and print it one-item-per-line?  I love that trick.</p>
+
+<p>OK, but let's use output redirection to toss that data into a file and make a little more:</p>
+
+<pre><code>$ ruby -e 'puts((1..10).to_a)' &gt; one_to_ten.txt
+$ ruby -e 'puts((11..20).to_a)' &gt; eleven_to_twenty.txt
+$ ls
+eleven_to_twenty.txt one_to_ten.txt
+</code></pre>
+
+<p>Perfect.</p>
+
+<p>Now, it's worth discussing just how well behaved Unix programs like <code>grep</code> read data.  I bet you already know that you can pass a file argument on the command-line and <code>grep</code> will search inside of that file (shown here using a pattern that always matches every line):</p>
+
+<pre><code>$ grep '^' one_to_ten.txt
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</code></pre>
+
+<p>What you may not know is that you aren't just limited to one file.  If you provide more, <code>grep</code> will just treat them as one long data stream, searching through them in the order they are listed:</p>
+
+<pre><code>$ grep '^' one_to_ten.txt eleven_to_twenty.txt 
+one_to_ten.txt:1
+one_to_ten.txt:2
+one_to_ten.txt:3
+one_to_ten.txt:4
+one_to_ten.txt:5
+one_to_ten.txt:6
+one_to_ten.txt:7
+one_to_ten.txt:8
+one_to_ten.txt:9
+one_to_ten.txt:10
+eleven_to_twenty.txt:11
+eleven_to_twenty.txt:12
+eleven_to_twenty.txt:13
+eleven_to_twenty.txt:14
+eleven_to_twenty.txt:15
+eleven_to_twenty.txt:16
+eleven_to_twenty.txt:17
+eleven_to_twenty.txt:18
+eleven_to_twenty.txt:19
+eleven_to_twenty.txt:20
+</code></pre>
+
+<p>Finally, we can list no files at all and <code>grep</code> will read from <code>STDIN</code>.  Let's pipe some data there to show that:</p>
+
+<pre><code>$ cat one_to_ten.txt eleven_to_twenty.txt | grep '^'
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+</code></pre>
+
+<p>You can tell this is a pretty standard means of treating input for Unix programs, because I slipped in an example of <code>cat</code> reading from multiple files the same way <code>grep</code> did.</p>
+
+<p>Ruby also supports this input pattern.  It has a special constant called <code>ARGF</code> that supports <code>IO</code>-like operations.  <code>ARGF</code> does the same trick of reading from the passed files names or <code>STDIN</code>.</p>
+
+<p>Given that, we can make a <code>cat</code>-like Ruby command with this code:</p>
+
+<pre><code>$ ruby -e 'ARGF.each do |line| puts line end' one_to_ten.txt
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</code></pre>
+
+<p>We don't really do that though.  That model is so common that Ruby provides many shortcuts for it.  First, we can just order Ruby into a <b>p</b>rint loop with no code to execute:</p>
+
+<pre><code>$ ruby -pe '' one_to_ten.txt eleven_to_twenty.txt 
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+</code></pre>
+
+<p>Obviously, that's not too helpful, but we can transform the data on the way through, say to line up the numbers:</p>
+
+<pre><code>$ ruby -pe '$_ = "%04d\n" % $_' one_to_ten.txt eleven_to_twenty.txt 
+0001
+0002
+0003
+0004
+0005
+0006
+0007
+0008
+0009
+0010
+0011
+0012
+0013
+0014
+0015
+0016
+0017
+0018
+0019
+0020
+</code></pre>
+
+<p>OK, that got pretty cryptic, so we better walk through it.  First, <code>-p</code> basically wraps your code in this loop:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">while</span> <span class="nb">gets</span>
+  <span class="c1"># any code (say from -e) goes here</span>
+  <span class="nb">print</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Even that is still a bit cryptic.  These bare <code>Kernel</code> methods like <code>gets()</code> and <code>print()</code> have some powerful defaults.  For example, <code>gets()</code> reads from <code>ARGF</code> by default and stores the result in <code>$_</code> (the current line variable).  Similarly, <code>print</code> will spit out the contents of <code>$_</code> when no arguments are passed.  In other words, you can think of the above loop in this expanded form, if it helps:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">while</span> <span class="p">(</span><span class="vg">$_</span> <span class="o">=</span> <span class="no">ARGF</span><span class="o">.</span><span class="n">gets</span><span class="p">)</span>
+  <span class="c1"># any code (say from -e) goes here</span>
+  <span class="nb">print</span> <span class="vg">$_</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That leaves only what I passed to <code>-e</code>:  <code>$_ = "%04d\n" % $_</code>.  The <code>String</code> is a format saying to display a decimal number on a line by itself, make it at least 4 digits wide, and lead with zeros instead of spaces.  It's applied to the current contents of <code>$_</code> (from <code>gets()</code>) using the format operator (<code>%</code>).  The result is stuffed back into <code>$_</code> (so <code>print()</code> will output the modified content).</p>
+
+<p>Now, we don't have to print each line.  Ruby also supports <code>-n</code>, which is the same loop with <b>n</b>o <code>print()</code>.  Using that, we can decide what to print:</p>
+
+<pre><code>$ ruby -ne 'print if $_.to_i.even?' one_to_ten.txt eleven_to_twenty.txt 
+2
+4
+6
+8
+10
+12
+14
+16
+18
+20
+</code></pre>
+
+<p>That means we've reached the point where we can write our own <code>grep</code>:</p>
+
+<pre><code>$ ruby -ne 'print if $_ =~ /6/' one_to_ten.txt eleven_to_twenty.txt 
+6
+16
+</code></pre>
+
+<p>Oh, but Ruby has another shortcut for that too.  Testing <code>$_</code> against a Regular Expression is common in these command-line programs, so Ruby allows you to drop the variable reference and the operator:</p>
+
+<pre><code>$ ruby -ne 'print if /6/' one_to_ten.txt eleven_to_twenty.txt 
+6
+16
+</code></pre>
+
+<p>Cryptic, but powerful, eh?</p>
+
+<h5>Tracking Context</h5>
+
+<p>I've shown you some simple command-line tricks, but how would we handle the surrounding context like <code>grep</code> does?</p>
+
+<p>The following lines are pretty easy, now that we know how what the loop surrounding our code looks like.  Here are our matches, with up to two lines of context below them:</p>
+
+<pre><code>$ cat one_to_ten.txt eleven_to_twenty.txt &gt; ns.txt
+$ ruby -ne 'if /9/; print; 2.times do gets and print end end' ns.txt
+9
+10
+11
+19
+20
+</code></pre>
+
+<p>Note that I condensed our number files before I started there, to keep these commands shorter.  Also note that it's fine to pass multiple lines to <code>-e</code> as long as you split them with semicolons (<code>;</code>).</p>
+
+<p>In the example above, I just fetch and print some extra lines when I find a match.  I use <code>gets()</code> and <code>print()</code> for the extra lines, just like Ruby is doing with our loop.</p>
+
+<p>That covers after context, but how would we handle before context?  That's trickier.  We need to track proceeding lines somewhere.  But assigning a variable inside of our loop could mean that it would be reassigned each time.  Does it surprise you to hear that Ruby has an answer for that too?</p>
+
+<p>You probably learned at some point that interpreters, like Ruby, start executing code on your first line and finish at the last line (assuming no flow control or calls to <code>exit()</code>).  That's not really the full story though.  Run this Ruby program to prove it to yourself:</p>
+
+<div class="highlight highlight-ruby"><pre>        <span class="nb">puts</span> <span class="s2">"Two"</span>
+<span class="k">END</span>   <span class="p">{</span> <span class="nb">puts</span> <span class="s2">"Five"</span> <span class="p">}</span>
+        <span class="nb">puts</span> <span class="s2">"Three"</span>
+<span class="k">BEGIN</span> <span class="p">{</span> <span class="nb">puts</span> <span class="s2">"One"</span>  <span class="p">}</span>
+        <span class="nb">puts</span> <span class="s2">"Four"</span>
+</pre></div>
+
+<p>Does it surprise you that those numbers print in order?  Well, surprising or not, they do.  Ruby's actual execution goes something like this:</p>
+
+<ol>
+<li>Run all <code>BEGIN { … }</code> blocks from first encountered to last</li>
+<li>Run all code outside of <code>BEGIN { … }</code> and <code>END { … }</code> first to last</li>
+<li>Run all <code>END { … }</code> blocks from first encountered to last</li>
+</ol><p>Given that, we could recreate <code>wc -l</code> (<b>w</b>ord <b>c</b>ount <b>l</b>ines) like this:</p>
+
+<pre><code>$ ruby -ne 'BEGIN { $count = 0 }; $count += 1; END { p $count }' ns.txt 
+20
+</code></pre>
+
+<p>Even though all of that code is technically inside of our loop, the <code>BEGIN { … }</code> block is run before the loop and <code>END { … }</code> is run after.</p>
+
+<p>Now that we know another dirty trick, we are ready to take on <code>grep</code>'s before context lines:</p>
+
+<pre><code>$ ruby -ne 'BEGIN { $p = [] };
+            puts $p, $_ if /2$/; $p = ($p + [$_]).last(2)' ns.txt 
+1
+2
+10
+11
+12
+</code></pre>
+
+<p>I finally had to break that example up over two lines to keep it readable, but I really entered it all on one long line in my terminal.</p>
+
+<p>You can see that I just prepared an <code>Array</code> before we ever started and I'm adding new lines onto it as they come in.  However, I'm keeping it truncated down to just the context I care about.  Then, when it's time to <code>print()</code>, I place those lines before the match.</p>
+
+<p>We can combine those two techniques to reproduce <code>grep</code>'s <code>-C</code> switch.  In order to do that though, I'll need to use the context size in multiple places.  That means it's time to get it into a variable.  Wouldn't you know it, Ruby has a switch for that too?  Watch this:</p>
+
+<pre><code>$ ruby -se 'p [$var, $n]' -- -var='some value' -n=42
+["some value", "42"]
+</code></pre>
+
+<p>When you pass <code>-s</code> Ruby parses arguments after the script name (or the argument ender <code>--</code>).  If they take the form of <code>-VARIABLE=VALUE</code>, Ruby will strip them and set a global variable equal to the indicated value.  This can make it a little easier to configure simple scripts.</p>
+
+<p>Given that, here's the final <code>grep</code>-with-context copycat:</p>
+
+<pre><code>$ ruby -nse 'BEGIN { $p = [] };
+             if /6/; puts $p, $_;
+             $c.to_i.times do gets and print end end;
+             $p = ($p + [$_]).last($c.to_i)' -- -c=2 ns.txt
+4
+5
+6
+7
+8
+14
+15
+16
+17
+18
+</code></pre>
+
+<p>Again that's just one line.</p>
+
+<h5>Ruby's Advantage</h5>
+
+<p>OK, let's face it, <code>grep</code> pretty handily whips my attempts to replace it.  However, don't count our friend Ruby out just yet!</p>
+
+<p>It's important to remember that <code>grep</code> is a hyper-specialized tool that's very good at what it does, but has a limited scope.  Ruby, on the other hand, is a general purpose programming language.  It has a lot of tricks up its sleeve and a big reach when it comes to problem domains.</p>
+
+<p>Let me prove it to you by turning the tables on <code>grep</code>.</p>
+
+<p>Remember the original problem?  I was trying to find the specific requests from one user in a log file.  I used <code>grep</code> and it worked, but I had to guess how much context I would need and put up with some noise from unrelated requests.</p>
+
+<p>Ruby can do better, with one last shortcut.  Meet the "flip flop" operator:</p>
+
+<pre><code>$ ruby -ne 'print if /4/../7/' ns.txt 
+4
+5
+6
+7
+14
+15
+16
+17
+</code></pre>
+
+<p>When you use a <code>Range</code> of <code>Regexp</code> objects in a command-line conditional like this, Ruby takes it as starting and ending conditions.  When the first <code>Regexp</code> matches once, a switch will flip on and the condition will return <code>true</code> until the second <code>Regexp</code> matches a line.  The condition then goes back to being <code>false</code> until the first <code>Regexp</code> matches again.</p>
+
+<p>In the example above, the first expression matched on line <code>4</code>, so we started printing.  The second expression matched line <code>7</code> so that's where we stopped printing.  The cycle repeated on lines <code>14</code> and <code>17</code>.</p>
+
+<p>Let's take this back to my original problem:</p>
+
+<pre><code>$ zcat log/production.log.4.gz |
+  ruby -ne 'if /^Started.+for 0\.0\.0\.0/../^Completed/;
+            print; puts "--" if /^Completed/ end'
+Started GET "/rubies-in-the-rough" for 0.0.0.0 at 2011-10-25 08:40:01 +0000
+  Processing by InterestsController#show as HTML
+  Parameters: {"param"=&gt;"rubies-in-the-rough"}
+Rendered interests/_interest.html.erb (5.6ms)
+Rendered shared/_nav_links.html.erb (1.4ms)
+Rendered shared/_nav_links.html.erb (2.3ms)
+Rendered interests/show.html.erb within layouts/application (15.5ms)
+Completed 200 OK in 20ms (Views: 16.0ms | ActiveRecord: 1.5ms)
+--
+Started GET "/connect?…" for 0.0.0.0 at 2011-10-25 10:08:53 +0000
+  Processing by SessionsController#create as HTML
+  Parameters: {…}
+Rendered users/_form.html.erb (73.2ms)
+Rendered shared/_connection_links.html.erb (3.4ms)
+Rendered shared/_nav_links.html.erb (0.9ms)
+Rendered shared/_nav_links.html.erb (1.6ms)
+Rendered sessions/new.html.erb within layouts/application (85.6ms)
+Completed 200 OK in 87ms (Views: 85.3ms | ActiveRecord: 1.0ms)
+--
+Started GET "/auth/github" for 0.0.0.0 at 2011-10-25 10:08:58 +0000
+  Processing by ConnectionsController#auth as HTML
+  Parameters: {"provider"=&gt;"github"}
+Rendered public/404.html (0.1ms)
+Completed 404 Not Found in 1ms (Views: 0.8ms | ActiveRecord: 0.0ms)
+…
+</code></pre>
+
+<p>The Ruby version is a little longer, but it grabs exactly what I want without guessing or noise.  (Note:  that might not be the case if requests had been interleaved in the log, but <code>grep</code> would fair no better in that case.)  I say we can call this a win.</p>
+
+<h4>Remember, There are Traps to Avoid</h4>
+
+<p>I have purposely taken you into some very dark corners of Ruby in this article.  I did that to hopefully stretch your brain a bit with something you may not be familiar with.</p>
+
+<p>I'm also serious about using more command-line Ruby.  I promise you will learn new things, good and bad.  The bad lessons are helpful too.</p>
+
+<p>Remember though, we're breaking book here.  Ruby prides itself on being a clean language.  However, a lot of the features I've shown today are dangerously cryptic.  If you write a full program using these features, you're going to step right into those traps the rules try to protect your from.</p>
+
+<p>Play your own game, but watch for traps.</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/rubies-in-the-rough/doing-it-wrong">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/the-wrong-tool-for-the-job">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Scripting">Scripting</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/the-wrong-tool-for-the-job#comments">2 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (2)</span></h5>
+
+    <ol>
+        <li id="comment_504">
+    <div class="avatar"><img alt="Ryan LeCompte" height="70" src="http://www.gravatar.com/avatar/ff8d752bc77d9b25e4b457401ea0f84c?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="504">
+      <span class="c_name"><a href="https://twitter.com/ryanlecompte">Ryan LeCompte</a></span>
+      <span class="c_date">January 14th, 2012</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/the-wrong-tool-for-the-job#comment_504">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I really enjoyed this article! Here's another way to extract full requests from a rails log using <code>Enumerable#slice_before</code>:</p>
+
+<pre><code>ruby -e 'ARGF.slice_before(/^Started (GET|POST|PUT|DELETE)/).each { |slice| puts slice }' development.log
+</code></pre></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/the-wrong-tool-for-the-job/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="r0W9qAQkoY0oy56DdEwNpm1LIk2AFVFhy9T26HSRqrM=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="504" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fthe-wrong-tool-for-the-job" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fthe-wrong-tool-for-the-job" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_504" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_511">
+    <div class="avatar"><img alt="Lucas Prim" height="70" src="http://www.gravatar.com/avatar/d7556befd6b2a40d5618be1c0340e54a?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="511">
+      <span class="c_name"><a href="mailto:lucas.prim@gmail.com">Lucas Prim</a></span>
+      <span class="c_date">February 17th, 2012</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/the-wrong-tool-for-the-job#comment_511">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Wow! I would never have guessed that ruby could overthrow <code>grep</code> so beautifully! Great article!</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/the-wrong-tool-for-the-job/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="r0W9qAQkoY0oy56DdEwNpm1LIk2AFVFhy9T26HSRqrM=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="511" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fthe-wrong-tool-for-the-job" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fthe-wrong-tool-for-the-job" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_511" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/rubies-in-the-rough/the-wrong-tool-for-the-job/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="r0W9qAQkoY0oy56DdEwNpm1LIk2AFVFhy9T26HSRqrM=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fthe-wrong-tool-for-the-job" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fthe-wrong-tool-for-the-job" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

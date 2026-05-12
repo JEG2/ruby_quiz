@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / Sleepy Programs</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Can we do modern message passing multiprocessing in Ruby across processes and thread?  Sure can.">
+    <meta name="keywords"    content="thinking about code, software design, Concurrency, Performance, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/sleepy-programs/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>22</h4>
+    <span>
+      AUG<br>
+      2014
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Sleepy Programs</h3>
+        
+        <p>When we think of real multiprocessing, our thoughts probably drift more towards languages like Erlang, Go, Clojure, or Rust.  Such languages really focus on getting separate "processes" to communicate via messages.  This makes it a lot easier to know when one process is waiting on another, because calls to receive messages typically block until one is available.</p>
+
+<p>But what about Ruby?  Can we do intelligent process coordination in Ruby?</p>
+
+<p>Yes, we can.  The tools for it are more awkward though.  It's easy to run into tricky edge cases and hard to code your way out of them correctly.</p>
+
+<p>Let's play with an example to see how good we can make things.  Here's what we will do:</p>
+
+<ol>
+<li>We will start one parent process that will <code>fork()</code> a single child process</li>
+<li>The child will push three messages onto a RabbitMQ queue and <code>exit()</code>
+</li>
+<li>The parent will listen for three messages to arrive, then <code>exit()</code>
+</li>
+</ol><p>Here's a somewhat sloppy first attempt at solving this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby</span>
+
+<span class="nb">require</span> <span class="s2">"benchmark"</span>
+
+<span class="nb">require</span> <span class="s2">"bunny"</span>
+
+<span class="no">QUEUE_NAME</span> <span class="o">=</span> <span class="s2">"example"</span>
+<span class="no">MESSAGES</span>   <span class="o">=</span> <span class="sx">%w[first second third]</span>
+
+<span class="k">def</span> <span class="nf">send_messages</span><span class="p">(</span><span class="o">*</span><span class="n">messages</span><span class="p">)</span>
+  <span class="n">connection</span> <span class="o">=</span> <span class="no">Bunny</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">tap</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:start</span><span class="p">)</span>
+  <span class="n">exchange</span>   <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">create_channel</span><span class="o">.</span><span class="n">default_exchange</span>
+
+  <span class="n">messages</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">message</span><span class="o">|</span>
+    <span class="n">exchange</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">routing_key</span><span class="p">:</span> <span class="no">QUEUE_NAME</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="n">connection</span><span class="o">.</span><span class="n">close</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">listen_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span>
+  <span class="n">connection</span> <span class="o">=</span> <span class="no">Bunny</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">tap</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:start</span><span class="p">)</span>
+  <span class="n">queue</span>      <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">create_channel</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="no">QUEUE_NAME</span><span class="p">,</span> <span class="n">auto_delete</span><span class="p">:</span> <span class="kp">true</span><span class="p">)</span>
+
+  <span class="n">queue</span><span class="o">.</span><span class="n">subscribe</span> <span class="k">do</span> <span class="o">|</span><span class="n">delivery_info</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">payload</span><span class="o">|</span>
+    <span class="n">received_messages</span> <span class="o">&lt;&lt;</span> <span class="n">payload</span>
+  <span class="k">end</span>
+
+  <span class="n">time_it</span><span class="p">(</span><span class="s2">"Received </span><span class="si">#{</span><span class="no">MESSAGES</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> messages"</span><span class="p">)</span> <span class="k">do</span>
+    <span class="k">yield</span>
+  <span class="k">end</span>
+
+  <span class="n">connection</span><span class="o">.</span><span class="n">close</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">time_it</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+  <span class="n">elapsed</span> <span class="o">=</span> <span class="no">Benchmark</span><span class="o">.</span><span class="n">realtime</span> <span class="k">do</span>
+    <span class="k">yield</span>
+  <span class="k">end</span>
+  <span class="nb">puts</span> <span class="s2">"%s: %.2fs"</span> <span class="o">%</span> <span class="o">[</span><span class="nb">name</span><span class="p">,</span> <span class="n">elapsed</span><span class="o">]</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">wait_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span>
+  <span class="k">until</span> <span class="n">received_messages</span> <span class="o">==</span> <span class="no">MESSAGES</span>
+    <span class="nb">sleep</span> <span class="mi">0</span><span class="o">.</span><span class="mi">1</span>  <span class="c1"># don't peg the CPU while we wait</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">send_and_receive</span>
+  <span class="n">pid</span> <span class="o">=</span> <span class="nb">fork</span> <span class="k">do</span>
+    <span class="nb">sleep</span> <span class="mi">3</span>  <span class="c1"># make sure we're receiving before they are sent</span>
+    <span class="n">send_messages</span><span class="p">(</span><span class="o">*</span><span class="no">MESSAGES</span><span class="p">)</span>
+  <span class="k">end</span>
+  <span class="no">Process</span><span class="o">.</span><span class="n">detach</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span>
+
+  <span class="n">received_messages</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+  <span class="n">listen_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">wait_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">send_and_receive</span>
+</pre></div>
+
+<p>Let's talk about each piece of this code real quick.  You can mostly ignore the first two methods, <code>send_messages()</code> and <code>listen_for_messages()</code>.  These are just wrappers over RabbitMQ's publish and subscribe process.  The only tricky bit is that <code>listen_for_messages()</code> does a <code>yield</code> after subscribing to the queue.  The reason for this is that subscribing just spins up a separate <code>Thread</code> which will call the passed block as messages arrive.  That's happening in the background, which means the main <code>Thread</code> needs to find some way to wait until we have received the expected messages.  The <code>yield</code> gives us a place to insert this waiting code.</p>
+
+<p>The next two methods, <code>time_it()</code> and <code>wait_for_messages()</code>, are simple helpers.  I added the first mainly to give us some noticeable output.  The latter performs the waiting and checking discussed above.</p>
+
+<p>The real action happens in <code>send_and_receive()</code>.  This method should look a lot like the steps we defined earlier:  <code>fork()</code> off a child, <code>send_messages()</code>, then <code>listen_for_messages()</code>.</p>
+
+<p>Now this code has a couple of problems.  One way to see them is to run it:</p>
+
+<pre><code>$ ruby sleepy.rb
+Received 3 messages: 3.03s
+</code></pre>
+
+<p>Doesn't three seconds sound a little slow for modern hardware communicating via a super efficient queuing system?  Yeah, it is.</p>
+
+<p>I actually put the sleeps in the code manually.  Look for these two lines:</p>
+
+<pre><code># ...
+
+    sleep 0.1  # don't peg the CPU while we wait
+
+# ...
+
+    sleep 3  # make sure we're receiving before they are sent
+
+# ...
+</code></pre>
+
+<p>Now it's obvious where the three second delay is coming from, eh?  Let's talk about why I added that second <code>sleep()</code>.</p>
+
+<p>The issue is that once we <code>fork()</code> that child process, it's off to the races.  The parent process will continue running too, but we don't know who will get to what first.  If the child fires off messages before the parent is listening for them, they will be missed.  Instead we need the child to wail until the parent is ready to begin the experiment.</p>
+
+<p>My three second sleep is one crude way to sort of handle this.  I just delay the child for a significant period of time in computerland.  Odds are that the parent will be setup by the time it starts sending.  It could still fail though, if my machine was under heavy load at the time and it didn't give my parent process enough attention before the child woke up.  Plus, it's slowing our experiment way down.  In other words, this is a bad idea all around.</p>
+
+<p>The good news is that we can fix it by making some semi-cryptic changes to just one method:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">send_and_receive</span>
+  <span class="n">reader</span><span class="p">,</span> <span class="n">writer</span> <span class="o">=</span> <span class="no">IO</span><span class="o">.</span><span class="n">pipe</span>
+  <span class="n">pid</span>            <span class="o">=</span> <span class="nb">fork</span> <span class="k">do</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">close</span>
+
+    <span class="n">reader</span><span class="o">.</span><span class="n">read</span>
+    <span class="n">reader</span><span class="o">.</span><span class="n">close</span>
+
+    <span class="n">send_messages</span><span class="p">(</span><span class="o">*</span><span class="no">MESSAGES</span><span class="p">)</span>
+  <span class="k">end</span>
+  <span class="no">Process</span><span class="o">.</span><span class="n">detach</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span>
+  <span class="n">reader</span><span class="o">.</span><span class="n">close</span>
+
+  <span class="n">received_messages</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+  <span class="n">listen_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"ready"</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">close</span>
+
+    <span class="n">wait_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>As you can see, I've introduced a pipe.  A pipe is a one-way communication channel between processes.  You get an endpoint to write to and another to read from.  After you <code>fork()</code>, it's good practice to have each side <code>close()</code> the end they're not using.  Then I just have the child call <code>read()</code> on the pipe.  This will block until the parent sends some content that can be read.  The parent completes its setup, including subscribing to the queue, and then it pushes a simple <code>"ready"</code> message down the pipe.  That will get the child unblocked and sending messages.</p>
+
+<p>Does this change help?  Yes, a lot:</p>
+
+<pre><code>$ ruby sleepy.rb
+Received 3 messages: 0.10s
+</code></pre>
+
+<p>We're three seconds faster.</p>
+
+<p>Unfortunately, the remaining delay looks suspiciously like my other call to <code>sleep()</code>.  Here's that code to refresh your memory:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">wait_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span>
+  <span class="k">until</span> <span class="n">received_messages</span> <span class="o">==</span> <span class="no">MESSAGES</span>
+    <span class="nb">sleep</span> <span class="mi">0</span><span class="o">.</span><span class="mi">1</span>  <span class="c1"># don't peg the CPU while we wait</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This loop just periodically checks to see if we have our three messages yet.  We could technically remove the call to <code>sleep()</code> here and it would run.  However, it would waste a lot of CPU time just checking these messages over and over again as fast as possible.  Ironically, that bid for speed might starve the child process of resources and slow things down.  So we kind of need the <code>sleep()</code>, or something like it.</p>
+
+<p>But the problem remains that we're likely getting our messages very quickly and then just waiting for a <code>sleep()</code> call to run out so we notice they have arrived.  We can do better with one simple change:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">listen_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span>
+  <span class="n">connection</span> <span class="o">=</span> <span class="no">Bunny</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">tap</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:start</span><span class="p">)</span>
+  <span class="n">queue</span>      <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">create_channel</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="no">QUEUE_NAME</span><span class="p">,</span> <span class="n">auto_delete</span><span class="p">:</span> <span class="kp">true</span><span class="p">)</span>
+
+  <span class="n">main_thread</span> <span class="o">=</span> <span class="no">Thread</span><span class="o">.</span><span class="n">current</span>
+  <span class="n">queue</span><span class="o">.</span><span class="n">subscribe</span> <span class="k">do</span> <span class="o">|</span><span class="n">delivery_info</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">payload</span><span class="o">|</span>
+    <span class="n">received_messages</span> <span class="o">&lt;&lt;</span> <span class="n">payload</span>
+    <span class="n">main_thread</span><span class="o">.</span><span class="n">wakeup</span>
+  <span class="k">end</span>
+
+  <span class="n">time_it</span><span class="p">(</span><span class="s2">"Received </span><span class="si">#{</span><span class="no">MESSAGES</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> messages"</span><span class="p">)</span> <span class="k">do</span>
+    <span class="k">yield</span>
+  <span class="k">end</span>
+
+  <span class="n">connection</span><span class="o">.</span><span class="n">close</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The difference here is that I capture the <code>main_thread</code> before I setup my subscription.  Remember, that block will be called in a different <code>Thread</code>.  Then, each time I receive a message, I cancel any <code>sleep()</code> the <code>main_thread</code> is currently doing with a call to <code>wakeup()</code>.  This means it will recheck, when it should, as new messages arrive.</p>
+
+<p>That gives us another significant speed boost:</p>
+
+<pre><code>$ ruby sleepy.rb 
+Received 3 messages: 0.01s
+</code></pre>
+
+<p>I would probably stop here, but I should warn you that my solution isn't perfect.  Some might be tempted to take this final step:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">wait_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span>
+  <span class="k">until</span> <span class="n">received_messages</span> <span class="o">==</span> <span class="no">MESSAGES</span>
+    <span class="nb">sleep</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Here the short <code>sleep()</code> has been changed into an indefinite one.  You would think this is OK, because the other <code>Thread</code> will wake us when the time comes.  Sadly, it's not because my last fix added a race condition.  Consider what would happen if the <code>Thread</code>s executed code in this order:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="c1"># first the main thread checks, but finds only two of the three messages:</span>
+  <span class="k">until</span> <span class="n">received_messages</span> <span class="o">==</span> <span class="no">MESSAGES</span>
+
+<span class="c1"># ...</span>
+
+    <span class="c1"># then the listening thread queues the final message and wakes the main</span>
+    <span class="c1"># thread (this has no effect since it isn't currently sleeping):</span>
+    <span class="n">received_messages</span> <span class="o">&lt;&lt;</span> <span class="n">payload</span>
+    <span class="n">main_thread</span><span class="o">.</span><span class="n">wakeup</span>
+
+<span class="c1"># ...</span>
+
+    <span class="c1"># finally the main thread goes back to sleep, forever:</span>
+    <span class="nb">sleep</span>
+</pre></div>
+
+<p>As long as you leave my short <code>sleep</code>, you'll only pay a small penalty if this edge case does kick in.</p>
+
+<p>Could we ensure it didn't happen though?  Yes, with more message passing!  Here's the final code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby</span>
+
+<span class="nb">require</span> <span class="s2">"benchmark"</span>
+<span class="nb">require</span> <span class="s2">"thread"</span>
+
+<span class="nb">require</span> <span class="s2">"bunny"</span>
+
+<span class="no">QUEUE_NAME</span> <span class="o">=</span> <span class="s2">"example"</span>
+<span class="no">MESSAGES</span>   <span class="o">=</span> <span class="sx">%w[first second third]</span>
+
+<span class="k">def</span> <span class="nf">send_messages</span><span class="p">(</span><span class="o">*</span><span class="n">messages</span><span class="p">)</span>
+  <span class="n">connection</span> <span class="o">=</span> <span class="no">Bunny</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">tap</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:start</span><span class="p">)</span>
+  <span class="n">exchange</span>   <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">create_channel</span><span class="o">.</span><span class="n">default_exchange</span>
+
+  <span class="n">messages</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">message</span><span class="o">|</span>
+    <span class="n">exchange</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">routing_key</span><span class="p">:</span> <span class="no">QUEUE_NAME</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="n">connection</span><span class="o">.</span><span class="n">close</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">listen_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">,</span> <span class="n">check_queue</span><span class="p">,</span> <span class="n">listen_queue</span><span class="p">)</span>
+  <span class="n">connection</span> <span class="o">=</span> <span class="no">Bunny</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">tap</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:start</span><span class="p">)</span>
+  <span class="n">queue</span>      <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">create_channel</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="no">QUEUE_NAME</span><span class="p">,</span> <span class="n">auto_delete</span><span class="p">:</span> <span class="kp">true</span><span class="p">)</span>
+
+  <span class="n">queue</span><span class="o">.</span><span class="n">subscribe</span> <span class="k">do</span> <span class="o">|</span><span class="n">delivery_info</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">payload</span><span class="o">|</span>
+    <span class="n">received_messages</span> <span class="o">&lt;&lt;</span> <span class="n">payload</span>
+
+    <span class="n">check_queue</span> <span class="o">&lt;&lt;</span> <span class="ss">:check</span>
+    <span class="n">listen_queue</span><span class="o">.</span><span class="n">pop</span>
+  <span class="k">end</span>
+
+  <span class="n">time_it</span><span class="p">(</span><span class="s2">"Received </span><span class="si">#{</span><span class="no">MESSAGES</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> messages"</span><span class="p">)</span> <span class="k">do</span>
+    <span class="k">yield</span>
+  <span class="k">end</span>
+
+  <span class="n">connection</span><span class="o">.</span><span class="n">close</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">time_it</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+  <span class="n">elapsed</span> <span class="o">=</span> <span class="no">Benchmark</span><span class="o">.</span><span class="n">realtime</span> <span class="k">do</span>
+    <span class="k">yield</span>
+  <span class="k">end</span>
+  <span class="nb">puts</span> <span class="s2">"%s: %.2fs"</span> <span class="o">%</span> <span class="o">[</span><span class="nb">name</span><span class="p">,</span> <span class="n">elapsed</span><span class="o">]</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">wait_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">,</span> <span class="n">check_queue</span><span class="p">,</span> <span class="n">listen_queue</span><span class="p">)</span>
+  <span class="kp">loop</span> <span class="k">do</span>
+    <span class="n">check_queue</span><span class="o">.</span><span class="n">pop</span>
+
+    <span class="k">break</span> <span class="k">if</span> <span class="n">received_messages</span> <span class="o">==</span> <span class="no">MESSAGES</span>
+
+    <span class="n">listen_queue</span> <span class="o">&lt;&lt;</span> <span class="ss">:listen</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">send_and_receive</span>
+  <span class="n">reader</span><span class="p">,</span> <span class="n">writer</span> <span class="o">=</span> <span class="no">IO</span><span class="o">.</span><span class="n">pipe</span>
+  <span class="n">pid</span>            <span class="o">=</span> <span class="nb">fork</span> <span class="k">do</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">close</span>
+
+    <span class="n">reader</span><span class="o">.</span><span class="n">read</span>
+    <span class="n">reader</span><span class="o">.</span><span class="n">close</span>
+
+    <span class="n">send_messages</span><span class="p">(</span><span class="o">*</span><span class="no">MESSAGES</span><span class="p">)</span>
+  <span class="k">end</span>
+  <span class="no">Process</span><span class="o">.</span><span class="n">detach</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span>
+  <span class="n">reader</span><span class="o">.</span><span class="n">close</span>
+
+  <span class="n">received_messages</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+  <span class="n">check_queue</span>       <span class="o">=</span> <span class="no">Queue</span><span class="o">.</span><span class="n">new</span>
+  <span class="n">listen_queue</span>      <span class="o">=</span> <span class="no">Queue</span><span class="o">.</span><span class="n">new</span>
+  <span class="n">listen_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">,</span> <span class="n">check_queue</span><span class="p">,</span> <span class="n">listen_queue</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"ready"</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">close</span>
+
+    <span class="n">wait_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">,</span> <span class="n">check_queue</span><span class="p">,</span> <span class="n">listen_queue</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">send_and_receive</span>
+</pre></div>
+
+<p>Look Ma, no <code>sleep()</code>!</p>
+
+<p>My changes here are very similar to the earlier pipe trick, only I used a <code>Thread</code>-safe <code>Queue</code>.  The <code>pop()</code> method of a <code>Queue</code> will block waiting just like <code>IO</code>'s <code>read()</code> did.  I also had to introduce two <code>Queue</code>s, because I needed two-way communication.  The listening <code>Thread</code> now tells the main <code>Thread</code> when it's time to check and it won't resume listening again until the main <code>Thread</code> gives approval.</p>
+
+<p>I think this version is safe from race conditions and it doesn't wake up periodically to check things that haven't changed.  It's also still as fast as the unsafe version.</p>
+
+<p>If you must do safe multiprocessing, in any language, just pass messages.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/sleepy-programs">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Concurrency">Concurrency</a> &amp; <a href="/tags/Performance">Performance</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/sleepy-programs#comments">8 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (8)</span></h5>
+
+    <ol>
+        <li id="comment_550">
+    <div class="avatar"><img alt="Daniel Schierbeck" height="70" src="http://www.gravatar.com/avatar/a9cc05e6a7866e5fa9a7d107b5070174?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="550">
+      <span class="c_name"><a href="mailto:dasch@zendesk.com">Daniel Schierbeck</a></span>
+      <span class="c_date">August 23rd, 2014</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/sleepy-programs#comment_550">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Couldn't you create a persistent queue in the writer process - then the parent doesn't need to be ready when the write happens and you can avoid synchronizing. I think the RabbitMQ way would be for both the reader and the writer to create the queue. </p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/sleepy-programs/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Km2Rah1S5MJwm2c/86T/j6293pUFlj7+N4g3Gsai6B0=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="550" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_550" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_551">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="https://avatars.githubusercontent.com/u/5639?v=4" width="70" /></div>
+    <div class="comment-info" data-comment-id="551">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">August 23rd, 2014</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/sleepy-programs#comment_551">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>You could use persistent queues, yes.</p>
+
+<p>That's a big change though, in my opinion.  You'll want to think about things like message volume and what your storage needs will be.  Also, persistence is going to slow things a bit.  There are definitely cases where you want to make these tradeoffs, but I don't think this is a decision you make lightly.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/sleepy-programs/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Km2Rah1S5MJwm2c/86T/j6293pUFlj7+N4g3Gsai6B0=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="551" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_551" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_552">
+    <div class="avatar"><img alt="Daniel Schierbeck" height="70" src="http://www.gravatar.com/avatar/5da4c52f43677f395aff5bde775593c2?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="552">
+      <span class="c_name"><a href="mailto:daniel.schierbeck@gmail.com">Daniel Schierbeck</a></span>
+      <span class="c_date">August 25th, 2014</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/sleepy-programs#comment_552">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>The queue actually doesn't have to be persistent (i.e. stored on disk) it just needs to be a "shared" queue that's not tied to a single consumer. That way, the consumer can come and go. It'll still be in memory, and the messages will be retained by Rabbit until a consumer has grabbed them. </p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/sleepy-programs/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Km2Rah1S5MJwm2c/86T/j6293pUFlj7+N4g3Gsai6B0=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="552" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_552" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_553">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="https://avatars.githubusercontent.com/u/5639?v=4" width="70" /></div>
+    <div class="comment-info" data-comment-id="553">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">August 25th, 2014</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/sleepy-programs#comment_553">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Good to know.  Thanks for clarifying.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/sleepy-programs/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Km2Rah1S5MJwm2c/86T/j6293pUFlj7+N4g3Gsai6B0=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="553" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_553" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_554">
+    <div class="avatar"><img alt="Maurizio De Magnis" height="70" src="https://avatars.githubusercontent.com/u/21038?v=2" width="70" /></div>
+    <div class="comment-info" data-comment-id="554">
+      <span class="c_name"><a href="https://github.com/olistik">Maurizio De Magnis</a></span>
+      <span class="c_date">August 29th, 2014</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/sleepy-programs#comment_554">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><blockquote>
+<p>Instead we need the child to wail unit the parent is ready to begin the experiment.</p>
+</blockquote>
+
+<p><em>wait until</em> :-)</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/sleepy-programs/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Km2Rah1S5MJwm2c/86T/j6293pUFlj7+N4g3Gsai6B0=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="554" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_554" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_555">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="https://avatars.githubusercontent.com/u/5639?v=4" width="70" /></div>
+    <div class="comment-info" data-comment-id="555">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">August 29th, 2014</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/sleepy-programs#comment_555">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Fixed.  Thanks.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/sleepy-programs/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Km2Rah1S5MJwm2c/86T/j6293pUFlj7+N4g3Gsai6B0=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="555" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_555" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_556">
+    <div class="avatar"><img alt="Andrew Ryan Lazarus" height="70" src="https://avatars.githubusercontent.com/u/10101?v=2" width="70" /></div>
+    <div class="comment-info" data-comment-id="556">
+      <span class="c_name"><a href="https://github.com/nerdrew">Andrew Ryan Lazarus</a></span>
+      <span class="c_date">September 5th, 2014</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/sleepy-programs#comment_556">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Question: can a timeout be easily added to this? I was working on a similar problem recently, but using <code>Timeout.timeout</code> doesn't seem safe since I'm waiting on a resource from a pool. If the timeout raises at the wrong time, the resource doesn't get checked back into the pool. Ideally, a blocking call with a built in timeout would be what I want.</p>
+
+<p>Something like: <code>q.pop(timeout)</code></p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/sleepy-programs/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Km2Rah1S5MJwm2c/86T/j6293pUFlj7+N4g3Gsai6B0=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="556" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_556" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_557">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="https://avatars.githubusercontent.com/u/5639?v=4" width="70" /></div>
+    <div class="comment-info" data-comment-id="557">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">September 5th, 2014</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/sleepy-programs#comment_557">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>You can <a href="https://github.com/ruby/ruby/blob/a198bb3929a4562a12b4aa245a297c7d3695149f/ext/thread/thread.c#L303">use <code>Queue</code> in a non-blocking fashion</a> to achieve what you are after.  This requires a little bit of a busy loop, sleeping a bit and retrying until you hit your limit.</p>
+
+<p>If you want to handle your scenario without a busy loop, <a href="http://www.ruby-doc.org/core-2.1.2/Thread.html#method-c-handle_interrupt">see <code>Thread::handle_interrupt()</code></a>.  There's even an example in that documentation using <code>Timeout</code>.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/sleepy-programs/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Km2Rah1S5MJwm2c/86T/j6293pUFlj7+N4g3Gsai6B0=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="557" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_557" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/rubies-in-the-rough/sleepy-programs/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Km2Rah1S5MJwm2c/86T/j6293pUFlj7+N4g3Gsai6B0=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fsleepy-programs" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

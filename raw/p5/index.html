@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="The Ruby programming blog of James Edward Gray II (JEG2).  Any content of interest to Rubyists specifically, or developers in general, is fair game.">
+    <meta name="keywords"    content="Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1>Gray Soft</h1>
+            <span>The Ruby programming blog of James Edward Gray II (JEG2).</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+            <ul class="blog-list">
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      JAN<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/perls-golf-culture"><h3 class="blog-title">Perl&#39;s Golf Culture</h3></a>
+          <p>I'm stealing some time to write this while on vacation.  I am also under the weather.  Given that, we'll make this article short and easier on me to think up.  That's not always a bad thing though.  There are plenty of simple concepts I would like to get across.  For example, let's talk about how Perl programmers do what it is they do.</p>
+
+<h4>Ruby's Sister Language</h4>
+
+<p>I spent plenty of time in the Perl camps and I really learned a lot about programming there.  That may shock you to hear, because Perl programmers often get a bad wrap from the rest of the programming community.</p>
+
+<p>One reason they catch a lot flak is that their language is often terse to the point of obscurity.  We joke that Perl is a "write only" language or too hard for other developers to read.  That would be bad enough on its own, but Perl programmers seem to intentionally make this worse.</p>
+
+<p>Perl programmers love to play the programmer's version of golf.  That is writing a program with the fewest possible keystrokes.  To shrink their program's size, they will resort to every dirty trick in the book, including:</p><p><a href="/rubies-in-the-rough/perls-golf-culture">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/perls-golf-culture">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Experimentation">Experimentation</a> &amp; <a href="/tags/Syntax">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/perls-golf-culture#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      DEC<br>
+      2011
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/refactoring-rcat"><h3 class="blog-title">Refactoring:  rcat</h3></a>
+          <p>I use these <em>Rubies in the Rough</em> articles to teach how I think about code.  Well, I have a scary admission to make:  I didn't really understand refactoring until I was many years into being a programmer.  Sure, I knew what it meant, but I just didn't get it.  I hope to save you from the same mistake.</p>
+
+<p>Refactoring is important.  Very important.  It may be one of the most important things we do as programmers.  If I learned one thing from reading <a href="http://rubyrogues.com/023-rr-book-club-smalltalk-best-practice-patterns-with-kent-beck/">Smalltalk Best Practice Patterns</a>, it's that code's <strong>primary</strong> purpose is to communicate with the reader.  Let's face it though, when we are trying to get something working, it's often like stumbling around in the dark.  We are running into all kinds of things, breaking stuff, and just trying to reach that "Holy cow it works!" moment.  We're probably not thinking too long and hard about how well this mess we are making communicates and that's perfectly fine.</p>
+
+<p>Refactoring is where you get to fix that.  It's about taking working code and making it sexy.  Note that I said it starts with <strong>working code</strong>.  Until you have that, there's nothing worth communicating to a potential reader.  Make it work, then make it sexy.  (I believe that saying really involves speed, but that's a very different conversation we can have at a later date.)</p><p><a href="/rubies-in-the-rough/refactoring-rcat">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/refactoring-rcat">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Iterators">Iterators</a> &amp; <a href="/tags/Refactoring">Refactoring</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/refactoring-rcat#comments">5 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>11</h4>
+    <span>
+      DEC<br>
+      2011
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/even-more-eloquent-ruby"><h3 class="blog-title">Even More Eloquent Ruby</h3></a>
+          <p>I recently read <a href="http://www.amazon.com/gp/product/0321584104/ref=as_li_ss_tl?ie=UTF8&amp;tag=eloqruby-20&amp;linkCode=as2&amp;camp=217145&amp;creative=399349&amp;creativeASIN=0321584104">Eloquent Ruby</a> so we can discuss it on an upcoming <a href="http://rubyrogues.com/">Ruby Rogues</a> episode with author Russ Olsen.  In short, the book is fantastic.  You should definitely read it.</p>
+
+<p>I, on the other hand, am cranky.  When you have read Ruby books since the first one was published (literally!), you can always find something to complain about.  There are a handful of examples in Eloquent Ruby that could be better, in my opinion.  I thought I would show you some of those.  If you've read the book, this should make a nice supplement.  Don't worry if you haven't though, you will still be able to follow these ideas just fine.  I also won't spoil the ending, but you all know that the Rubyist saves the day.</p>
+
+<p>Before I start, let me stress one more time that this is a terrific book.  It has so many clear discussions of real issues Rubyists must face when writing code like class variables, the differences between <code>lambda()</code>, <code>proc()</code>, and <code>Proc.new()</code>, how to use blocks and modules, why people think Ruby leaks memory and how you can avoid those problems, plus more.  Don't let any fun I poke at the examples below change your view of this book.  If I didn't love it, I wouldn't have bothered to write this article.</p><p><a href="/rubies-in-the-rough/even-more-eloquent-ruby">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/even-more-eloquent-ruby">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Iterators">Iterators</a> &amp; <a href="/tags/Syntax">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/even-more-eloquent-ruby#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      DEC<br>
+      2011
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/dreamy-testing-part-2"><h3 class="blog-title">Dreamy Testing (Part 2)</h3></a>
+          <p>In <a href="/rubies-in-the-rough/dreamy-testing-part-1">Part 1 of this article</a>, I began building out my ideal testing interface, or at least my best attempt at such a thing.</p>
+
+<p>In that article, I worked primarily on the "assertion" interface:  a file full of calls to <code>ok()</code> with a block that returns <code>true</code> or <code>false</code> to pass or fail tests.  I also built some standard test printers to show us familiar output.</p>
+
+<p>As I wrapped up, I was running this code in <code>example/basic_test.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">ok</span><span class="p">(</span><span class="s2">"Is true"</span><span class="p">)</span>  <span class="p">{</span> <span class="kp">true</span>        <span class="p">}</span>
+<span class="n">ok</span><span class="p">(</span><span class="s2">"Is false"</span><span class="p">)</span> <span class="p">{</span> <span class="kp">false</span>       <span class="p">}</span>
+<span class="n">ok</span><span class="p">(</span><span class="s2">"Is error"</span><span class="p">)</span> <span class="p">{</span> <span class="nb">fail</span> <span class="s2">"Oops"</span> <span class="p">}</span>
+</pre></div>
+
+<p>and seeing these results:</p>
+
+<pre><code>$ ruby -I lib -r ok example/basic_test.rb 
+Running tests:
+.FE
+
+0) Failure: Is false
+  example/basic_test.rb:2:in `&lt;main&gt;'
+1) Error: Is error
+  example/basic_test.rb:3:in `block in &lt;main&gt;'
+  example/basic_test.rb:3:in `&lt;main&gt;'
+
+Finished tests in 0.000300s
+3 tests, 1 failure, 1 error
+</code></pre>
+
+<p>Of course, there was still a lot missing in my code.  Let's work on adding some of the other must have features and perhaps a nicety or two.</p>
+
+<h4>Running Tests</h4>
+
+<p>In the first article, I spent a lot of time talking about how all of the references to things other than my code in tests are a distraction.  I wanted to remove as much of that as possible.  We have done pretty well on that front.</p><p><a href="/rubies-in-the-rough/dreamy-testing-part-2">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/dreamy-testing-part-2">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Test-Driven%20Development">Test-Driven Development</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/dreamy-testing-part-2#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      NOV<br>
+      2011
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/dreamy-testing-part-1"><h3 class="blog-title">Dreamy Testing (Part 1)</h3></a>
+          <p>I want to take a swing at one last rule before I wrap up this <em>Breaking All of the Rules</em> miniseries, at least for now.  I'm not the type of guy to come out full on against many things and I won't do that here.  But there is one rule I think is on pretty shaky ground for how often I hear it thrown about.  Let's analyze it and break it.</p>
+
+<h4>Don't Reinvent the Wheel</h4>
+
+<p>It should be pretty thoroughly drilled into most programmer's minds that we don't want to waste our time reinventing wheels.  Well, let's try to find the why behind that before we accept it as law.</p>
+
+<p>First, what's the not-so-hidden assumption this time?  It's that we are wasting our time.  If we aren't, should the rule still hold?</p>
+
+<p>As always, there are good reasons that this rule exists.  Here are a couple I feel are worth honoring:</p>
+
+<ul>
+<li>When you are in the middle of a job and you figure out that you need something, it's usually a much better idea to go with an existing, ready-to-use solution.  It would take you time to rebuild it and your version isn't likely to be as robust (just due to it being newer).</li>
+<li>If there's an existing solution that is 90% of what you need, it's probably better to contribute the other 10% than to separately build a new 100% solution.  Contributing should be faster for you and help others in return.</li>
+</ul><p><a href="/rubies-in-the-rough/dreamy-testing-part-1">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/dreamy-testing-part-1">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Test-Driven%20Development">Test-Driven Development</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/dreamy-testing-part-1#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>11</h4>
+    <span>
+      NOV<br>
+      2011
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/doing-it-wrong"><h3 class="blog-title">Doing it Wrong</h3></a>
+          <p>Continuing with my <em>Breaking All of the Rules</em> series, I want to peek into several little areas where I've been caught doing the wrong thing.  I'm a rule breaker and I'm determined to take someone down with me!</p>
+
+<h4>My Forbidden Parser</h4>
+
+<p>In one application, I work with an API that hands me very simple data like this:</p>
+
+<div class="highlight highlight-xml"><pre><span class="nt">&lt;emails&gt;</span>
+  <span class="nt">&lt;email&gt;</span>user1@example.com<span class="nt">&lt;/email&gt;</span>
+  <span class="nt">&lt;email&gt;</span>user2@example.com<span class="nt">&lt;/email&gt;</span>
+  <span class="nt">&lt;email&gt;</span>user3@example.com<span class="nt">&lt;/email&gt;</span>
+  …
+<span class="nt">&lt;/emails&gt;</span>
+</pre></div>
+
+<p>Now I need to make a dirty confession:  I parsed this with a Regular Expression.</p>
+
+<p>I know, I know.  We should <a href="http://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags#answer-1732454">never parse HTML or XML with a Regular Expression</a>.  If you don't believe me, just take a moment to actually read that response.  Yikes!</p>
+
+<p>Oh and you shouldn't validate emails with a Regular Expression.  Oops.  We're talking about at least two violations here.</p>
+
+<p>But it gets worse.</p>
+
+<p>You may be think I rolled a little parser based on Regular Expressions.  That might look like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"strscan"</span>
+
+<span class="k">class</span> <span class="nc">EmailParser</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="vi">@scanner</span> <span class="o">=</span> <span class="no">StringScanner</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+    <span class="n">parse_emails</span><span class="p">(</span><span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="kp">private</span>
+
+  <span class="k">def</span> <span class="nf">parse_emails</span><span class="p">(</span><span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+    <span class="vi">@scanner</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">%r{\s*&lt;emails&gt;\s*}</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">fail</span> <span class="s2">"Failed to match list start"</span>
+    <span class="kp">loop</span> <span class="k">do</span>
+      <span class="n">parse_email</span><span class="p">(</span><span class="o">&amp;</span><span class="n">block</span><span class="p">)</span> <span class="ow">or</span> <span class="k">break</span>
+    <span class="k">end</span>
+    <span class="vi">@scanner</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">%r{\s*&lt;/emails&gt;}</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">fail</span> <span class="s2">"Failed to match list end"</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">parse_email</span><span class="p">(</span><span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+    <span class="k">if</span> <span class="vi">@scanner</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">%r{&lt;email&gt;\s*}</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">email</span> <span class="o">=</span> <span class="vi">@scanner</span><span class="o">.</span><span class="n">scan_until</span><span class="p">(</span><span class="sr">%r{&lt;/email&gt;\s*}</span><span class="p">)</span>
+        <span class="n">block</span><span class="o">[</span><span class="n">email</span><span class="o">.</span><span class="n">strip</span><span class="o">[</span><span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="o">-</span><span class="mi">9</span><span class="o">].</span><span class="n">strip</span><span class="o">]</span>
+        <span class="k">return</span> <span class="kp">true</span>
+      <span class="k">else</span>
+        <span class="nb">fail</span> <span class="s2">"Failed to match email end"</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+    <span class="kp">false</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="no">EmailParser</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">ARGF</span><span class="o">.</span><span class="n">read</span><span class="p">)</span><span class="o">.</span><span class="n">parse</span> <span class="k">do</span> <span class="o">|</span><span class="n">email</span><span class="o">|</span>
+  <span class="nb">puts</span> <span class="n">email</span>
+<span class="k">end</span>
+</pre></div><p><a href="/rubies-in-the-rough/doing-it-wrong">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/doing-it-wrong">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/ActiveRecord">ActiveRecord</a> &amp; <a href="/tags/Parsing">Parsing</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/doing-it-wrong#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      NOV<br>
+      2011
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/the-wrong-tool-for-the-job"><h3 class="blog-title">The Wrong Tool for the Job</h3></a>
+          <p>I want to start our exploration of how to think about Ruby programming with a miniseries called <em>Breaking All of the Rules</em>.  As I'm sure you know, programmers have a lot of rules.  You can barely speak to a programmer for a few minutes without them quoting some axiom.  We have a huge collection of advice to hand out.</p>
+
+<p>Fortunately, I'm not just a programmer.  I'm also a tournament chess player.  Getting good at chess has really helped my programming.  That's because chess players also have a ton of rules.</p>
+
+<p>Perhaps you've seen our books of opening chess moves?  They are literally hundred of pages that just list the various moves that you can "start" a chess game with.  I use the word start very loosely there because some combinations can go 20 moves into the game or more.  Chess games generally only average about 60 moves, so the first third of what we do is often straight out of a book.  In fact, while you are playing a chess opening, we say that you are "in book."  That means you are following the rules.</p><p><a href="/rubies-in-the-rough/the-wrong-tool-for-the-job">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/the-wrong-tool-for-the-job">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Scripting">Scripting</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/the-wrong-tool-for-the-job#comments">2 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>10</h4>
+    <span>
+      JAN<br>
+      2010
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/key-value-stores/tokyo-cabinets-key-value-database-types"><h3 class="blog-title">Tokyo Cabinet&#39;s Key-Value Database Types</h3></a>
+          <p>We've taken a good look at Tokyo Cabinet's Hash Database, but there's a lot more to the library than just that.  Tokyo Cabinet supports three other kinds of databases.  In addition, each database type accepts various tuning parameters that can be used to change its behavior.  Each database type and setting involves different tradeoffs so you really have a lot of options for turning Tokyo Cabinet into exactly what you need.  Let's look into some of those options now.</p>
+
+<h4>The B+Tree Database</h4>
+
+<p>Tokyo Cabinet's B+Tree Database is a little slower than the Hash Database we looked at before.  That's its downside.  However, giving up a little speed gains you several extra features that may just allow you to work smarter instead of faster.</p>
+
+<p>The B+Tree Database is a more advanced form of the Hash Database.  What that means is that all of the stuff I showed you in the last article still applies.  You can set, read, and remove values by keys, iteration is supported, and you still have access to the neat options like adding to counters.  With a B+Tree Database you get all of that and more.</p><p><a href="/key-value-stores/tokyo-cabinets-key-value-database-types">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="key-value-stores/tokyo-cabinets-key-value-database-types">
+  In: <a href="/key-value-stores">Key-Value Stores</a>
+  <span>|</span>
+  Tags: <a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/key-value-stores/tokyo-cabinets-key-value-database-types#comments">4 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      JAN<br>
+      2010
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/key-value-stores/tokyo-cabinet-as-a-key-value-store"><h3 class="blog-title">Tokyo Cabinet as a Key-Value Store</h3></a>
+          <p>Like most key-value stores, Tokyo Cabinet has a very <code>Hash</code>-like interface from Ruby (assuming you use Oklahoma Mixer).  You can almost think of a Tokyo Cabinet database as a <code>Hash</code> that just happens to be stored in a file instead of memory.  The advantage of that is that your data doesn't have to fit into memory.  Luckily, you don't have to pay a big speed penalty to get this disk-backed storage.  Tokyo Cabinet is pretty darn fast.</p>
+
+<h4>Getting and Setting Keys</h4>
+
+<p>Let's have a look at the normal <code>Hash</code>-like methods as well as the file storage aspect:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -KU</span>
+
+<span class="nb">require</span> <span class="s2">"oklahoma_mixer"</span>
+
+<span class="no">OklahomaMixer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"data.tch"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">db</span><span class="o">|</span>
+  <span class="k">if</span> <span class="n">db</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">zero?</span>
+    <span class="nb">puts</span> <span class="s2">"Loading the database.  Rerun to read back the data."</span>
+    <span class="n">db</span><span class="o">[</span><span class="ss">:one</span><span class="o">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">db</span><span class="o">[</span><span class="ss">:two</span><span class="o">]</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="ss">:three</span> <span class="o">=&gt;</span> <span class="mi">3</span><span class="p">,</span> <span class="ss">:four</span> <span class="o">=&gt;</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">db</span><span class="o">[</span><span class="s2">"users:1"</span><span class="o">]</span> <span class="o">=</span> <span class="s2">"James"</span>
+    <span class="n">db</span><span class="o">[</span><span class="s2">"users:2"</span><span class="o">]</span> <span class="o">=</span> <span class="s2">"Ruby"</span>
+  <span class="k">else</span>
+    <span class="nb">puts</span> <span class="s2">"Reading data."</span>
+    <span class="sx">%w[ db[:one]</span>
+<span class="sx">        db["users:2"]</span>
+<span class="sx">        -</span>
+<span class="sx">        db.keys</span>
+<span class="sx">        db.keys(:prefix\ =&gt;\ "users:")</span>
+<span class="sx">        db.keys(:limit\ =&gt;\ 2)</span>
+<span class="sx">        db.values</span>
+<span class="sx">        -</span>
+<span class="sx">        db.values_at(:one,\ :two) ]</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">command</span><span class="o">|</span>
+      <span class="nb">puts</span><span class="p">(</span><span class="n">command</span> <span class="o">==</span> <span class="s2">"-"</span> <span class="p">?</span> <span class="s2">""</span> <span class="p">:</span> <span class="s2">"</span><span class="si">#{</span><span class="n">command</span><span class="si">}</span><span class="s2"> = %p"</span> <span class="o">%</span> <span class="o">[</span><span class="nb">eval</span><span class="p">(</span><span class="n">command</span><span class="p">)</span><span class="o">]</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div><p><a href="/key-value-stores/tokyo-cabinet-as-a-key-value-store">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="key-value-stores/tokyo-cabinet-as-a-key-value-store">
+  In: <a href="/key-value-stores">Key-Value Stores</a>
+  <span>|</span>
+  Tags: <a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/key-value-stores/tokyo-cabinet-as-a-key-value-store#comments">7 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>17</h4>
+    <span>
+      SEP<br>
+      2009
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/key-value-stores/where-redis-is-a-good-fit"><h3 class="blog-title">Where Redis is a Good Fit</h3></a>
+          <p>Like any system, Redis has strengths and weaknesses.  Some of the biggest positives with Redis are:</p>
+
+<ul>
+<li>It's wicked fast.  In fact, it may just be the fastest key-value store.</li>
+<li>The collection types and the atomic operations that work on them allow you to model some moderately complex data scenarios.  This makes Redis fit some higher order problems where a simple key-value store wouldn't quite be enough.</li>
+<li>The snapshot data dumping model can be an asset.  You get persistence with Redis, but you pay a minimal penalty for it.</li>
+</ul><p>Of course, there are always some minuses.  These are the two I consider the most important:</p>
+
+<ul>
+<li>Redis is an in-memory data store, first and foremost.  That means your entire dataset must fit completely in RAM and leave enough breathing room for anything else the server must do.</li>
+<li>Snapshot backups are not perfect.  If Redis fails between snapshots, you can lose data.  You need to make sure that's acceptable for any application you use it in.</li>
+</ul><p>It may seem weird to call snapshots both a pro and a con, but it does work for you in some ways and against you in others.  You have to decide where the trade-off is worth it.</p><p><a href="/key-value-stores/where-redis-is-a-good-fit">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="key-value-stores/where-redis-is-a-good-fit">
+  In: <a href="/key-value-stores">Key-Value Stores</a>
+  <span>|</span>
+  Tags: <a href="/tags/Redis">Redis</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/key-value-stores/where-redis-is-a-good-fit#comments">6 Comments</a>
+</div>
+
+      </li>
+</ul>
+
+<div class="pagination text-center"><ul><li class="previous_page"><a class="previous_page" rel="prev" href="/?page=4">&#8592; Previous</a></li> <li><a rel="start" href="/?page=1">1</a></li> <li><a href="/?page=2">2</a></li> <li><a href="/?page=3">3</a></li> <li><a rel="prev" href="/?page=4">4</a></li> <li class="active"><a class="active">5</a></li> <li><a rel="next" href="/?page=6">6</a></li> <li><a href="/?page=7">7</a></li> <li><a href="/?page=8">8</a></li> <li><a href="/?page=9">9</a></li> <li class="disabled"><a>&hellip;</a></li> <li><a href="/?page=13">13</a></li> <li><a href="/?page=14">14</a></li> <li class="next"><a class="next" rel="next" href="/?page=6">Next &#8594;</a></li></ul></div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

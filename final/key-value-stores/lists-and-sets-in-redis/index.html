@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Key-Value Stores / Lists and Sets in Redis</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Peeking behind the curtain of the simple key-value store facade to get a good look at the two features that make Redis unique and powerful.">
+    <meta name="keywords"    content="key-value stores, NoSQL, Redis, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/key-value-stores/lists-and-sets-in-redis/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/key-value-stores">Key-Value Stores</a></h1>
+            <span>Notes from my learning about simple NoSQL storage solutions.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>16</h4>
+    <span>
+      SEP<br>
+      2009
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Lists and Sets in Redis</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/key-value-stores/using-redis-as-a-key-value-store/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/key-value-stores/using-key-value-stores-from-ruby/">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/key-value-stores/where-redis-is-a-good-fit/">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p><em>[<strong>Update</strong>:  though all of the techniques I show here still apply, many methods of the Redis gem have changed names to match the actual <a href="http://redis.io/commands">Redis commands</a> they call.  There are also easier and more powerful ways to do some of what I show in here, thanks to additions to Redis.]</em></p>
+
+<p>Redis adds one huge twist to traditional key-value storage:  collections.  Supporting both <em>lists</em> and <em>sets</em> through some very powerful atomic operations allows for advanced key-value usage.</p>
+
+<h4>Lists</h4>
+
+<p>Redis allows a single key to hold a list of values.  This is your typical ordered list with the operations you would expect:  appending, indexed access, and access to a range of values.</p>
+
+<p>This has many potential uses.  I'll cover two that I think will be very common.  First, if you are going to use Redis as a full database, you store things that are naturally a list of items, like comments, in a real list.  Let's look at some code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="no">CLEAR</span> <span class="o">=</span> <span class="sb">`clear`</span>
+
+<span class="c1"># create an article to comment on</span>
+<span class="n">db</span>                <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+<span class="n">article_id</span>        <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">incr</span><span class="p">(</span><span class="s2">"global:next_article_id"</span><span class="p">)</span>
+<span class="n">article</span>           <span class="o">=</span> <span class="s2">"article:</span><span class="si">#{</span><span class="n">article_id</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">class</span> <span class="o">&lt;&lt;</span> <span class="n">article</span>
+  <span class="k">def</span> <span class="nf">method_missing</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">blk</span><span class="p">)</span>
+    <span class="k">return</span> <span class="k">super</span> <span class="k">unless</span> <span class="n">field</span><span class="o">.</span><span class="n">to_s</span> <span class="o">!~</span> <span class="sr">/[!?=]\z/</span> <span class="o">&amp;&amp;</span> <span class="n">args</span><span class="o">.</span><span class="n">empty?</span> <span class="o">&amp;&amp;</span> <span class="n">blk</span><span class="o">.</span><span class="n">nil?</span>
+    <span class="s2">"</span><span class="si">#{</span><span class="nb">self</span><span class="si">}</span><span class="s2">:</span><span class="si">#{</span><span class="n">field</span><span class="si">}</span><span class="s2">"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="n">db</span><span class="o">[</span><span class="n">article</span><span class="o">.</span><span class="n">title</span><span class="o">]</span> <span class="o">=</span> <span class="s2">"My Favorite Language"</span>
+<span class="n">db</span><span class="o">[</span><span class="n">article</span><span class="o">.</span><span class="n">body</span><span class="o">]</span>  <span class="o">=</span> <span class="s2">"I love Ruby!"</span>
+<span class="c1"># initialize some session details</span>
+<span class="n">comments_per_page</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">comment_page</span>      <span class="o">=</span> <span class="mi">1</span>
+<span class="n">login</span>             <span class="o">=</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">shift</span> <span class="o">||</span> <span class="s2">"JEG2"</span>
+
+<span class="kp">loop</span> <span class="k">do</span>
+  <span class="c1"># show article</span>
+  <span class="nb">print</span> <span class="no">CLEAR</span>
+  <span class="nb">puts</span> <span class="s2">"</span><span class="si">#{</span><span class="n">db</span><span class="o">[</span><span class="n">article</span><span class="o">.</span><span class="n">title</span><span class="o">]</span><span class="si">}</span><span class="s2">:"</span>
+  <span class="nb">puts</span> <span class="s2">"  </span><span class="si">#{</span><span class="n">db</span><span class="o">[</span><span class="n">article</span><span class="o">.</span><span class="n">body</span><span class="o">]</span><span class="si">}</span><span class="s2">"</span>
+
+  <span class="c1"># paginate comments</span>
+  <span class="n">start</span>      <span class="o">=</span>  <span class="n">comments_per_page</span> <span class="o">*</span> <span class="p">(</span><span class="n">comment_page</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="n">finish</span>     <span class="o">=</span>  <span class="n">start</span> <span class="o">+</span> <span class="n">comments_per_page</span> <span class="o">-</span> <span class="mi">1</span>
+  <span class="n">comments</span>   <span class="o">=</span>  <span class="n">db</span><span class="o">.</span><span class="n">list_range</span><span class="p">(</span><span class="n">article</span><span class="o">.</span><span class="n">comments</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">finish</span><span class="p">)</span>
+  <span class="n">pagination</span> <span class="o">=</span>  <span class="nb">Array</span><span class="p">(</span><span class="n">start</span><span class="o">.</span><span class="n">zero?</span> <span class="p">?</span> <span class="kp">nil</span> <span class="p">:</span> <span class="s2">"(p)revious"</span><span class="p">)</span>
+  <span class="n">pagination</span> <span class="o">&lt;&lt;</span> <span class="s2">"(n)ext"</span> <span class="k">if</span> <span class="n">db</span><span class="o">.</span><span class="n">list_length</span><span class="p">(</span><span class="n">article</span><span class="o">.</span><span class="n">comments</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">&gt;</span> <span class="n">finish</span>
+  <span class="c1"># show comments</span>
+  <span class="n">comments</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">comment</span><span class="o">|</span>
+    <span class="n">posted</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">body</span> <span class="o">=</span> <span class="n">comment</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"|"</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="nb">puts</span> <span class="s2">"----"</span>
+    <span class="nb">puts</span> <span class="s2">"  </span><span class="si">#{</span><span class="n">body</span><span class="si">}</span><span class="s2">"</span>
+    <span class="nb">puts</span> <span class="s2">"  posted by </span><span class="si">#{</span><span class="n">user</span><span class="si">}</span><span class="s2"> on </span><span class="si">#{</span><span class="n">posted</span><span class="si">}</span><span class="s2">"</span>
+  <span class="k">end</span>
+
+  <span class="c1"># handle commands</span>
+  <span class="nb">puts</span>
+  <span class="nb">print</span> <span class="s2">"Command? [</span><span class="si">#{</span><span class="p">(</span><span class="sx">%w[(c)omment (q)uit]</span> <span class="o">+</span> <span class="n">pagination</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">', '</span><span class="p">)</span><span class="si">}</span><span class="s2">]  "</span>
+  <span class="k">case</span> <span class="p">(</span><span class="n">command</span> <span class="o">=</span> <span class="nb">gets</span><span class="p">)</span>
+  <span class="k">when</span> <span class="sr">/\Ac(?:omment)?\Z/i</span>  <span class="c1"># add a comment</span>
+    <span class="nb">print</span> <span class="s2">"Your comment?  "</span>
+    <span class="n">comment</span> <span class="o">=</span> <span class="nb">gets</span> <span class="ow">or</span> <span class="k">break</span>
+    <span class="n">posted</span>  <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">'%m/%d/%Y at %H:%M:%S'</span><span class="p">)</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">push_tail</span><span class="p">(</span><span class="n">article</span><span class="o">.</span><span class="n">comments</span><span class="p">,</span> <span class="s2">"</span><span class="si">#{</span><span class="n">posted</span><span class="si">}</span><span class="s2">|</span><span class="si">#{</span><span class="n">login</span><span class="si">}</span><span class="s2">|</span><span class="si">#{</span><span class="n">comment</span><span class="o">.</span><span class="n">strip</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+  <span class="k">when</span> <span class="sr">/\Ap(?:revious)?\Z/i</span>  <span class="c1"># view previous page of comments</span>
+    <span class="k">if</span> <span class="n">pagination</span><span class="o">.</span><span class="n">first</span> <span class="o">=~</span> <span class="sr">/\A\(p\)/</span>
+      <span class="n">comment_page</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="k">else</span>
+      <span class="nb">puts</span> <span class="s2">"You are on the first page of comments."</span>
+      <span class="nb">gets</span> <span class="ow">or</span> <span class="k">break</span>
+    <span class="k">end</span>
+  <span class="k">when</span> <span class="sr">/\An(?:ext)?\Z/i</span>  <span class="c1"># view next page of comments</span>
+    <span class="k">if</span> <span class="n">pagination</span><span class="o">.</span><span class="n">last</span> <span class="o">=~</span> <span class="sr">/\A\(n\)/</span>
+      <span class="n">comment_page</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">else</span>
+      <span class="nb">puts</span> <span class="s2">"You are on the last page of comments."</span>
+      <span class="nb">gets</span> <span class="ow">or</span> <span class="k">break</span>
+    <span class="k">end</span>
+  <span class="k">when</span> <span class="sr">/\Aq(?:uit)?\Z/i</span><span class="p">,</span> <span class="kp">nil</span>  <span class="c1"># exit program</span>
+    <span class="k">break</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I know that looks like a lot of code, but it's mostly interface.  It also shows much of the common list interactions in just three methods.</p>
+
+<p>You can see that adding to the list was a simple matter of calling <code>push_tail()</code>.  Similar to how <code>incr()</code>/<code>decr()</code> initialize counters to <code>0</code>, list actions will default to an empty list if the key is undefined when they are triggered.  You will get an error if you use the operations on keys that have already been set to non-list values though, so be careful with that.</p>
+
+<p>When I was ready to read the list back, I paginated through the results using <code>list_length()</code> and <code>list_range()</code>.  You pass a starting and ending index to <code>list_range()</code> and negative indices can be used to count backwards from the end just as Ruby allows.  Redis doesn't allow you to read a full list with a simple key lookup (<code>[]</code> or <code>get()</code>), so use <code>list_range(…, 0, -1)</code> instead.</p>
+
+<p>Here is what this example looks like in practice after I've entered a few comments:</p>
+
+<pre><code>My Favorite Language:
+  I love Ruby!
+----
+  First!
+  posted by JEG2 on 09/07/2009 at 15:35:11
+----
+  Yeah, we know.
+  posted by JEG2 on 09/07/2009 at 15:35:29
+
+Command? [(c)omment, (q)uit, (n)ext]
+</code></pre>
+
+<p>Then if I type an <code>n</code> followed by a <code>return</code>:</p>
+
+<pre><code>My Favorite Language:
+  I love Ruby!
+----
+  ruby { |love| love + 1 }
+  posted by JEG2 on 09/07/2009 at 15:35:52
+----
+  Who doesn't?
+  posted by JEG2 on 09/07/2009 at 15:36:20
+
+Command? [(c)omment, (q)uit, (p)revious, (n)ext]
+</code></pre>
+
+<p>You get the idea.</p>
+
+<p>Let's go back to how I added items to the list for just a moment though.<br><br>
+As the name <code>push_tail()</code> might lead you to guess, there are three related methods:  <code>pop_tail()</code>, <code>push_head()</code>, <code>pop_head()</code>.  The <code>push_head()</code> method will add items to the beginning of the list, instead of the end as I did above.  Then <code>pop_head()</code> and <code>pop_tail()</code> can be used to remove entries from either end.  This means that lists can function as stacks and queues, just as Ruby's <code>Array</code> does.</p>
+
+<p>I believe using Redis lists as queues will be another popular setup:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="no">WORKER_COUNT</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="c1"># spawn some workers</span>
+<span class="no">WORKER_COUNT</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+  <span class="nb">fork</span> <span class="k">do</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+    <span class="kp">loop</span> <span class="k">do</span>
+      <span class="k">next</span>  <span class="k">unless</span> <span class="n">work</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">pop_head</span><span class="p">(</span><span class="ss">:work</span><span class="p">)</span>
+      <span class="k">break</span> <span class="k">if</span>     <span class="n">work</span> <span class="o">==</span> <span class="s2">"QUIT"</span>
+      <span class="nb">puts</span> <span class="s2">"Work from </span><span class="si">#{</span><span class="no">Process</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">work</span><span class="si">}</span><span class="s2"> = </span><span class="si">#{</span><span class="nb">eval</span> <span class="n">work</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="c1"># generate some work</span>
+<span class="n">db</span> <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+<span class="mi">10</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">push_tail</span><span class="p">(</span> <span class="ss">:work</span><span class="p">,</span>
+                <span class="s2">"</span><span class="si">#{</span><span class="nb">rand</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="sx">%w[+ - * / %]</span><span class="o">[</span><span class="nb">rand</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">]</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="nb">rand</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s2">"</span> <span class="p">)</span>
+<span class="k">end</span>
+
+<span class="c1"># finish off all processes</span>
+<span class="no">WORKER_COUNT</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">push_tail</span><span class="p">(</span><span class="ss">:work</span><span class="p">,</span> <span class="s2">"QUIT"</span><span class="p">)</span>
+<span class="k">end</span>
+<span class="no">Process</span><span class="o">.</span><span class="n">waitall</span>
+</pre></div>
+
+<p>When I run that, we can see the workers pulling off their assignments and taking care of the work:</p>
+
+<pre><code>Work from 1478: 9 + 9 = 18
+Work from 1479: 0 / 7 = 0
+Work from 1478: 1 % 3 = 1
+Work from 1479: 2 % 4 = 2
+Work from 1479: 4 * 7 = 28
+Work from 1478: 1 / 9 = 0
+Work from 1479: 1 + 1 = 2
+Work from 1479: 3 * 4 = 12
+Work from 1478: 6 - 9 = -3
+Work from 1480: 0 / 1 = 0
+</code></pre>
+
+<p>Adding and removing work are both atomic actions.  Once a work has a job, it's guaranteed other workers won't receive it.</p>
+
+<p>You aren't limited to a single queue either, of course.  Each key can hold a queue, so you can divide jobs up by priority, time required, or anything else that makes sense.</p>
+
+<p>I know of at least one big site using this kind of setup to process their background jobs.  They switched to this approach because just saving the jobs to a relational database was too much of a time penalty for their needs.</p>
+
+<p>You can edit a list by index using <code>list_set()</code>, but unlike in Ruby, you will get an error if you try to set an index that doesn't already exist.  Use <code>list_index()</code> to read a single value at an index.</p>
+
+<p>If you want to use lists as a circular buffer, say for storing recent log entries or notices without allowing the data to grow infinitely, the <code>list_trim()</code> method is what you need.  It takes identical arguments to <code>list_range()</code>, but instead of returning the indicated keys it shaves the list down to include only those keys.  Thus, if you want to keep a list at no more than 100 entries, you can use code like:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">db</span><span class="o">.</span><span class="n">push_tail</span><span class="p">(</span><span class="ss">:list</span><span class="p">,</span> <span class="s2">"whatever"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">list_trim</span><span class="p">(</span><span class="ss">:list</span><span class="p">,</span> <span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+<p>If you need to delete items out of the middle of a list, use the <code>list_rm()</code> method.  It takes the key, a count of how many matching values to remove, and the value to match against.  A count of <code>0</code> will remove all matching values from within the list and negative counts will start removing at the tail of the list, moving toward the head.</p>
+
+<p>Finally, you may want to know about the <code>rename()</code> method, in case you need to atomically replace an entire list.  You can build up the new list under a separate key an then just use <code>rename()</code> to replace the old key.  Be careful with <code>rename()</code> though because it expects the old key name followed by the new key name, which is backwards from how we usually do things in Ruby.  If you need a <code>rename()</code> that won't destroy old data, there's also a <code>rename_unless_exists()</code> method.</p>
+
+<h4>Sets</h4>
+
+<p>Redis has one more type of collection:  sets.  Sets are probably even simpler to work with operation wise, but are a large source in the power of Redis over normal key-value stores.</p>
+
+<p>To Redis a set is an unordered collection with no duplicate members.  If you add an item to a set more than once, it will still just be listed one time.</p>
+
+<p>Let's begin by looking at some basic set operations:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">set_member?</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"one"</span><span class="p">)</span>  <span class="c1"># =&gt; false</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"one"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_member?</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"one"</span><span class="p">)</span>  <span class="c1"># =&gt; 1</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_delete</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"one"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_member?</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"one"</span><span class="p">)</span>  <span class="c1"># =&gt; false</span>
+
+<span class="mi">50</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"one"</span><span class="p">)</span>
+<span class="k">end</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"two"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_count</span><span class="p">(</span><span class="ss">:nums</span><span class="p">)</span>    <span class="c1"># =&gt; 2</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_members</span><span class="p">(</span><span class="ss">:nums</span><span class="p">)</span>  <span class="c1"># =&gt; ["two", "one"]</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">spop</span><span class="p">(</span><span class="ss">:nums</span><span class="p">)</span>  <span class="c1"># =&gt; "two"</span>
+<span class="n">db</span><span class="o">.</span><span class="n">spop</span><span class="p">(</span><span class="ss">:nums</span><span class="p">)</span>  <span class="c1"># =&gt; "one"</span>
+<span class="n">db</span><span class="o">.</span><span class="n">spop</span><span class="p">(</span><span class="ss">:nums</span><span class="p">)</span>  <span class="c1"># =&gt; nil</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:work</span><span class="p">,</span> <span class="s2">"write about sets"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:work</span><span class="p">,</span> <span class="s2">"write about sorting"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_members</span><span class="p">(</span><span class="ss">:work</span><span class="p">)</span>  <span class="c1"># =&gt; ["write about sorting", "write about sets"]</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_move</span><span class="p">(</span><span class="ss">:work</span><span class="p">,</span> <span class="ss">:finished</span><span class="p">,</span> <span class="s2">"write about sets"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_members</span><span class="p">(</span><span class="ss">:work</span><span class="p">)</span>      <span class="c1"># =&gt; ["write about sorting"]</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_members</span><span class="p">(</span><span class="ss">:finished</span><span class="p">)</span>  <span class="c1"># =&gt; ["write about sets"]</span>
+</pre></div>
+
+<p>I assume each of those examples is pretty easy to follow.  The first chunk of code shows adding to and deleting from a set, plus testing membership.  After that we see the rules I mentioned earlier:  no duplicates and unordered.  Next we see the <code>spop()</code> method which is just a random member remover function.  The final chunk of code shows how you can atomically move members from one set to another.  Those are the basics of sets.</p>
+
+<p>The real power of sets comes from how you can use them to build simple queries in Redis.  That's possible through the support of some atomic set operations:  intersect(ion), union, and diff(erence).  Here are some examples:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:odd</span><span class="p">,</span>            <span class="s2">"one"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:even</span><span class="p">,</span>           <span class="s2">"two"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:odd</span><span class="p">,</span>            <span class="s2">"three"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:divisible_by_3</span><span class="p">,</span> <span class="s2">"three"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:even</span><span class="p">,</span>           <span class="s2">"four"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:divisible_by_4</span><span class="p">,</span> <span class="s2">"four"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:odd</span><span class="p">,</span>            <span class="s2">"five"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:even</span><span class="p">,</span>           <span class="s2">"six"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:divisible_by_3</span><span class="p">,</span> <span class="s2">"six"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:odd</span><span class="p">,</span>            <span class="s2">"seven"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:even</span><span class="p">,</span>           <span class="s2">"eight"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:divisible_by_4</span><span class="p">,</span> <span class="s2">"eight"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:odd</span><span class="p">,</span>            <span class="s2">"nine"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:divisible_by_3</span><span class="p">,</span> <span class="s2">"nine"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:even</span><span class="p">,</span>           <span class="s2">"ten"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:odd</span><span class="p">,</span>            <span class="s2">"eleven"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:even</span><span class="p">,</span>           <span class="s2">"twelve"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:divisible_by_3</span><span class="p">,</span> <span class="s2">"twelve"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:divisible_by_4</span><span class="p">,</span> <span class="s2">"twelve"</span><span class="p">)</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">set_intersect</span><span class="p">(</span><span class="ss">:even</span><span class="p">,</span> <span class="ss">:divisible_by_3</span><span class="p">)</span>                   <span class="c1"># =&gt; ["six",</span>
+                                                           <span class="c1">#     "twelve"]</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_intersect</span><span class="p">(</span><span class="ss">:even</span><span class="p">,</span> <span class="ss">:divisible_by_3</span><span class="p">,</span> <span class="ss">:divisible_by_4</span><span class="p">)</span>  <span class="c1"># =&gt; ["twelve"]</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">set_diff</span><span class="p">(</span><span class="ss">:divisible_by_3</span><span class="p">,</span> <span class="ss">:even</span><span class="p">)</span>                   <span class="c1"># =&gt; ["three", "nine"]</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_diff</span><span class="p">(</span><span class="ss">:even</span><span class="p">,</span> <span class="ss">:divisible_by_3</span><span class="p">)</span>                   <span class="c1"># =&gt; ["four", "ten",</span>
+                                                      <span class="c1">#     "eight", "two"]</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_diff</span><span class="p">(</span><span class="ss">:even</span><span class="p">,</span> <span class="ss">:divisible_by_3</span><span class="p">,</span> <span class="ss">:divisible_by_4</span><span class="p">)</span>  <span class="c1"># =&gt; ["ten", "two"]</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">set_union</span><span class="p">(</span><span class="ss">:divisible_by_3</span><span class="p">,</span> <span class="ss">:divisible_by_4</span><span class="p">)</span>  <span class="c1"># =&gt; ["four", "six",</span>
+                                                <span class="c1">#     "twelve", "three",</span>
+                                                <span class="c1">#     "eight", "nine"]</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">set_union_store</span><span class="p">(</span><span class="ss">:all</span><span class="p">,</span> <span class="ss">:even</span><span class="p">,</span> <span class="ss">:odd</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_members</span><span class="p">(</span><span class="ss">:all</span><span class="p">)</span>  <span class="c1"># =&gt; ["four", "eleven", "seven", "eight", "one",</span>
+                      <span class="c1">#     "six", "ten", "twelve", "three", "five", "nine",</span>
+                      <span class="c1">#     "two"]</span>
+</pre></div>
+
+<p>Again, I assume the results of these examples are pretty straight forward.  <code>set_intersect()</code> returns the members in all listed sets, <code>set_diff()</code> subtracts the members of each successive set listed from the first set, and <code>set_union()</code>    returns all members present in any of the listed sets.  Note that order is significant in <code>set_diff()</code> due to the way it is defined.  Finally, I showed a variant that stores the results instead of returning the entire set.  Though I only showed <code>set_union_store()</code>, <code>set_intersect_store()</code> and <code>set_diff_store()</code> do exist.</p>
+
+<p>A typical usage for these methods is to store unique identifiers of records in the system by various categorical breakdowns.  You can then use the set operations to find simple query results of those present in more than one category, in one category but not others, or those present in any category.  This may be able to save you a trip to a more powerful but expensive tool, like SQL, for some queries.</p>
+
+<p>To give an example of building queries with sets, let's look at a simple program.  This code will load <a href="http://www.census.gov/genealogy/names/names_files.html">some first and last names from the U.S Census Bureau</a> into a Redis database.  We will then allow the user to make queries by name position (first or last), gender, popularity, and any leading prefix.</p>
+
+<p>To keep the code simple, we're going to adopt a pretty crude definition of popularity.  The files are already in order of rank, so we will just call the first third of the file popular, the second third average, and the rest uncommon.</p>
+
+<p>We're also going to need to be a bit clever to handle prefix searches with just sets.  Redis doesn't really have text search features, so we will need build an index we can use.  The idea is simple:  given the name <code>"James"</code> we will add it to the sets <code>"prefix:j"</code>, <code>"prefix:ja"</code>, <code>"prefix:jam"</code>, <code>"prefix:jame"</code>, and <code>"prefix:james"</code>.  Later, when we are answering queries, we can just add the set for the input the user gave us into our set intersection.</p>
+
+<p>Here's the code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"abbrev"</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="c1"># prepare the database</span>
+<span class="n">db</span> <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+<span class="k">if</span> <span class="n">db</span><span class="o">.</span><span class="n">dbsize</span><span class="o">.</span><span class="n">zero?</span>
+  <span class="nb">puts</span> <span class="s2">"Loading names into the database..."</span>
+  <span class="n">started</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="mi">0</span>
+  <span class="c1"># load names</span>
+  <span class="sx">%w[all.last female.first male.first]</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">group</span><span class="o">|</span>
+    <span class="n">gender</span><span class="p">,</span> <span class="n">position</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"."</span><span class="p">)</span>
+    <span class="n">category</span>         <span class="o">=</span> <span class="p">(</span><span class="o">[</span><span class="n">position</span><span class="p">,</span> <span class="n">gender</span><span class="o">]</span> <span class="o">-</span> <span class="sx">%w[all]</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">":"</span><span class="p">)</span>
+    <span class="n">top_third</span>        <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="s2">"dist.</span><span class="si">#{</span><span class="n">group</span><span class="si">}</span><span class="s2">.txt"</span><span class="p">)</span> <span class="o">/</span> <span class="mi">3</span>
+    <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"dist.</span><span class="si">#{</span><span class="n">group</span><span class="si">}</span><span class="s2">.txt"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">names</span><span class="o">|</span>
+      <span class="n">names</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">given</span><span class="o">|</span>
+        <span class="nb">name</span> <span class="o">=</span> <span class="n">given</span><span class="o">[</span><span class="sr">/\w+/</span><span class="o">]</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">pipelined</span> <span class="k">do</span> <span class="o">|</span><span class="n">commands</span><span class="o">|</span>
+          <span class="n">commands</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="s2">"position:</span><span class="si">#{</span><span class="n">position</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="nb">name</span><span class="p">)</span>
+          <span class="n">commands</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="s2">"gender:</span><span class="si">#{</span><span class="n">gender</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>     <span class="nb">name</span><span class="p">)</span> <span class="p">\</span>
+            <span class="k">unless</span> <span class="n">gender</span> <span class="o">==</span> <span class="s2">"all"</span>
+          <span class="no">Abbrev</span><span class="o">.</span><span class="n">abbrev</span><span class="p">(</span><span class="nb">name</span><span class="o">.</span><span class="n">downcase</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">prefix</span><span class="o">|</span>
+            <span class="n">commands</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="s2">"prefix:</span><span class="si">#{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="nb">name</span><span class="p">)</span>
+          <span class="k">end</span>
+          <span class="n">popularity</span> <span class="o">=</span> <span class="k">if</span>    <span class="n">names</span><span class="o">.</span><span class="n">pos</span> <span class="o">&lt;</span> <span class="n">top_third</span>     <span class="k">then</span> <span class="s2">"popular"</span>
+                       <span class="k">elsif</span> <span class="n">names</span><span class="o">.</span><span class="n">pos</span> <span class="o">&lt;</span> <span class="n">top_third</span> <span class="o">*</span> <span class="mi">2</span> <span class="k">then</span> <span class="s2">"average"</span>
+                       <span class="k">else</span>                                 <span class="s2">"uncommon"</span>
+                       <span class="k">end</span>
+          <span class="n">commands</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="s2">"popularity:</span><span class="si">#{</span><span class="n">category</span><span class="si">}</span><span class="s2">:</span><span class="si">#{</span><span class="n">popularity</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="nb">name</span><span class="p">)</span>
+        <span class="k">end</span>
+        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+  <span class="c1"># save and report</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">save</span>
+  <span class="nb">puts</span> <span class="s2">"Loaded </span><span class="si">#{</span><span class="n">count</span><span class="si">}</span><span class="s2"> names in </span><span class="si">#{</span><span class="no">Time</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="n">started</span><span class="si">}</span><span class="s2"> seconds."</span>
+  <span class="nb">puts</span>
+<span class="k">end</span>
+
+<span class="c1"># perform queries</span>
+<span class="n">position</span>   <span class="o">=</span> <span class="sx">%w[first last]</span>
+<span class="n">gender</span>     <span class="o">=</span> <span class="sx">%w[male female]</span>
+<span class="n">popularity</span> <span class="o">=</span> <span class="sx">%w[popular average uncommon]</span>
+<span class="c1"># UI for entering queries</span>
+<span class="k">def</span> <span class="nf">ask</span><span class="p">(</span><span class="n">choices</span><span class="p">)</span>
+  <span class="nb">print</span> <span class="o">[</span> <span class="n">choices</span><span class="o">[</span><span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="o">-</span><span class="mi">2</span><span class="o">].</span><span class="n">join</span><span class="p">(</span><span class="s2">", "</span><span class="p">),</span>
+          <span class="n">choices</span><span class="o">[-</span><span class="mi">1</span><span class="o">]</span> <span class="o">].</span><span class="n">join</span><span class="p">(</span><span class="s2">", or "</span><span class="p">)</span><span class="o">.</span><span class="n">capitalize</span> <span class="o">+</span> <span class="s2">"?  "</span>
+  <span class="n">choice</span> <span class="o">=</span> <span class="nb">gets</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">strip</span>
+  <span class="n">choice</span><span class="o">.</span><span class="n">empty?</span> <span class="p">?</span> <span class="kp">nil</span> <span class="p">:</span> <span class="no">Abbrev</span><span class="o">.</span><span class="n">abbrev</span><span class="p">(</span><span class="n">choices</span><span class="p">)</span><span class="o">[</span><span class="n">choice</span><span class="o">]</span>
+<span class="k">end</span>
+<span class="n">query</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+<span class="k">if</span> <span class="n">choice</span> <span class="o">=</span> <span class="n">ask</span><span class="p">(</span><span class="n">position</span><span class="p">)</span>
+  <span class="n">query</span> <span class="o">&lt;&lt;</span> <span class="s2">"position:</span><span class="si">#{</span><span class="n">choice</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">end</span>
+<span class="k">unless</span> <span class="n">choice</span> <span class="o">==</span> <span class="s2">"last"</span>
+  <span class="k">if</span> <span class="n">choice</span> <span class="o">=</span> <span class="n">ask</span><span class="p">(</span><span class="n">gender</span><span class="p">)</span>
+    <span class="n">query</span> <span class="o">&lt;&lt;</span> <span class="s2">"gender:</span><span class="si">#{</span><span class="n">choice</span><span class="si">}</span><span class="s2">"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="k">if</span> <span class="n">choice</span> <span class="o">=</span> <span class="n">ask</span><span class="p">(</span><span class="n">popularity</span><span class="p">)</span>
+  <span class="n">query</span> <span class="o">&lt;&lt;</span> <span class="s2">"popularity:</span><span class="si">#{</span><span class="n">query</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span> <span class="n">f</span><span class="o">[</span><span class="sr">/\w+\z/</span><span class="o">]</span> <span class="si">}</span><span class="s2">.join(':')}:</span><span class="si">#{</span><span class="n">choice</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">end</span>
+<span class="nb">print</span> <span class="s2">"Prefix?  "</span>
+<span class="n">prefix</span> <span class="o">=</span> <span class="nb">gets</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">strip</span>
+<span class="k">unless</span> <span class="n">prefix</span><span class="o">.</span><span class="n">empty?</span>
+  <span class="n">query</span> <span class="o">&lt;&lt;</span> <span class="s2">"prefix:</span><span class="si">#{</span><span class="n">prefix</span><span class="o">.</span><span class="n">downcase</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">end</span>
+<span class="nb">puts</span>
+<span class="c1"># execute query and show stats</span>
+<span class="nb">puts</span> <span class="s2">"Running query..."</span>
+<span class="n">width</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">set</span><span class="o">|</span> <span class="n">set</span><span class="o">.</span><span class="n">size</span> <span class="p">}</span><span class="o">.</span><span class="n">max</span>
+<span class="n">query</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">set</span><span class="o">|</span>
+  <span class="nb">puts</span> <span class="s2">"  %</span><span class="si">#{</span><span class="n">width</span><span class="si">}</span><span class="s2">s:  </span><span class="si">#{</span><span class="n">db</span><span class="o">.</span><span class="n">set_count</span><span class="p">(</span><span class="n">set</span><span class="p">)</span><span class="si">}</span><span class="s2"> names"</span> <span class="o">%</span> <span class="n">set</span>
+<span class="k">end</span>
+<span class="n">started</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+<span class="nb">puts</span>
+<span class="nb">puts</span><span class="p">(</span> <span class="n">query</span><span class="o">.</span><span class="n">empty?</span> <span class="p">?</span> <span class="n">db</span><span class="o">.</span><span class="n">set_union</span><span class="p">(</span><span class="s2">"position:first"</span><span class="p">,</span> <span class="s2">"position:last"</span><span class="p">)</span> <span class="p">:</span>
+                     <span class="n">db</span><span class="o">.</span><span class="n">set_intersect</span><span class="p">(</span><span class="o">*</span><span class="n">query</span><span class="p">)</span> <span class="p">)</span>
+<span class="nb">puts</span>
+<span class="nb">puts</span> <span class="s2">"</span><span class="si">#{</span><span class="no">Time</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="n">started</span><span class="si">}</span><span class="s2"> seconds."</span>
+</pre></div>
+
+<p>Using that code, we can load the database and search for names like mine:</p>
+
+<pre><code>$ ruby names.rb
+Loading names into the database...
+Loaded 94293 names in 58.25652 seconds.
+
+First, or last?  f
+Male, or female?  m
+Popular, average, or uncommon?  p
+Prefix?  Ja
+
+Running query...
+                 position:first:  5163 names
+                    gender:male:  1219 names
+  popularity:first:male:popular:  406 names
+                      prefix:ja:  501 names
+
+JARED
+JACKIE
+JAVIER
+JAY
+JAIME
+JAMES
+JACK
+JAMIE
+JACOB
+JASON
+
+0.003345 seconds.
+</code></pre>
+
+<p>As you can see, a little setup work really pays us back.  Redis can chew through those multi-set queries in no time at all.</p>
+
+<p>Since we've now seen all of the Redis value types, it's worth a quick mention that you can ask the database for the <code>type()</code> of a given key.  The response will be one of:  <code>"none"</code> (key not set), <code>"string"</code>, <code>"list"</code>, or <code>"set"</code>.</p>
+
+<h4>Sorting</h4>
+
+<p>As soon as you have collections of data, you will want tools for controlling the order of those collections.  This is especially important with things like set that don't have an order until you define one.</p>
+
+<p>Redis has a single method for this, called <code>sort()</code>, but it's by far the most complex and powerful method in the entire API.  Let's examine what it can do piece by piece.  First, here is a basic sort:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"1"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"2"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"10"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"11"</span><span class="p">)</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="ss">:nums</span><span class="p">)</span>  <span class="c1"># =&gt; ["1", "2", "10", "11"]</span>
+</pre></div>
+
+<p>That's easy enough to understand.  I built a set (note that <code>sort()</code> works with lists too) and asked Redis to sort the members.  It did.</p>
+
+<p>Here's a question though:  did the order surprise you?  Values are generally considered <code>String</code>s in Redis, but those numbers weren't sorted as <code>String</code>s.  This is another one of those sometimes numeric meaning exceptions I've mentioned before.  Redis goes one step further with <code>sort()</code> though and even recognizes <code>Float</code>s:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:floats</span><span class="p">,</span> <span class="s2">"3"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:floats</span><span class="p">,</span> <span class="s2">"3.02"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:floats</span><span class="p">,</span> <span class="s2">"3.14"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:floats</span><span class="p">,</span> <span class="s2">"3.2"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:floats</span><span class="p">,</span> <span class="s2">"4"</span><span class="p">)</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="ss">:floats</span><span class="p">)</span>  <span class="c1"># =&gt; ["3", "3.02", "3.14", "3.2", "4"]</span>
+</pre></div>
+
+<p>Now, if you want a <code>String</code> ordering, you can ask for it.  You can also reverse either order.  Here's how those options work in our original example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"1"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"2"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"10"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"11"</span><span class="p">)</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="ss">:order</span> <span class="o">=&gt;</span> <span class="s2">"ALPHA"</span><span class="p">)</span>       <span class="c1"># =&gt; ["1", "10", "11", "2"]</span>
+<span class="n">db</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="ss">:order</span> <span class="o">=&gt;</span> <span class="s2">"ALPHA DESC"</span><span class="p">)</span>  <span class="c1"># =&gt; ["2", "11", "10", "1"]</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="ss">:order</span> <span class="o">=&gt;</span> <span class="s2">"DESC"</span><span class="p">)</span>  <span class="c1"># =&gt; ["11", "10", "2", "1"]</span>
+</pre></div>
+
+<p>The <code>sort()</code> method also supports a limit with offset that can be used to fetch a subset of entries and also handle pagination:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"1"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"2"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"10"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="s2">"11"</span><span class="p">)</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="ss">:limit</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="o">]</span><span class="p">)</span>  <span class="c1"># =&gt; ["1", "2", "10"]</span>
+<span class="n">db</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="ss">:limit</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="o">]</span><span class="p">)</span>  <span class="c1"># =&gt; ["11"]</span>
+</pre></div>
+
+<p>There are two more options you can set with <code>sort()</code>.  The first option allows you to use a key lookup to find the actual value to order by.  Thus, if you had a set of ID's, but actually wanted to <code>sort()</code> by an attribute associated with those ID's, you could look up the attribute.  Let me show you what I mean:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+
+<span class="sx">%w[one two three four]</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">num</span><span class="o">|</span>
+  <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">incr</span><span class="p">(</span><span class="s2">"global:num_id"</span><span class="p">)</span>
+  <span class="n">db</span><span class="o">[</span><span class="s2">"num:</span><span class="si">#{</span><span class="nb">id</span><span class="si">}</span><span class="s2">:word"</span><span class="o">]</span>      <span class="o">=</span> <span class="n">num</span>
+  <span class="n">db</span><span class="o">[</span><span class="s2">"num:</span><span class="si">#{</span><span class="nb">id</span><span class="si">}</span><span class="s2">:word_size"</span><span class="o">]</span> <span class="o">=</span> <span class="n">num</span><span class="o">.</span><span class="n">size</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+<span class="k">end</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="ss">:by</span> <span class="o">=&gt;</span> <span class="s2">"num:*:word_size"</span><span class="p">)</span>  <span class="c1"># =&gt; ["1", "2", "4", "3"]</span>
+</pre></div>
+
+<p>I made the ID's match up with the numbers here just to make the example easy to follow, but notice how those ID's where actually orders by their <code>"num:ID:word_size"</code> key.  As you can see, <code>sort()</code> replaced the <code>*</code> in my key name with the actual member of the set, which was the ID in this case.</p>
+
+<p>The final feature lets us take that one step further.  Just as we can fetch a key for the order, we can also fetch a key for the result.  That allows us to return not just the ID, but the actual data.  For example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+
+<span class="sx">%w[one two three four]</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">num</span><span class="o">|</span>
+  <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">incr</span><span class="p">(</span><span class="s2">"global:num_id"</span><span class="p">)</span>
+  <span class="n">db</span><span class="o">[</span><span class="s2">"num:</span><span class="si">#{</span><span class="nb">id</span><span class="si">}</span><span class="s2">:word"</span><span class="o">]</span>      <span class="o">=</span> <span class="n">num</span>
+  <span class="n">db</span><span class="o">[</span><span class="s2">"num:</span><span class="si">#{</span><span class="nb">id</span><span class="si">}</span><span class="s2">:word_size"</span><span class="o">]</span> <span class="o">=</span> <span class="n">num</span><span class="o">.</span><span class="n">size</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+<span class="k">end</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span> <span class="ss">:nums</span><span class="p">,</span> <span class="ss">:by</span>  <span class="o">=&gt;</span> <span class="s2">"num:*:word_size"</span><span class="p">,</span>
+                <span class="ss">:get</span> <span class="o">=&gt;</span> <span class="s2">"num:*:word"</span> <span class="p">)</span>  <span class="c1"># =&gt; ["one", "two", "four", "three"]</span>
+</pre></div>
+
+<p>So the <code>sort()</code> fetched the <code>word_size</code> keys to build the ordering and then fetched the <code>word</code> keys as the actual result.  If you want, you can even fetch multiple keys for each result:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"redis"</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="no">Redis</span><span class="o">.</span><span class="n">new</span>
+
+<span class="sx">%w[one two three four]</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">num</span><span class="o">|</span>
+  <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">incr</span><span class="p">(</span><span class="s2">"global:num_id"</span><span class="p">)</span>
+  <span class="n">db</span><span class="o">[</span><span class="s2">"num:</span><span class="si">#{</span><span class="nb">id</span><span class="si">}</span><span class="s2">:word"</span><span class="o">]</span>      <span class="o">=</span> <span class="n">num</span>
+  <span class="n">db</span><span class="o">[</span><span class="s2">"num:</span><span class="si">#{</span><span class="nb">id</span><span class="si">}</span><span class="s2">:word_size"</span><span class="o">]</span> <span class="o">=</span> <span class="n">num</span><span class="o">.</span><span class="n">size</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">set_add</span><span class="p">(</span><span class="ss">:nums</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+<span class="k">end</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span> <span class="ss">:nums</span><span class="p">,</span> <span class="ss">:by</span>  <span class="o">=&gt;</span> <span class="s2">"num:*:word_size"</span><span class="p">,</span>
+                <span class="ss">:get</span> <span class="o">=&gt;</span> <span class="sx">%w[ num:*:word</span>
+<span class="sx">                            num:*:word_size ]</span> <span class="p">)</span>  <span class="c1"># =&gt; ["one", "3",</span>
+                                                 <span class="c1">#     "two", "3",</span>
+                                                 <span class="c1">#     "four", "4",</span>
+                                                 <span class="c1">#     "three", "5"]</span>
+</pre></div>
+
+<p><code>sort()</code> is the power tool of collection ordering and fetching.  I've shown most of the options separately to make things easier to understand, but you can combine them as needed to order, limit, and even lookup your data.</p>
+
+<p>The collections types add quite a bit of flexibility to simple key-value storage.  You can use these tools to group keys and process them by various criteria.  This makes Redis useable in a wider range of scenarios than some simple key-value stores.</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/key-value-stores/using-redis-as-a-key-value-store/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/key-value-stores/using-key-value-stores-from-ruby/">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/key-value-stores/where-redis-is-a-good-fit/">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="key-value-stores/lists-and-sets-in-redis">
+  In: <a href="/key-value-stores/">Key-Value Stores</a>
+  <span>|</span>
+  Tags: <a href="/tags/Redis/">Redis</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/key-value-stores/lists-and-sets-in-redis#comments">4 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (4)</span></h5>
+
+    <ol>
+        <li id="comment_323">
+    <div class="avatar"><img alt="Keith Gautreaux" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="323">
+      <span class="c_name">Keith Gautreaux</span>
+      <span class="c_date">September 16th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/key-value-stores/lists-and-sets-in-redis#comment_323">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I am enjoying this series of posts.  But, am I confused or are your comments for the command <code>case</code> statement for <code>(p)revious</code> and <code>(n)ext</code> reversed?</p></div>
+    <ol>
+      
+        <li id="comment_324">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="324">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">September 16th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/key-value-stores/lists-and-sets-in-redis#comment_324">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>You are right that they were.  All fixed.  Thanks!</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_438">
+    <div class="avatar"><img alt="WK" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="438">
+      <span class="c_name">WK</span>
+      <span class="c_date">March 28th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/key-value-stores/lists-and-sets-in-redis#comment_438">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>As not Ruby user I found Redis gem methods cleaner than DSL itself. Despite it, it seems that nowadays Redis gem uses same syntax as DSL has. So it was bit confusing to me not getting your code to work as prompt. Like I said, it was second or third time to see Ruby code to me. </p>
+
+<p>If I am right and there is some change in gem API, maybe could you add some <strong>warning</strong> in the beginning of your enlightening posts. I am really grateful for your shared knowledge!</p></div>
+    <ol>
+      
+        <li id="comment_439">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="439">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">March 28th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/key-value-stores/lists-and-sets-in-redis#comment_439">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Yeah, these are definitely old.  I hope to redo them someday to improve the information and show off some new features.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

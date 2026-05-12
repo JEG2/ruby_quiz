@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Ruby Voodoo / Dual Interface Modules</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Two different ways to use modules with one simple trick.">
+    <meta name="keywords"    content="tips and tricks, APIs, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/ruby-voodoo/dual-interface-modules/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/ruby-voodoo">Ruby Voodoo</a></h1>
+            <span>Deep dives into random corners of my favorite programming language.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>9</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Dual Interface Modules</h3>
+        
+        <p>I'm guessing we've all seen Ruby's <code>Math</code> <code>Module</code>.  I'm sure you know that you can call methods in it as "module (or class) methods:"</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">Math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>  <span class="c1"># =&gt; 2.0</span>
+</pre></div>
+
+<p>That's just one way to use the <code>Math</code> <code>Module</code> though.  Another is to treat it as a mixin and call the same methods as instance methods:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">MyMathyThing</span>
+  <span class="kp">extend</span> <span class="no">Math</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">my_sqrt</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">sqrt</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="no">MyMathyThing</span><span class="o">.</span><span class="n">my_sqrt</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>  <span class="c1"># =&gt; 2.0</span>
+</pre></div>
+
+<p>Ruby ships with a few <code>Module</code>s that work like this, including the mighty <code>Kernel</code>.</p>
+
+<p>How is this dual interface accomplished?  With the seldom seen <code>module_function()</code> method.  You use this much like you would <code>private()</code>, to affect all following method definitions:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Greeter</span>
+  <span class="kp">module_function</span>
+
+  <span class="k">def</span> <span class="nf">hello</span>
+    <span class="s2">"Hello!"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">module</span> <span class="nn">MyGreeter</span>
+  <span class="kp">extend</span> <span class="no">Greeter</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">my_hello</span>
+    <span class="n">hello</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="no">Greeter</span><span class="o">.</span><span class="n">hello</span>       <span class="c1"># =&gt; "Hello!"</span>
+<span class="no">MyGreeter</span><span class="o">.</span><span class="n">my_hello</span>  <span class="c1"># =&gt; "Hello!"</span>
+</pre></div>
+
+<p>As you can see, it magically gives us the dual interface for the methods beneath it.  You can also affect specific methods by name, just as you could with <code>private()</code>.  This is equivalent to my definition above:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Greeter</span>
+  <span class="k">def</span> <span class="nf">hello</span>
+    <span class="s2">"Hello!"</span>
+  <span class="k">end</span>
+  <span class="kp">module_function</span> <span class="ss">:hello</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>What this helper actually does is to make a copy of the method and move it up to the module interface level.  Once the copy is made, they can be affected separately:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Copies</span>
+  <span class="k">def</span> <span class="nf">copy</span>
+    <span class="s2">"Copied!"</span>
+  <span class="k">end</span>
+  <span class="kp">module_function</span> <span class="ss">:copy</span>
+
+  <span class="n">alias_method</span> <span class="ss">:copier</span><span class="p">,</span> <span class="ss">:copy</span>
+  <span class="kp">public</span>       <span class="ss">:copier</span>
+  <span class="k">undef</span>        <span class="ss">:copy</span>
+<span class="k">end</span>
+
+<span class="no">Copies</span><span class="o">.</span><span class="n">copy</span>  <span class="c1"># =&gt; "Copied!"</span>
+<span class="n">c</span> <span class="o">=</span> <span class="no">Object</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">Copies</span><span class="p">)</span>
+<span class="n">c</span><span class="o">.</span><span class="n">copier</span>     <span class="c1"># =&gt; "Copied!"</span>
+<span class="n">c</span><span class="o">.</span><span class="n">copy</span>
+<span class="c1"># ~&gt; -:16: undefined method `copy' for #&lt;Object:0x26e6c&gt; (NoMethodError)</span>
+</pre></div>
+
+<p>This process also marks the instance method version <code>private()</code>, which is why I needed the call to <code>public()</code> in the last example.  This means that methods you mixin to another object do not add to its external interface:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Selfish</span>
+  <span class="kp">module_function</span>
+
+  <span class="k">def</span> <span class="nf">mine</span>
+    <span class="s2">"mine"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">module</span> <span class="nn">Sharing</span>
+  <span class="kp">extend</span> <span class="no">Selfish</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">yours_and_mine</span>
+    <span class="s2">"yours and </span><span class="si">#{</span><span class="n">mine</span><span class="si">}</span><span class="s2">"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="no">Sharing</span><span class="o">.</span><span class="n">yours_and_mine</span>  <span class="c1"># =&gt; "yours and mine"</span>
+<span class="no">Sharing</span><span class="o">.</span><span class="n">mine</span>
+<span class="c1"># ~&gt; -:18: private method `mine' called for Sharing:Module (NoMethodError)</span>
+</pre></div>
+
+<p>As we've seen there are some advantages to this interface, but there are some drawbacks too.  For example, I first tried to write the <code>MyGreeter</code> example as:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">MyGreeter</span>
+  <span class="kp">include</span> <span class="no">Greeter</span>
+
+  <span class="kp">module_function</span>
+
+  <span class="k">def</span> <span class="nf">my_hello</span>
+    <span class="n">hello</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="no">MyGreeter</span><span class="o">.</span><span class="n">my_hello</span>  <span class="c1"># =&gt; </span>
+<span class="c1"># ~&gt; -:15:in `my_hello': undefined local variable or method</span>
+<span class="c1"># ~&gt;      `hello' for MyGreeter:Module (NameError)</span>
+<span class="c1"># ~&gt;    from -:20</span>
+</pre></div>
+
+<p>That didn't work because the <code>Greeter</code> functionality was not copied up with my method.  You can fix that by using a different trick to duplicate the functionality:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">MyGreeter</span>
+  <span class="kp">include</span> <span class="no">Greeter</span>
+
+  <span class="kp">extend</span> <span class="nb">self</span>  <span class="c1"># mixin functionality to our own Module interface</span>
+
+  <span class="k">def</span> <span class="nf">my_hello</span>
+    <span class="n">hello</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="no">MyGreeter</span><span class="o">.</span><span class="n">my_hello</span>  <span class="c1"># =&gt; "Hello!"</span>
+</pre></div>
+
+<p>This provides a similar dual interface, but there are important differences.  First, we've changed the <code>ancestors()</code> of <code>MyGreeter</code>, not copied methods:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">MyGreeter</span><span class="o">.</span><span class="n">ancestors</span>  <span class="c1"># =&gt; [MyGreeter, Greeter]</span>
+</pre></div>
+
+<p>There's just one method and changing it affects everywhere it is used.</p>
+
+<p>We also didn't magically make the mixin interface <code>private()</code> and it will bleed through:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">MyNestedGreeter</span>
+  <span class="kp">extend</span> <span class="no">MyGreeter</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">my_nested_hello</span>
+    <span class="n">my_hello</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="no">MyNestedGreeter</span><span class="o">.</span><span class="n">my_nested_hello</span>  <span class="c1"># =&gt; "Hello!"</span>
+<span class="no">MyNestedGreeter</span><span class="o">.</span><span class="n">my_hello</span>         <span class="c1"># =&gt; "Hello!"</span>
+</pre></div>
+
+<p>It's all tradeoffs of course, but knowing our options allows us to make informed choices about what is best for our needs.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="ruby-voodoo/dual-interface-modules">
+  In: <a href="/ruby-voodoo">Ruby Voodoo</a>
+  <span>|</span>
+  Tags: <a href="/tags/APIs">APIs</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-voodoo/dual-interface-modules#comments">2 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (2)</span></h5>
+
+    <ol>
+        <li id="comment_461">
+    <div class="avatar"><img alt="Dan" height="70" src="http://www.gravatar.com/avatar/970431ee9fafb6767305fa8e5270c4d6?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="461">
+      <span class="c_name"><a href="mailto:dan.hopkins@livingsocial.com">Dan</a></span>
+      <span class="c_date">October 23rd, 2011</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/ruby-voodoo/dual-interface-modules#comment_461">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>After watching Rich Hickey's talk on simplicity vs. ease i've been looking for ways to back off creating objects and using more module for namespaces.</p>
+
+<p>This works perfectly!</p>
+
+<p>Where are all these functions documented?</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/ruby-voodoo/dual-interface-modules/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="gbY4S3IHbDpPkXU+vObMaFv4jxGOWzQDNspGElJ9pJg=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="461" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fruby-voodoo%2Fdual-interface-modules" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fruby-voodoo%2Fdual-interface-modules" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_461" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_462">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="462">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">October 23rd, 2011</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/ruby-voodoo/dual-interface-modules#comment_462">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>If you meant <code>module_function</code> and <code>extend</code>, see:</p>
+
+<pre><code>ri Module#module_function
+ri Object#extend
+</code></pre>
+
+<p>If you meant where do module functions get documented, you can use <code>Kernel</code> as an example:</p>
+
+<pre><code>ri Kernel
+</code></pre></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/ruby-voodoo/dual-interface-modules/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="gbY4S3IHbDpPkXU+vObMaFv4jxGOWzQDNspGElJ9pJg=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="462" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fruby-voodoo%2Fdual-interface-modules" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fruby-voodoo%2Fdual-interface-modules" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_462" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/ruby-voodoo/dual-interface-modules/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="gbY4S3IHbDpPkXU+vObMaFv4jxGOWzQDNspGElJ9pJg=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fruby-voodoo%2Fdual-interface-modules" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fruby-voodoo%2Fdual-interface-modules" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

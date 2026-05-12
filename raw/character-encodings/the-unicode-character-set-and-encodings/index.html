@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Character Encodings / The Unicode Character Set and Encodings</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="An in depth study of the largest character set in modern usage and how it can meet your needs.">
+    <meta name="keywords"    content="encodings, m17n, Multilingualization, Unicode, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/character-encodings/the-unicode-character-set-and-encodings/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/character-encodings">Character Encodings</a></h1>
+            <span>My extensive coverage of a complex topic all programmers should study a little.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>16</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">The Unicode Character Set and Encodings</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/character-encodings/what-is-a-character-encoding">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/character-encodings/understanding-m17n-multilingualization">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/character-encodings/general-encoding-strategies">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p>Since the rise of the various character encodings, there has been a quest to find the one perfect encoding we could all use.  It's hard to get everyone to agree about whether or not this has truly been accomplished, but most of us agree that <a href="http://unicode.org/">Unicode</a> is as close as it gets.</p>
+
+<p>The goal of Unicode was literally to provide a character set that includes all characters in use today.  That's letters and numbers for all languages, all the images needed by pictographic languages, and all symbols.  As you can imagine that's quite a challenging task, but they've done very well.  Take a moment to <a href="http://www.unicode.org/charts/">browse all the characters in the current Unicode specification</a> to see for yourself.  The Unicode Consortium often reminds us that they still have room for more characters as well, so we will be all set when we start meeting alien races.</p>
+
+<p>Now in order to really understand what Unicode is, I need to clear up a point I've played pretty loose with so far:  a character set and a character encoding aren't necessarily the same thing.  Unicode is one character set, and has multiple character encodings.  Allow me to explain.</p>
+
+<p>A character set is just the mapping of symbols to their magic number representations inside the computer.  Unicode calls these numbers code points and they are usually written in the form <code>U+0061</code> where the <code>U+</code> means Unicode and the four digit number is hexadecimal for a code point.  Thus <code>0061</code> is is <code>97</code>.  That happens to be the Unicode code point for <code>a</code> and if you remember my previous post well, you will recognize that matches up with US-ASCII.  We'll talk more about that in a bit.  It is worth noting though that Ruby 1.8 and 1.9 can show you these code points:</p>
+
+<pre><code>$ ruby -vKUe 'p "aé…".unpack("U*")'
+ruby 1.8.6 (2008-08-11 patchlevel 287) [i686-darwin9.4.0]
+[97, 233, 8230]
+$ ruby_dev -ve 'p "aé…".unpack("U*")'
+ruby 1.9.0 (2008-10-10 revision 0) [i386-darwin9.5.0]
+[97, 233, 8230]
+</code></pre>
+
+<p>The <code>U</code> pattern for <code>unpack()</code> asks for a Unicode code point and the <code>*</code> just repeats it for each character.  Note that I used the <code>-KU</code> switch to get Ruby 1.8 in UTF-8 mode.  Ruby 1.9 assumed UTF-8 because of how my environment is configured.  We will talk a lot more about those details when we get into specific language features.</p>
+
+<p>Code points aren't what actually gets recorded in a file, they are just abstract numbers for each character.  How those characters get written into a data stream is an encoding.  There are multiple encodings for Unicode or multiple ways to record those abstract numbers into files.</p>
+
+<p>Different encodings have different strengths.  For example, one possible encoding of Unicode is UTF-32, where 32 bits (or four bytes) are reserved for each code point.  This has the advantage that you can always count on four bytes being used (unlike variable length encodings, which we will discuss shortly).  An obvious downside though is the wasted space.  I mean if you have all ASCII data, you only really need one byte each, but UTF-32 will use four without exception.</p>
+
+<p>You do need to be very careful how you work with multibyte encodings.  UTF-32 is a good example of one that can be pretty tricky, because parts of the data can look normal.  For example, look at this simple <code>String</code> as Ruby 1.9 sees it:</p>
+
+<pre><code>$ ruby_dev -ve 'p "abc".encode("UTF-32BE")'
+ruby 1.9.0 (2008-10-10 revision 0) [i386-darwin9.5.0]
+"\x00\x00\x00a\x00\x00\x00b\x00\x00\x00c"
+</code></pre>
+
+<p>There are a lot of null bytes in there, but notice how there are also normal <code>"a"</code>, <code>"b"</code>, and <code>"c"</code> bytes.  I'm not going to show how this could happen to avoid encouraging bad habits, but if you replaced just the <code>"a"</code> byte with two bytes like <code>"ab"</code> your encoding is now broken and will eventually cause you problems.  You also have to be careful anytime you slice up a <code>String</code> to make sure you don't divide the content mid-character.</p>
+
+<p>Another possible encoding of Unicode is UTF-8.  It has become pretty popular for things like email and web pages in recent years for several reasons.  First, UTF-8 is 100% compatible with US-ASCII.  The lowest 128 code points match their US-ASCII equivalents and UTF-8 encodes these in a single byte.  Ruby 1.9 can show us this:</p>
+
+<pre><code>$ cat ascii_and_utf8.rb 
+str   = "abc"
+ascii = str.encode("US-ASCII")
+utf8  = str.encode("UTF-8")
+
+[ascii, utf8].each do |encoded_str|
+  p [encoded_str, encoded_str.encoding.name, encoded_str.bytes.to_a]
+end
+$ ruby_dev -v ascii_and_utf8.rb 
+ruby 1.9.0 (2008-10-10 revision 0) [i386-darwin9.5.0]
+["abc", "US-ASCII", [97, 98, 99]]
+["abc", "UTF-8", [97, 98, 99]]
+</code></pre>
+
+<p>I've used several new Ruby 1.9 features here.  I don't want to go too deeply into these at this point but briefly:  <code>encode()</code> allows me to transcode a <code>String</code> from its current encoding to the one I pass the name for, <code>encoding()</code> gives me the current <code>Encoding</code> object for that <code>String</code> and <code>name()</code> turns that into a simple name, and finally Ruby 1.9 <code>String</code>s provide <code>Enumerator</code>s to walk the content by <code>bytes()</code>, <code>chars()</code>, <code>codepoints()</code>, or <code>lines()</code> and I use that to get the actual bytes here.  I promise we will talk a lot more about these when we get to handling encodings in Ruby 1.9.</p>
+
+<p>For now the key point to notice about this example is that US-ASCII and UTF-8 are the same all the way down to the bytes.</p>
+
+<p>Of course, 128 characters isn't enough to contain the super large Unicode character set.  Eventually you need more bytes.  UTF-8 is a variable length encoding that uses more bytes to represent larger code points as needed.  It does this with a simple set of rules:</p>
+
+<ol>
+<li> Single byte characters always have a <code>0</code> in the most significant bit:  <code>0xxxxxxx</code>.</li>
+<li> The number of significant <code>1</code> bits shows how many bytes the code point takes up for multibyte code points.  Thus the most significant bits of a two byte character will be <code>110xxxxx</code> and they will be <code>1110xxxx</code> for a three byte character.</li>
+<li> All other bytes of multibyte sequences begin with <code>10</code>:  <code>10xxxxxx</code>.</li>
+</ol><p>Again, we can ask Ruby 1.9 to show this:</p>
+
+<pre><code>$ cat utf8_bytes.rb 
+# encoding:  UTF-8
+
+chars = %w[a é …]
+chars.each do |char|
+  p char.bytes.map { |b| "%08b" % b }
+end
+$ ruby_dev utf8_bytes.rb 
+["01100001"]
+["11000011", "10101001"]
+["11100010", "10000000", "10100110"]
+</code></pre>
+
+<p>Notice how different characters are different lengths and how the byte patterns show what to expect as I just described.  This makes UTF-8 a little safer to manipulate, because you won't see a bare <code>"a"</code> byte that isn't really an <code>"a"</code> in the data.  You do still have to be careful how you slice up a <code>String</code> though to avoid breaking up multibyte characters.</p>
+
+<p>All of these facts combine to make UTF-8 a very good choice for universal character encodings, in my opinion.  The characters you need will be there.  Simple ASCII content will be unchanged.  Most software has at least some support for UTF-8 now as well.</p>
+
+<p>Is Unicode perfect?  No, it's not.</p>
+
+<p>Some characters have multiple representations.  For example, the Unicode code points are actually a super set of Latin-1 and thus include single byte versions of accented characters like <code>é</code>.  Unicode also has the concept of combining marks though, where the accent would have one point and the letter another.  Those are combined into one character when displayed.  This creates some oddities where two <code>String</code>s could appear to contain the same content but not test equal depending on how they are compared.  It also lessens the benefit of an encoding like UTF-32 since four bytes are just guaranteed for a code point, but it can take multiple code points to build a character.</p>
+
+<p>Asian cultures have also been slow to adopt Unicode for a few reasons.  First, Unicode usually makes their data larger.  For example, Shift JIS can represent all the Japanese characters in two bytes while most of them will be three bytes in UTF-8.  Hard drive space is pretty cheap these days, but a 1.5x multiplier on most of your data can be a factor in some cases.</p>
+
+<p>The Unicode Consortium also had to make some hard choices when specifying all of these characters.  One such choice, known as <a href="http://en.wikipedia.org/wiki/Han_unification">Han Unification</a>, was heavily debated for a while.  I think many people recognize why the decision was made these days, but the debate definitely slowed Unicode adoption, especially in Japan.</p>
+
+<p>Finally, there's a lot of data out there not in a Unicode encoding.  Unfortunately, there are issues that can make it hard to convert this data to Unicode flawlessly.  All of these factors combine to make a Unicode-as-a-one-encoding-fits-all philosophy not totally flawless.</p>
+
+<p>Still, it's absolutely your best bet for support of a wide audience in a single encoding.</p>
+
+<p>Key take-away points:</p>
+
+<ul>
+<li>A character set isn't quite the same as an encoding</li>
+<li>Unicode is one character set that can be encoded several different ways</li>
+<li>Unicode is designed to support all characters used by all people</li>
+<li>You won't find a better default encoding for modern day software as Unicode satisfies a much higher percentage of the world's population than any other single encoding</li>
+<li>UTF-8 is probably the best Unicode encoding to work with when you have the choice because of how well it fits in with plain US-ASCII and the fact that it's a little safer to work with</li>
+<li>Multibyte encodings can be tricky to work with properly, especially encodings like UTF-32 that can contain some normal looking data</li>
+</ul>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/character-encodings/what-is-a-character-encoding">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/character-encodings/understanding-m17n-multilingualization">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/character-encodings/general-encoding-strategies">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="character-encodings/the-unicode-character-set-and-encodings">
+  In: <a href="/character-encodings">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization">Multilingualization</a> &amp; <a href="/tags/Unicode">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/the-unicode-character-set-and-encodings#comments">8 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (8)</span></h5>
+
+    <ol>
+        <li id="comment_223">
+    <div class="avatar"><img alt="Allan Odgaard" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="223">
+      <span class="c_name"><a href="http://blog.macromates.com/">Allan Odgaard</a></span>
+      <span class="c_date">October 17th, 2008</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/the-unicode-character-set-and-encodings#comment_223">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>While you indirectly say so, I think it is worth putting emphasis on the fact that UTF-8 data implicitly carry a checksum in the multi-byte sequences.</p>
+
+<p>This is nice because plain text files are normally not tagged with encoding (as they have no natural place for such tag), but the checksum can be used instead.</p>
+
+<p>For example a user who has been using CP-1252 for all of his text files can in practice move to UTF-8 file-by-file by performing an UTF-8 validity check when loading a file, should the sequence fail to be valid UTF-8, then it is one of his old CP-1252 files.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/character-encodings/the-unicode-character-set-and-encodings/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Im2KAXS5nfhWynIRl4WELwgCyxCUUzAsZftXjqV4ii8=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="223" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_223" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_224">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="224">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">October 19th, 2008</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/the-unicode-character-set-and-encodings#comment_224">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Allan has a great point there.  You can use code like the following in Ruby 1.8 to validate UTF-8:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="k">module</span> <span class="nn">UTF8Checksum</span>
+  <span class="k">def</span> <span class="nf">is_utf8?</span>
+    <span class="n">where_we_were</span> <span class="o">=</span> <span class="n">pos</span>
+    <span class="k">begin</span>
+      <span class="kp">loop</span> <span class="k">do</span>
+        <span class="k">break</span> <span class="k">if</span> <span class="n">eof?</span>
+        <span class="n">first_byte</span> <span class="o">=</span> <span class="s2">"%08b"</span> <span class="o">%</span> <span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
+        <span class="k">unless</span> <span class="n">first_byte</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="o">==</span> <span class="sc">?0</span>
+          <span class="n">bytes_left</span>  <span class="o">=</span> <span class="n">first_byte</span><span class="o">[</span><span class="sr">/\A1+/</span><span class="o">].</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span>
+          <span class="n">extra_bytes</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">bytes_left</span><span class="p">)</span>
+          <span class="k">unless</span> <span class="n">extra_bytes</span>                    <span class="ow">and</span>
+                 <span class="n">extra_bytes</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">bytes_left</span> <span class="ow">and</span>
+                 <span class="n">extra_bytes</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span><span class="o">.</span>
+                             <span class="n">all?</span> <span class="p">{</span> <span class="o">|</span><span class="n">b</span><span class="o">|</span> <span class="p">(</span><span class="s2">"%08b"</span> <span class="o">%</span> <span class="n">b</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span> <span class="o">=~</span> <span class="sr">/\A10/</span> <span class="p">}</span>
+            <span class="k">return</span> <span class="kp">false</span>
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+      <span class="k">return</span> <span class="kp">true</span>
+    <span class="k">ensure</span>
+      <span class="n">seek</span><span class="p">(</span><span class="n">where_we_were</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">class</span> <span class="nc">IO</span>
+  <span class="kp">include</span> <span class="no">UTF8Checksum</span>
+<span class="k">end</span>
+<span class="no">ARGF</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">UTF8Checksum</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">String</span>
+  <span class="k">def</span> <span class="nf">is_utf8?</span>
+    <span class="nb">require</span> <span class="s2">"stringio"</span>
+    <span class="no">StringIO</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">self</span><span class="p">)</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">UTF8Checksum</span><span class="p">)</span><span class="o">.</span><span class="n">is_utf8?</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">if</span> <span class="bp">__FILE__</span> <span class="o">==</span> <span class="vg">$PROGRAM_NAME</span>
+  <span class="n">answer</span> <span class="o">=</span> <span class="no">ARGF</span><span class="o">.</span><span class="n">is_utf8?</span>
+  <span class="nb">p</span> <span class="n">answer</span>
+  <span class="nb">exit</span><span class="p">(</span><span class="n">answer</span> <span class="p">?</span> <span class="mi">0</span> <span class="p">:</span> <span class="mi">1</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>In Ruby 1.9, you could check that a String is UTF-8 with the simple code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">str</span><span class="o">.</span><span class="n">force_encoding</span><span class="p">(</span><span class="s2">"UTF-8"</span><span class="p">)</span><span class="o">.</span><span class="n">valid_encoding?</span>
+</pre></div></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/character-encodings/the-unicode-character-set-and-encodings/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Im2KAXS5nfhWynIRl4WELwgCyxCUUzAsZftXjqV4ii8=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="224" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_224" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_424">
+    <div class="avatar"><img alt="Panagiotis Atmatzidis" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="424">
+      <span class="c_name"><a href="http://www.convalesco.org">Panagiotis Atmatzidis</a></span>
+      <span class="c_date">February 16th, 2011</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/the-unicode-character-set-and-encodings#comment_424">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks James for the excellent tutorial! Thanks Alan for giving the straight solution to my problem! :-)</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/character-encodings/the-unicode-character-set-and-encodings/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Im2KAXS5nfhWynIRl4WELwgCyxCUUzAsZftXjqV4ii8=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="424" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_424" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_255">
+    <div class="avatar"><img alt="Jan" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="255">
+      <span class="c_name"><a href="http://rwsleep.blogspot.com">Jan</a></span>
+      <span class="c_date">January 16th, 2009</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/the-unicode-character-set-and-encodings#comment_255">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Great article! It made the difference between charset and encoding clear to me.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/character-encodings/the-unicode-character-set-and-encodings/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Im2KAXS5nfhWynIRl4WELwgCyxCUUzAsZftXjqV4ii8=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="255" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_255" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_353">
+    <div class="avatar"><img alt="amishera" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="353">
+      <span class="c_name">amishera</span>
+      <span class="c_date">March 23rd, 2010</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/the-unicode-character-set-and-encodings#comment_353">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I think it would be great to have 2 links per page which takes the user to the next and previous topics. Instead of showing the link text as 'next' and 'previous' it should show the title of the text directly such as 'ruby 1.8 encoding' which is say the title of the next topic. It would even be greater if you have the table of contents on each page.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/character-encodings/the-unicode-character-set-and-encodings/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Im2KAXS5nfhWynIRl4WELwgCyxCUUzAsZftXjqV4ii8=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="353" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_353" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_354">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="354">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">March 23rd, 2010</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/the-unicode-character-set-and-encodings#comment_354">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I've been working on a rewrite of this blog which I will get finished with eventually.  It will handle series much better, I promise.  I write a lot of them so the blog needs to be more tuned to that.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/character-encodings/the-unicode-character-set-and-encodings/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Im2KAXS5nfhWynIRl4WELwgCyxCUUzAsZftXjqV4ii8=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="354" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_354" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_402">
+    <div class="avatar"><img alt="Andre" height="70" src="http://www.gravatar.com/avatar/9d4125cce41d7e9d6ae485cabac5d298?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="402">
+      <span class="c_name"><a href="mailto:nucleus_rei@web.de">Andre</a></span>
+      <span class="c_date">September 21st, 2010</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/the-unicode-character-set-and-encodings#comment_402">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Hi James, </p>
+
+<p>First off, thanks for a great article. In fact thanks for the whole series. I'm not through yet but I'm sure I'll love the rest as much as the first ones.</p>
+
+<p>On to my question: It's about the part where you show the binary representation of UTF-8 encoded bytes. Specifically this part:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">a</span> <span class="o">=</span> <span class="o">[</span><span class="s2">"1100001"</span><span class="o">]</span>
+</pre></div>
+
+<p>Should this mentally be read as </p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">a</span> <span class="o">=</span> <span class="o">[</span><span class="s2">"01100001"</span><span class="o">]</span> <span class="p">?</span>
+</pre></div>
+
+<p>Otherwise, it somehow confuses me as per the rules above it is a single byte and <code>"1100001"</code> is the binary representation for <code>"a"</code>.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/character-encodings/the-unicode-character-set-and-encodings/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Im2KAXS5nfhWynIRl4WELwgCyxCUUzAsZftXjqV4ii8=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="402" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_402" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_403">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="403">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">September 21st, 2010</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/the-unicode-character-set-and-encodings#comment_403">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Correct.  Ruby left out the most significant bit since it's unset.  It has to be a <code>0</code> though by the rules.  You've got it.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/character-encodings/the-unicode-character-set-and-encodings/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Im2KAXS5nfhWynIRl4WELwgCyxCUUzAsZftXjqV4ii8=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="403" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_403" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/character-encodings/the-unicode-character-set-and-encodings/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="Im2KAXS5nfhWynIRl4WELwgCyxCUUzAsZftXjqV4ii8=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fcharacter-encodings%2Fthe-unicode-character-set-and-encodings" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

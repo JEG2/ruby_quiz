@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This is where I try to teach how I think about programming.">
+    <meta name="keywords"    content="thinking about code, software design, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+            <ul class="blog-list">
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>22</h4>
+    <span>
+      AUG<br>
+      2014
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/sleepy-programs"><h3 class="blog-title">Sleepy Programs</h3></a>
+          <p>When we think of real multiprocessing, our thoughts probably drift more towards languages like Erlang, Go, Clojure, or Rust.  Such languages really focus on getting separate "processes" to communicate via messages.  This makes it a lot easier to know when one process is waiting on another, because calls to receive messages typically block until one is available.</p>
+
+<p>But what about Ruby?  Can we do intelligent process coordination in Ruby?</p>
+
+<p>Yes, we can.  The tools for it are more awkward though.  It's easy to run into tricky edge cases and hard to code your way out of them correctly.</p>
+
+<p>Let's play with an example to see how good we can make things.  Here's what we will do:</p>
+
+<ol>
+<li>We will start one parent process that will <code>fork()</code> a single child process</li>
+<li>The child will push three messages onto a RabbitMQ queue and <code>exit()</code>
+</li>
+<li>The parent will listen for three messages to arrive, then <code>exit()</code>
+</li>
+</ol><p>Here's a somewhat sloppy first attempt at solving this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby</span>
+
+<span class="nb">require</span> <span class="s2">"benchmark"</span>
+
+<span class="nb">require</span> <span class="s2">"bunny"</span>
+
+<span class="no">QUEUE_NAME</span> <span class="o">=</span> <span class="s2">"example"</span>
+<span class="no">MESSAGES</span>   <span class="o">=</span> <span class="sx">%w[first second third]</span>
+
+<span class="k">def</span> <span class="nf">send_messages</span><span class="p">(</span><span class="o">*</span><span class="n">messages</span><span class="p">)</span>
+  <span class="n">connection</span> <span class="o">=</span> <span class="no">Bunny</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">tap</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:start</span><span class="p">)</span>
+  <span class="n">exchange</span>   <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">create_channel</span><span class="o">.</span><span class="n">default_exchange</span>
+
+  <span class="n">messages</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">message</span><span class="o">|</span>
+    <span class="n">exchange</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">routing_key</span><span class="p">:</span> <span class="no">QUEUE_NAME</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="n">connection</span><span class="o">.</span><span class="n">close</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">listen_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span>
+  <span class="n">connection</span> <span class="o">=</span> <span class="no">Bunny</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">tap</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:start</span><span class="p">)</span>
+  <span class="n">queue</span>      <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">create_channel</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="no">QUEUE_NAME</span><span class="p">,</span> <span class="n">auto_delete</span><span class="p">:</span> <span class="kp">true</span><span class="p">)</span>
+
+  <span class="n">queue</span><span class="o">.</span><span class="n">subscribe</span> <span class="k">do</span> <span class="o">|</span><span class="n">delivery_info</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">payload</span><span class="o">|</span>
+    <span class="n">received_messages</span> <span class="o">&lt;&lt;</span> <span class="n">payload</span>
+  <span class="k">end</span>
+
+  <span class="n">time_it</span><span class="p">(</span><span class="s2">"Received </span><span class="si">#{</span><span class="no">MESSAGES</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> messages"</span><span class="p">)</span> <span class="k">do</span>
+    <span class="k">yield</span>
+  <span class="k">end</span>
+
+  <span class="n">connection</span><span class="o">.</span><span class="n">close</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">time_it</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+  <span class="n">elapsed</span> <span class="o">=</span> <span class="no">Benchmark</span><span class="o">.</span><span class="n">realtime</span> <span class="k">do</span>
+    <span class="k">yield</span>
+  <span class="k">end</span>
+  <span class="nb">puts</span> <span class="s2">"%s: %.2fs"</span> <span class="o">%</span> <span class="o">[</span><span class="nb">name</span><span class="p">,</span> <span class="n">elapsed</span><span class="o">]</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">wait_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span>
+  <span class="k">until</span> <span class="n">received_messages</span> <span class="o">==</span> <span class="no">MESSAGES</span>
+    <span class="nb">sleep</span> <span class="mi">0</span><span class="o">.</span><span class="mi">1</span>  <span class="c1"># don't peg the CPU while we wait</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">send_and_receive</span>
+  <span class="n">pid</span> <span class="o">=</span> <span class="nb">fork</span> <span class="k">do</span>
+    <span class="nb">sleep</span> <span class="mi">3</span>  <span class="c1"># make sure we're receiving before they are sent</span>
+    <span class="n">send_messages</span><span class="p">(</span><span class="o">*</span><span class="no">MESSAGES</span><span class="p">)</span>
+  <span class="k">end</span>
+  <span class="no">Process</span><span class="o">.</span><span class="n">detach</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span>
+
+  <span class="n">received_messages</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+  <span class="n">listen_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">wait_for_messages</span><span class="p">(</span><span class="n">received_messages</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">send_and_receive</span>
+</pre></div><p><a href="/rubies-in-the-rough/sleepy-programs">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/sleepy-programs">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Concurrency">Concurrency</a> &amp; <a href="/tags/Performance">Performance</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/sleepy-programs#comments">8 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>20</h4>
+    <span>
+      JUL<br>
+      2014
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/daves-no-tests-challenge"><h3 class="blog-title">Dave&#39;s No Tests Challenge</h3></a>
+          <p>I've mentioned before <a href="http://graysoftinc.com/non-code/ipsc-2014-postmortem">my difficulties in the 2014 IPSC</a>.  But taking one beating is no reason not to try again.  The first loss just showed me that the contest still had more to teach me.</p>
+
+<p>A buddy of mine has spent some time with <a href="http://ipsc.ksp.sk/2014/real/problems/k.html">the crossword problem</a> and told me that he enjoyed it.  I didn't try this problem during the actual event, but I was a little familiar with it from my friend's description.</p>
+
+<p>To add to the fun, I decided this would be a great excuse to take up <a href="http://rubyrogues.com/164-rr-staying-sharp-with-dave-thomas/">the recent challenge Dave Thomas gave to the Ruby Rogues</a>:  "Stop writing tests."</p>
+
+<h4>Step 1:  Feedback Loops</h4>
+
+<p>Without tests to guide me, I really want to see what's going on.  One of the biggest advantages of tests, in my opinion, is the feedback loop it provides.  So I set out to provide my own feedback.</p>
+
+<p>Since the problem at hand involves filling in a crossword board, the easiest feedback loop I could think of was to see the board as it fills in.  The final board is also the required output.  Therefor, I decided a good first step would just be to read the board into some data structure and write it back out.  Once I had that, I could insert code between those steps to fill it in.  And constantly seeing the board evolve would let me eyeball things for obvious mistakes.</p><p><a href="/rubies-in-the-rough/daves-no-tests-challenge">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/daves-no-tests-challenge">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Databases">Databases</a>, <a href="/tags/Process">Process</a> &amp; <a href="/tags/Test-Driven%20Development">Test-Driven Development</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/daves-no-tests-challenge#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>30</h4>
+    <span>
+      MAY<br>
+      2014
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/objectified-beer"><h3 class="blog-title">Objectified Beer</h3></a>
+          <p>I got another thing out of my recent conversation with Katrina Owen:  a will-not-let-go itch to try a programming exercise that she mentioned.  I'm such a sucker for a challenge.</p>
+
+<p>Katrina spoke of an assignment that her and Sandi Metz have used in their object orientation trainings.  She said that they build an OO implementation of the <em>99 Bottles of Beer</em> song, "mainly removing <code>if</code>s and such."  There may be more to the actual task than this, but I ran with that brief explanation.</p>
+
+<p>As I often say, you'll probably learn more by trying the exercise for yourself before you read through my thoughts about it.  Give it a go if you can spare the time.</p>
+
+<h4>Diff Driven Development</h4>
+
+<p>I decided to throw some scaffolding into <a href="https://github.com/JEG2/bottles_of_beer_song">the master branch</a> of a Git repository.  I figured I could then branch off of that with each idea, to keep trying things out.</p>
+
+<p>I started by constructing a trivial framework for running and verifying the song.  That consisted of an executable:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+
+<span class="n">require_relative</span> <span class="s2">"../lib/bottles_of_beer"</span>
+
+<span class="n">verses</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">first</span> <span class="o">=~</span> <span class="sr">/\A\d+\z/</span> <span class="p">?</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">shift</span><span class="o">.</span><span class="n">to_i</span> <span class="p">:</span> <span class="mi">99</span>
+<span class="no">BottlesOfBeer</span><span class="o">::</span><span class="no">Song</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">verses</span><span class="p">)</span><span class="o">.</span><span class="n">sing</span><span class="p">(</span><span class="vg">$stdout</span><span class="p">)</span>
+</pre></div><p><a href="/rubies-in-the-rough/objectified-beer">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/objectified-beer">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Object%20Orientation">Object Orientation</a> &amp; <a href="/tags/Test-Driven%20Development">Test-Driven Development</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/objectified-beer#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      MAY<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/decorators-verses-the-mix-in"><h3 class="blog-title">Decorators Verses the Mix-in</h3></a>
+          <p>It is a neat time to be involved in the Ruby community, if you ask me.  A large portion of us are currently studying the techniques for doing good object oriented development.  We are looking at the ideas that have come before and trying to decide the best ways to apply those ideas to our favorite language.  This leads to blog posts, forum threads, and conference talks about what we are learning.  No matter what, we all gain from explorations like this.  Everybody wins as our collective knowledge grows.  We all deserve gold stars.</p>
+
+<p>So far, there's one point pretty much everyone agrees on:  composition should typically be preferred to inheritance.  The trickier part of that discussion though is deciding what composition looks like in Ruby.  Generally you see Rubyists comparing the merits of <a href="http://en.wikipedia.org/wiki/Decorator_pattern">decorators</a> and mix-ins.  <em>[<strong>Note</strong>:  the comments correctly pointed out that this was a bad use of the word "composition" on my part, to describe mix-ins.]</em>  There's <a href="https://groups.google.com/forum/?fromgroups#!topic/objects-on-rails/0-GTFdgPTLc">a very representative thread</a> on the excellent Objects on Rails mailing list.</p><p><a href="/rubies-in-the-rough/decorators-verses-the-mix-in">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/decorators-verses-the-mix-in">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Mix-ins">Mix-ins</a>, <a href="/tags/Object%20Orientation">Object Orientation</a> &amp; <a href="/tags/Patterns">Patterns</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/decorators-verses-the-mix-in#comments">7 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>11</h4>
+    <span>
+      MAY<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/delaying-decisions"><h3 class="blog-title">Delaying Decisions</h3></a>
+          <p>I love playing with Ruby's <code>Hash</code>.  I think it has a neat API and experimenting with it can actually help you understand how to write good Ruby.  Let's dig into this idea to see what I mean.</p>
+
+<h4>The nil Problem</h4>
+
+<p>In <a href="https://www.destroyallsoftware.com/screencasts/catalog/exceptions-and-control-flow">Destroy All Software #9</a> Gary chooses to show an example in Python because, unlike Ruby's <code>Hash</code>, it will raise an error for a non-existent key.  Ruby just returns <code>nil</code>, he explains.</p>
+
+<p>What Gary said isn't really true, but I'm guessing he just didn't know that at the time.  He was in the process of switching to Ruby from Python and I'm guessing he just didn't have a deep enough understanding of Ruby's <code>Hash</code> yet.  I bet he does know how it works now.</p>
+
+<p>But assume he was right.  What's he saying and why does it matter?  Consider some code like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">SearchesController</span> <span class="o">&lt;</span> <span class="no">ApplicationController</span>
+  <span class="k">def</span> <span class="nf">show</span>
+    <span class="n">terms</span> <span class="o">=</span> <span class="n">params</span><span class="o">[</span><span class="ss">:terms</span><span class="o">]</span>
+    <span class="no">SomeModel</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">terms</span><span class="p">)</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This is what Gary doesn't like, and rightfully so.  Because I indexed into <code>params</code> here with the <code>[]()</code> method, I will indeed get a <code>nil</code> if the <code>:terms</code> key wasn't in <code>params</code>.</p><p><a href="/rubies-in-the-rough/delaying-decisions">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/delaying-decisions">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/APIs">APIs</a> &amp; <a href="/tags/Hidden%20Features">Hidden Features</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/delaying-decisions#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      MAY<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/single-method-classes"><h3 class="blog-title">Single Method Classes</h3></a>
+          <p><em>[<strong>Update</strong>:  I've changed my mind about some of the following due to <a href="http://blog.codeclimate.com/blog/2012/11/14/why-ruby-class-methods-resist-refactoring/">this excellent counter argument</a>.]</em></p>
+
+<p>In the words of Dennis Miller, "I don't want to get off on a rant here, but…"</p>
+
+<p>There's something that drives me crazy and I see it in so much Ruby code.  I see it in the documentation for our key projects; I see Rubyists of all skill levels doing it; it's just everywhere.</p>
+
+<p>Let's talk about when the use of a <code>Class</code> is and is not appropriate.</p>
+
+<h4>The Chained new()</h4>
+
+<p>Here's an example of one form of code that bugs me:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Adder</span>
+  <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="mi">40</span> <span class="o">+</span> <span class="n">n</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="nb">p</span> <span class="no">Adder</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+
+<p>The problem here is that a <code>Class</code> has been used, probably because as Rubyists that's always our default choice, but it's the wrong fit for this code.  A <code>Class</code> is for state and behavior.  The example above is just using behavior.  No state is maintained.</p>
+
+<p>A handy tip for sniffing out this problem is watching for a call to <code>new()</code> in the middle of method chaining as we have here.  If you always use a <code>Class</code> like that, it's not really a <code>Class</code>.  Put another way, if an instance never gets assigned to a variable, something has likely gone wrong with the design.</p><p><a href="/rubies-in-the-rough/single-method-classes">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/single-method-classes">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Mix-ins">Mix-ins</a> &amp; <a href="/tags/Object%20Orientation">Object Orientation</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/single-method-classes#comments">3 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      APR<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/lets-patch-rails"><h3 class="blog-title">Let&#39;s Patch Rails</h3></a>
+          <p>In celebration of my first ever trip to <a href="http://railsconf2012.com/">RailsConf</a> next week I wanted to be a good open source citizen and contribute a patch.</p>
+
+<p>I'm giving <a href="https://www.youtube.com/watch?v=GRfJ9lni4QA">a presentation</a> at the conference on various random features that the framework provides.  I selected features from many places like blog posts, books, and some that I just remembered from years of working with the software.</p>
+
+<p>One of the features I decided to show was an old feature that I never see anyone use.  It turns out that there's a good reason for that.  When I tried it on a modern Rails, it didn't work anymore.  Rails has undergone some changes under the hood and this feature was likely removed in that process.  I figured out a workaround so I could still show it in my presentation, but it would be nice if I contributed the fix back to Rails so others could use it.</p>
+
+<p>In this article, I will walk through the entire process of doing that.</p>
+
+<h4>What's Missing?</h4>
+
+<p>ERb has always had an under appreciated syntax tweak.  Everyone knows you can write code like this:</p><p><a href="/rubies-in-the-rough/lets-patch-rails">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/lets-patch-rails">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Open%20Source">Open Source</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/lets-patch-rails#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>11</h4>
+    <span>
+      APR<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/riding-the-testrocket"><h3 class="blog-title">Riding the Testrocket</h3></a>
+          <p>I say it a lot, but programming is about ideas.  More specifically, it's about not running out of ideas.</p>
+
+<p>Along these lines, I read the results of an interesting study recently.  It was a study about how we think and solve problems.  When I was in school, the belief was that we needed to cram our brain full of facts.  We were pushed to memorize, memorize, memorize.</p>
+
+<p>The more modern view of learning is that facts don't matter as much.  Nowadays we just try to teach children how to think.  The assumption is that they can find the facts they need, because information is so universally available, and their thinking skills will allow them to work their way to other bits of knowledge.</p>
+
+<p>The study looked at people taught using both of these techniques and found some surprising results:  us memorizers can often out think the thinkers.  A leading theory about why that's the case is that the memorizers have more of a foundation to build their ideas off of.  Thinkers may be starting closer to scratch each time.  If so, they have further to go to get to the needed solution.  Memorizers, on the other hand, may already have a lot of knowledge that puts them closer to the solution before they even need to start thinking.</p><p><a href="/rubies-in-the-rough/riding-the-testrocket">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/riding-the-testrocket">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Code%20Reading">Code Reading</a> &amp; <a href="/tags/Syntax">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/riding-the-testrocket#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      APR<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/a-stylish-critique"><h3 class="blog-title">A Stylish Critique</h3></a>
+          <p><em>Before getting started, I feel compelled to point out that my dictionary defines a critique as "a detailed analysis and assessment of something."  It seems like we often assume the worst of that word, but that's not how I intend it here.</em></p>
+
+<p>The Ruby community seems to be talking about style guides lately.  So let's talk about them.</p>
+
+<p>The fact is that you will have many choices if you go looking for style guides for our favorite language.  You can pick from:</p>
+
+<ul>
+<li><a href="http://www.zenspider.com/Languages/Ruby/QuickRef.html#general-tips">The old stuff</a></li>
+<li><a href="http://www.caliban.org/ruby/rubyguide.shtml#style">Google's way</a></li>
+<li><a href="https://github.com/styleguide/ruby">GitHub's popular guide</a></li>
+<li>Guides from respected Rubyists, like <a href="https://github.com/dkubb/styleguide/blob/master/RUBY-STYLE">Dan Kubb</a>
+</li>
+<li>One of the <a href="https://github.com/chneukirchen/styleguide/network">many</a> <a href="https://github.com/bbatsov/ruby-style-guide/network">forks</a> of the popular guides on GitHub</li>
+<li>And many <a href="http://www.google.com/search?rls=en&amp;q=ruby+style+guide&amp;ie=UTF-8&amp;oe=UTF-8">more</a>
+</li>
+</ul><p>It's obvious that Rubyists care about this topic.  Let's see what's out there and consider what really is and is not useful from these guides.</p>
+
+<h4>What is a style guide really, and why do we even have them?</h4>
+
+<p>Defining style guides is surprisingly tough.  I suspect they started out as formatting rules for code, but they have evolved pretty far beyond that now.</p>
+
+<p>Most guides include general conventions that the author feels are important when writing the language in question.  This can go all the way down to how to use certain constructs, opinions on what the author considers idiomatic, and syntax to outright avoid.</p><p><a href="/rubies-in-the-rough/a-stylish-critique">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/a-stylish-critique">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Style">Style</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/a-stylish-critique#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      MAR<br>
+      2012
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rubies-in-the-rough/learn-to-love-mix-ins"><h3 class="blog-title">Learn to Love Mix-ins</h3></a>
+          <p>The road to mastering Ruby is paved with understanding some key Ruby concepts.  Mix-ins are one of those concepts.  I'm sure everyone reading this knows the mechanics of how mix-ins work, but it pays to spend some time really thinking about all that mix-ins imply.  Let's do just that.</p>
+
+<h4>Adding a Type</h4>
+
+<p>One of the primary reasons that Ruby needs mix-ins is that it does not support multiple inheritance.  That leaves mix-ins as our only option for modeling hybrid objects.  It's the way Ruby programmers can add another type.</p>
+
+<p>That's a good way to think about it too:  adding a type.</p>
+
+<p>Take pagination, for example.  Pagination methods are usually defined to return an object like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">PaginatedCollection</span> <span class="o">&lt;</span> <span class="nb">Array</span>
+  <span class="c1"># ... paginated helpers defined here ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That's never really felt right to me though.</p>
+
+<p>First, inheriting from Ruby's core classes can come back to bite you in some scenarios.  The reason is that Ruby makes some performance tradeoffs to keep the core classes fast, but those tradeoffs mean that those classes don't always perfectly follow Ruby's rules.</p><p><a href="/rubies-in-the-rough/learn-to-love-mix-ins">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rubies-in-the-rough/learn-to-love-mix-ins">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Mix-ins">Mix-ins</a> &amp; <a href="/tags/Object%20Orientation">Object Orientation</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/learn-to-love-mix-ins#comments">1 Comment</a>
+</div>
+
+      </li>
+</ul>
+
+<div class="pagination text-center"><ul><li class="previous_page disabled"><a class="previous_page disabled">&#8592; Previous</a></li> <li class="active"><a class="active">1</a></li> <li><a rel="next" href="/rubies-in-the-rough?page=2">2</a></li> <li><a href="/rubies-in-the-rough?page=3">3</a></li> <li class="next"><a class="next" rel="next" href="/rubies-in-the-rough?page=2">Next &#8594;</a></li></ul></div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

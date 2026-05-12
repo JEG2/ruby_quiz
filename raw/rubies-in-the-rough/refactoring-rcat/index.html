@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / Refactoring:  rcat</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This article is a refactoring exercise to improve the code of a small Unix utility.">
+    <meta name="keywords"    content="thinking about code, software design, Iterators, Refactoring, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/refactoring-rcat/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      DEC<br>
+      2011
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Refactoring:  rcat</h3>
+        
+        <p>I use these <em>Rubies in the Rough</em> articles to teach how I think about code.  Well, I have a scary admission to make:  I didn't really understand refactoring until I was many years into being a programmer.  Sure, I knew what it meant, but I just didn't get it.  I hope to save you from the same mistake.</p>
+
+<p>Refactoring is important.  Very important.  It may be one of the most important things we do as programmers.  If I learned one thing from reading <a href="http://rubyrogues.com/023-rr-book-club-smalltalk-best-practice-patterns-with-kent-beck/">Smalltalk Best Practice Patterns</a>, it's that code's <strong>primary</strong> purpose is to communicate with the reader.  Let's face it though, when we are trying to get something working, it's often like stumbling around in the dark.  We are running into all kinds of things, breaking stuff, and just trying to reach that "Holy cow it works!" moment.  We're probably not thinking too long and hard about how well this mess we are making communicates and that's perfectly fine.</p>
+
+<p>Refactoring is where you get to fix that.  It's about taking working code and making it sexy.  Note that I said it starts with <strong>working code</strong>.  Until you have that, there's nothing worth communicating to a potential reader.  Make it work, then make it sexy.  (I believe that saying really involves speed, but that's a very different conversation we can have at a later date.)</p>
+
+<p>Given the importance I place on this topic, refactoring will be a recurring theme in these articles.  Expect to regularly see articles where we try to clean some code up.  It's important that we practice this process and get good at it.</p>
+
+<h4>rcat</h4>
+
+<p>In <a href="https://practicingruby.com/articles/building-unix-style-command-line-applications">Practicing Ruby 2.9</a>, Gregory Brown builds a clone of the Unix <code>cat</code> program in pure Ruby.  He calls this clone <code>rcat</code>.  It's a great article and I recommend that you take a moment to read it before you finish reading this.</p>
+
+<p>It turns out that the code for <code>rcat</code> is a great refactoring exercise for several reasons:</p>
+
+<ul>
+<li>Most of us are probably familiar with what it does</li>
+<li>It's working code</li>
+<li>It has tests, but they are a little unusual</li>
+<li>It's pretty darn good code</li>
+</ul><p>Did the last point surprise you?  Yeah, I said it's good code.  That's a win for us.</p>
+
+<p>Hideous code is hard.  You have to start by learning a lot about it.  You just can't start editing it until you figure out which strings are safe to pull on and which are too risky.  Then you have to attack it with the utmost care, baby stepping your way from safe foothold to safe foothold and verifying the heck out of what you are doing.</p>
+
+<p>I'm not saying those skills aren't useful.  Of course they are.  It's a complex process though and I don't want to take us there on our first outing.  We will get to that down the road a bit.</p>
+
+<p>For now, let's look at some code that does a lot of things right.  Most code could be better in some areas and <code>rcat</code> is no different.  It makes a couple of minor missteps and we should be able to safely work on improving those.</p>
+
+<h5>You First</h5>
+
+<p>That's the task.  We're going to try making some minor improvements to <code>rcat</code>.</p>
+
+<p>I want you to work on a specific version of <code>rcat</code>:  the one initially released with the article.  That's the way I first saw it.  Greg has made a couple of minor improvements to it since then and I would rather we had the chance to spot those issues too.  So, here's how you can get a copy of the code locally and have it be on the version I want you to see:</p>
+
+<pre><code>$ git clone https://github.com/elm-city-craftworks/rcat.git
+Cloning into rcat...
+remote: Counting objects: 85, done.
+remote: Compressing objects: 100% (50/50), done.
+remote: Total 85 (delta 26), reused 82 (delta 23)
+Unpacking objects: 100% (85/85), done.
+$ cd rcat
+$ git branch as_released e28f2c
+$ git checkout as_released
+Switched to branch 'as_released'
+</code></pre>
+
+<p>Now, when you see these refactoring articles, you can do what you always do an just read along.  I encourage you <strong>not</strong> to do that.  You may learn something that way, but you just won't learn as much as you could.  Instead, take a swing at the problem yourself.  You probably won't do what I do and that will be just great.  That will help you see the differences between what you focus on and what I focus on.  If we do attack the same areas, then you will get to see the differences in how we go about it.</p>
+
+<p>In this particular example, because it is good code, it will just be great to see if you can find the problems I have with it.  They are fairly minor points, so consider this a test of your observation skills.  Even if you don't do the edits before you see mine, just trying to spot what I'm going to fix could be helpful.</p>
+
+<p>So, run the commands above to get the code and take a look through it before you read on.  If you are feeling really adventurous, try making some fixes yourself.</p>
+
+<h4>That One Bump in the Testing Road</h4>
+
+<p>We're in luck, <code>rcat</code> has tests!</p>
+
+<p>These tests are a little unusual in that they don't use a testing framework.  It's just a file of tests that Greg wrote, comparing <code>rcat</code> to <code>cat</code> in several different scenarios.  That makes me want to try the obvious:</p>
+
+<pre><code>$ ruby tests.rb 
+tests.rb:20:in ``': No such file or directory - rcat … (Errno::ENOENT)
+    from tests.rb:20:in `&lt;main&gt;'
+</code></pre>
+
+<p>Doh!  We were doing so well too.</p>
+
+<p>I must admit, this is totally normal for my running-other-people's-test track record.  There always seems to be one non-obvious requirement to run them.  For example, they may run but all error out while trying to connect to Redis.  Then I fire up Redis and they work fine.  It's sad that this is the norm, because we really want it to be trivial for everyone to run our tests!</p>
+
+<p>I guess I have found the first thing I want to fix.</p>
+
+<p>If you read the Practicing Ruby article that described <code>rcat</code> you'll see that it talked about Greg setting an environment variable to get the <code>rcat</code> executable in his <code>PATH</code>.  That tells us what the problem probably is, but we can't use Greg's exact suggestion since it's an absolute path on his machine.  I tried translating it to a relative path that would work for me to see if I can get the tests working:</p>
+
+<pre><code>$ PATH="./bin:$PATH" ruby tests.rb 
+You passed the tests, yay!
+</code></pre>
+
+<p>Bingo.  All I did was update my <code>PATH</code> variable for the command that followed by prepending the <code>./bin</code> directory that holds the <code>rcat</code> executable.  Now we know how to get the tests to work.</p>
+
+<p>Really, the tests should do that for us.  They know where they are and where <code>rcat</code> is.  They should just handle this.  Let's make that change.</p>
+
+<p>At this point, it's time to actually peak at the <code>tests.rb</code> file.  Skipping some comments at the top, this is how the code begins:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"open3"</span>
+
+<span class="n">working_dir</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">)</span>
+<span class="n">gettysburg_file</span> <span class="o">=</span> <span class="s2">"</span><span class="si">#{</span><span class="n">working_dir</span><span class="si">}</span><span class="s2">/data/gettysburg.txt"</span>
+<span class="n">spaced_file</span>     <span class="o">=</span> <span class="s2">"</span><span class="si">#{</span><span class="n">working_dir</span><span class="si">}</span><span class="s2">/data/spaced_out.txt"</span>
+
+<span class="c1">############################################################################</span>
+
+<span class="n">cat_output</span>  <span class="o">=</span> <span class="sb">`cat </span><span class="si">#{</span><span class="n">gettysburg_file</span><span class="si">}</span><span class="sb">`</span>
+<span class="n">rcat_output</span> <span class="o">=</span> <span class="sb">`rcat </span><span class="si">#{</span><span class="n">gettysburg_file</span><span class="si">}</span><span class="sb">`</span>
+
+<span class="nb">fail</span> <span class="s2">"Failed 'cat == rcat'"</span> <span class="k">unless</span> <span class="n">cat_output</span> <span class="o">==</span> <span class="n">rcat_output</span>
+
+<span class="c1">############################################################################</span>
+
+<span class="n">cat_output</span>  <span class="o">=</span> <span class="sb">`cat </span><span class="si">#{</span><span class="n">gettysburg_file</span><span class="si">}</span><span class="sb"> </span><span class="si">#{</span><span class="n">spaced_file</span><span class="si">}</span><span class="sb">`</span>
+<span class="n">rcat_output</span> <span class="o">=</span> <span class="sb">`rcat </span><span class="si">#{</span><span class="n">gettysburg_file</span><span class="si">}</span><span class="sb"> </span><span class="si">#{</span><span class="n">spaced_file</span><span class="si">}</span><span class="sb">`</span>
+
+<span class="nb">fail</span> <span class="s2">"Failed 'cat [f1 f2] == rcat [f1 f2]'"</span> <span class="k">unless</span> <span class="n">cat_output</span> <span class="o">==</span> <span class="n">rcat_output</span>
+
+<span class="c1">############################################################################</span>
+
+<span class="err">…</span>
+</pre></div>
+
+<p>The first chunk shows that Greg was already aware of these path issues.  He solved them for the data files by building local paths to them.</p>
+
+<p>The second and third chunks show a couple of the tests.  They are just shelling out to both programs and comparing the output.  That's easy enough to understand.</p>
+
+<p>We could solve the <code>rcat</code> problem the same way Greg handles the data files, but that will require us to edit every test.  It would also create a strange asymmetry:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">cat_output</span>  <span class="o">=</span> <span class="sb">`cat …`</span>
+<span class="n">rcat_output</span> <span class="o">=</span> <span class="sb">`</span><span class="si">#{</span><span class="n">rcat</span><span class="si">}</span><span class="sb"> …`</span>
+</pre></div>
+
+<p>Those aren't a super big deal, but it makes things just a touch harder to understand and I would rather not do that.  Given that, let's just twiddle the path as I did externally.  I changed the top code to:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"open3"</span>
+
+<span class="n">working_dir</span>     <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">)</span>
+<span class="n">gettysburg_file</span> <span class="o">=</span> <span class="s2">"</span><span class="si">#{</span><span class="n">working_dir</span><span class="si">}</span><span class="s2">/data/gettysburg.txt"</span>
+<span class="n">spaced_file</span>     <span class="o">=</span> <span class="s2">"</span><span class="si">#{</span><span class="n">working_dir</span><span class="si">}</span><span class="s2">/data/spaced_out.txt"</span>
+
+<span class="c1"># make sure rcat is in the PATH</span>
+<span class="no">ENV</span><span class="o">[</span><span class="s2">"PATH"</span><span class="o">]</span> <span class="o">=</span> <span class="o">[</span><span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">working_dir</span><span class="p">,</span> <span class="s2">"bin"</span><span class="p">),</span> <span class="no">ENV</span><span class="o">[</span><span class="s2">"PATH"</span><span class="o">]].</span><span class="n">compact</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">":"</span><span class="p">)</span>
+</pre></div>
+
+<p>Now we can just run the Ruby file normally:</p>
+
+<pre><code>$ ruby tests.rb 
+You passed the tests, yay!
+</code></pre>
+
+<p>I like that.  Keep it as easy as humanly possible for users to run your tests.  This helps to get them into your code and that's always a plus.</p>
+
+<h5>What About the Duplication?</h5>
+
+<p>As you look through these tests, you'll see plenty of duplication.  In just the two I posted above, you can already see it.</p>
+
+<ul>
+<li>The same arguments are always sent <code>cat</code> and <code>rcat</code>
+</li>
+<li>We capture the output from both</li>
+<li>Output is compared and an error thrown if they don't match</li>
+</ul><p>Couldn't we wrap that in a method that handles those details for us?  We definitely could, but it's not quite as utterly straightforward as I might have made it seem.</p>
+
+<p>First, read through the error messages.  They differ a bit, so we probably couldn't copy them exactly as they are.  We would likely standardize them based on the arguments.  I think that's fine.  It may actually be an improvement since the current messages seem a little inconsistent.</p>
+
+<p>But, if you keep reading down, you will see that the tests gain some variety of form.  Have a peek at this later test, for example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="sb">`cat </span><span class="si">#{</span><span class="n">gettysburg_file</span><span class="si">}</span><span class="sb">`</span>
+<span class="n">cat_success</span> <span class="o">=</span> <span class="vg">$?</span>
+
+<span class="sb">`rcat </span><span class="si">#{</span><span class="n">gettysburg_file</span><span class="si">}</span><span class="sb">`</span>
+<span class="n">rcat_success</span> <span class="o">=</span> <span class="vg">$?</span>
+
+<span class="k">unless</span> <span class="n">cat_success</span><span class="o">.</span><span class="n">exitstatus</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">rcat_success</span><span class="o">.</span><span class="n">exitstatus</span> <span class="o">==</span> <span class="mi">0</span>
+  <span class="nb">fail</span> <span class="s2">"Failed 'cat and rcat success exit codes match"</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Also, consider this one:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">cat_out</span><span class="p">,</span> <span class="n">cat_err</span><span class="p">,</span> <span class="n">cat_process</span>    <span class="o">=</span> <span class="no">Open3</span><span class="o">.</span><span class="n">capture3</span><span class="p">(</span><span class="s2">"cat some_invalid_file"</span><span class="p">)</span>
+<span class="n">rcat_out</span><span class="p">,</span> <span class="n">rcat_err</span><span class="p">,</span> <span class="n">rcat_process</span> <span class="o">=</span> <span class="no">Open3</span><span class="o">.</span><span class="n">capture3</span><span class="p">(</span><span class="s2">"rcat some_invalid_file"</span><span class="p">)</span> 
+
+<span class="k">unless</span> <span class="n">cat_process</span><span class="o">.</span><span class="n">exitstatus</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">rcat_process</span><span class="o">.</span><span class="n">exitstatus</span> <span class="o">==</span> <span class="mi">1</span>
+  <span class="nb">fail</span> <span class="s2">"Failed 'cat and rcat exit codes match on bad file"</span>
+<span class="k">end</span>
+
+<span class="k">unless</span> <span class="n">rcat_err</span> <span class="o">==</span> <span class="s2">"rcat: No such file or directory - some_invalid_file</span><span class="se">\n</span><span class="s2">"</span>
+  <span class="nb">fail</span> <span class="s2">"Failed 'cat and rcat error messages match on bad file'"</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>We could handle these different cases, but we're going to need to introduce some infrastructure to do it.  In turn, that infrastructure is going to make the tests less easy to browse.</p>
+
+<p>It seems like there are some pros and cons to making that change.  Because of that, I'm inclined not to go there.  I can't tell if I'm going to make the tests communicate better or worse with a change like that.  When I find myself at such a crossroads, I generally opt for a "Do No Harm" strategy.</p>
+
+<p>Perhaps, as more tests are added down the road, the picture will crystalize more and I'll be able to make a stronger argument for the change.  If that came to pass, I would make the change.</p>
+
+<p>That's why I'm electing to leave the tests as they are.  It's definitely a margin call though.  If you replaced them, I don't blame you.</p>
+
+<h4>Reading the Code</h4>
+
+<p>With the tests running smoothly, I'm ready to actually start reading the code.  For a small executable like this, I generally just crack open the executable file itself and follow where it leads me.</p>
+
+<p>Using that strategy, this is some of the first code I ran into:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">begin</span>
+  <span class="no">RCat</span><span class="o">::</span><span class="no">Application</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">ARGV</span><span class="p">)</span><span class="o">.</span><span class="n">run</span>
+<span class="k">rescue</span> <span class="no">Errno</span><span class="o">::</span><span class="no">ENOENT</span> <span class="o">=&gt;</span> <span class="n">err</span>
+  <span class="no">STDERR</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"rcat: </span><span class="si">#{</span><span class="n">err</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span>
+  <span class="nb">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">rescue</span> <span class="no">OptionParser</span><span class="o">::</span><span class="no">InvalidOption</span> <span class="o">=&gt;</span> <span class="n">err</span>
+  <span class="no">STDERR</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"rcat: </span><span class="si">#{</span><span class="n">err</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span>
+  <span class="no">STDERR</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"usage: rcat [-bns] [file ...]"</span>
+  <span class="nb">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That has my Spidey Sense tingling.  What are these errors doing up here?  This looks like parts of the code leaking into places it doesn't belong.  When I'm here, I have no idea what <code>Errno::ENOENT</code> or <code>OptionParser::InvalidOption</code> relate to.  Also, I know I link to this book in almost every freaking article, but doesn't <a href="http://exceptionalruby.com/">Exceptional Ruby</a> say that <code>begin</code> is a code smell?</p>
+
+<p>I'm also wondering why we are using <code>STDERR</code> here instead of <code>$stderr</code>.  Plus those <code>puts()</code> and <code>exit()</code> calls could be collapsed into a <a href="http://www.ruby-doc.org/core-1.9.3/Kernel.html#method-i-abort">calls to Ruby's <code>abort()</code></a>.  (If you read the article, you may have noticed these issues were fixed.  Greg updated them after I made the same mentions to him.)</p>
+
+<p>Going back to the article, does Greg give a reasoning for why these rescues are at the top level?  It turns out that he does.  Here's the best part:</p>
+
+<blockquote>
+<p>Regardless of how these exceptions are labeled, it's important to note that I intentionally let them bubble all the way up to the outermost layer and only then rescue them and call Kernel#exit. Intermingling exit calls within control flow or modeling logic makes debugging nearly impossible and also makes automated testing a whole lot harder.</p>
+</blockquote>
+
+<p>That's an interesting argument.  I would not be for making testing the code harder.  However, we're hurting readability significantly by moving these pieces so far from the code they relate to.  We have to find a way to balance those needs.</p>
+
+<h5>Can I Test exit()?</h5>
+
+<p>What is Greg saying about testing an <code>exit()</code> call?  He's saying, if we call it in the middle of our test run, it's just going to halt the running test suite without giving us a chance to check anything.  That would definitely be bad, but the real question is, "Is that true?"</p>
+
+<p>Let's find out.  I created a new file called <code>exit_test.rb</code> and entered this code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"minitest/autorun"</span>
+
+<span class="k">class</span> <span class="nc">ExitTest</span> <span class="o">&lt;</span> <span class="no">MiniTest</span><span class="o">::</span><span class="no">Unit</span><span class="o">::</span><span class="no">TestCase</span>
+  <span class="k">def</span> <span class="nf">test_exit</span>
+    <span class="nb">exit</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>If we run that, we will see that Greg is right:</p>
+
+<pre><code>$ ruby exit_test.rb 
+Run options: --seed 5481
+
+# Running tests:
+</code></pre>
+
+<p>That's not good.  It killed things before we could see some output.</p>
+
+<p>I'll be honest and tell you that's not what I expected to see.  I know that <code>exit()</code> just raises an <code>Exception</code> to end the program.  I also know that testing frameworks catch any <code>Exception</code> raised during the run so that they can report them in the results.  I expected it to catch the <code>Exception</code> and keep it from ending the program.  I had to look at the source code to see why it wasn't doing that.</p>
+
+<p>The answer is the while <code>MiniTest</code> does catch any <code>Exception</code> raised, <a href="https://github.com/seattlerb/minitest/blob/f5b2312b13230d7e57950fbe6c622458a5d33b04/lib/minitest/unit.rb#L1039">it reraises some of them</a>.  It just so happens that <a href="https://github.com/seattlerb/minitest/blob/f5b2312b13230d7e57950fbe6c622458a5d33b04/lib/minitest/unit.rb#L1016">the list of those that get reraised</a> includes <code>SystemExit</code>, which is what <code>exit()</code> raises.  That makes a lot of sense.  If <code>MiniTest</code> didn't do that, <code>exit()</code> wouldn't work like <code>exit()</code> while it was running and that might make us mad if we were trying to use it to debug a problem.</p>
+
+<p>Greg is a smart guy.  Thanks for the lesson, buddy.</p>
+
+<p>However, just because <code>MiniTest</code> doesn't automatically catch the error for us, doesn't mean we can't handle it.  In fact, <code>MiniTest</code> <strong>will</strong> catch it for us, if we ask nicely.  Watch this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"minitest/autorun"</span>
+
+<span class="k">class</span> <span class="nc">ExitTest</span> <span class="o">&lt;</span> <span class="no">MiniTest</span><span class="o">::</span><span class="no">Unit</span><span class="o">::</span><span class="no">TestCase</span>
+  <span class="k">def</span> <span class="nf">test_exit</span>
+    <span class="n">assert_raises</span><span class="p">(</span><span class="no">SystemExit</span><span class="p">)</span> <span class="k">do</span>
+      <span class="nb">exit</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>If we run that, we can see that our test works fine:</p>
+
+<pre><code>$ ruby exit_test.rb 
+Run options: --seed 50521
+
+# Running tests:
+
+.
+
+Finished tests in 0.000427s, 2341.9204 tests/s, 2341.9204 assertions/s.
+
+1 tests, 1 assertions, 0 failures, 0 errors, 0 skips
+</code></pre>
+
+<p>Now we're getting somewhere.  Could we use this to test a method that sometimes calls <code>exit()</code>?  Sure:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">good_and_bad</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+  <span class="n">result</span> <span class="o">==</span> <span class="ss">:good</span> <span class="p">?</span> <span class="mi">42</span> <span class="p">:</span> <span class="nb">exit</span>
+<span class="k">end</span>
+
+<span class="nb">require</span> <span class="s2">"minitest/autorun"</span>
+
+<span class="k">class</span> <span class="nc">GoodAndBadTest</span> <span class="o">&lt;</span> <span class="no">MiniTest</span><span class="o">::</span><span class="no">Unit</span><span class="o">::</span><span class="no">TestCase</span>
+  <span class="k">def</span> <span class="nf">test_good</span>
+    <span class="n">assert_equal</span><span class="p">(</span><span class="mi">42</span><span class="p">,</span> <span class="n">good_and_bad</span><span class="p">(</span><span class="ss">:good</span><span class="p">))</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">test_bad</span>
+    <span class="n">assert_raises</span><span class="p">(</span><span class="no">SystemExit</span><span class="p">)</span> <span class="k">do</span>
+      <span class="n">good_and_bad</span><span class="p">(</span><span class="ss">:bad</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That works just as you would expect:</p>
+
+<pre><code>$ ruby good_and_bad_test.rb 
+Run options: --seed 50819
+
+# Running tests:
+
+..
+
+Finished tests in 0.000468s, 4273.5043 tests/s, 4273.5043 assertions/s.
+
+2 tests, 2 assertions, 0 failures, 0 errors, 0 skips
+</code></pre>
+
+<p>So, while Greg is right that working with <code>exit()</code> in a test suite can have nasty consequences, that does not mean we can't test those methods.  I think that tips the scales for me.  I just feel it's too important to get that error handling into the right place.  I make a note that it needs moving and keep reading the code.</p>
+
+<h5>Everything in its Place</h5>
+
+<p>If you can remember back to before I got off on that testing tangent, we saw the executable hand off to the library code like this:  <code>RCat::Application.new(ARGV).run</code>.  That makes me want to get a look at the <code>Application</code> object.  I'm not going to dump that code in here, but I noticed two things when reading it:</p>
+
+<ul>
+<li>It's gorgeous.  I have no complaints.</li>
+<li>It's also the the exact place I was looking for to hang those wayward errors!</li>
+</ul><p>Let me show you the code as I saw it:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">RCat</span>
+  <span class="k">class</span> <span class="nc">Application</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+      <span class="c1"># setup code, safe to ignore...</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">run</span>
+      <span class="c1"># open files that could toss Errno::ENOENT here...</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">parse_options</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+      <span class="c1"># parse options with OptionParser here...</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Now watch how it looks with the errors moved into here:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">RCat</span>
+  <span class="k">class</span> <span class="nc">Application</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+      <span class="c1"># setup code, safe to ignore...</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">run</span>
+      <span class="c1"># open files that could toss Errno::ENOENT here...</span>
+    <span class="k">rescue</span> <span class="no">Errno</span><span class="o">::</span><span class="no">ENOENT</span> <span class="o">=&gt;</span> <span class="n">error</span>
+      <span class="c1"># handle Errno::ENOENT here...</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">parse_options</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+      <span class="c1"># parse options with OptionParser here...</span>
+    <span class="k">rescue</span> <span class="no">OptionParser</span><span class="o">::</span><span class="no">InvalidOption</span> <span class="o">=&gt;</span> <span class="n">error</span>
+      <span class="c1"># handle OptionParser::InvalidOption here...</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Burn that pattern into your brain, because it's what great error handling looks like.  This code already had perfect compartmentalization into methods that just do one thing.  All we did was tack the error handling for those things onto those methods.  You have the "happy path" first, which is the way code should be.  Then, if trouble arises, you just take the low road.  It's also worth noting that there's not a <code>begin</code> in site.</p>
+
+<p>I can understand Greg's desire not to work with ordinary methods that occasionally try to halt everything.  However, these aren't ordinary methods.  These are the tasks handled by the <code>Application</code> object.  Tasks like <code>run()</code>.  Being able to stop everything is totally in the scope of what we are doing here.</p>
+
+<p>Furthermore, look at the new and improved executable:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby</span>
+
+<span class="n">require_relative</span> <span class="s2">"../lib/rcat"</span>
+
+<span class="no">RCat</span><span class="o">::</span><span class="no">Application</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">ARGV</span><span class="p">)</span><span class="o">.</span><span class="n">run</span>
+</pre></div>
+
+<p>That's, in a word, ideal.  This file is now just an interface to our library code.  It just kicks off a process.  It doesn't do any work.  That allows us to safely forget about it.  If we write proper tests, we will know this code is just fine.</p>
+
+<p>I made the real move of the content, not just the comments shown above, and ran the tests.  They passed, so we're looking great with our second change.</p>
+
+<h4>Thrown for a Loop</h4>
+
+<p>There are three code files left that I haven't gone inside of yet.  However, one just requires some files and the other just sets a constant.  So really, we are down to one interesting stop left:  <code>lib/rcat/display</code>.</p>
+
+<p>The first thing I notice in here is that we're in a <code>Display</code> object, but doing things like <code>render()</code>.  It might be worthwhile to rename this thing to a <code>Renderer</code> for consistent terminology, but this is a minor point and I'm not going to worry about it now.</p>
+
+<p>There is a method here that concerns me, <code>render_line()</code>.  Here's the code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">render_line</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+  <span class="n">current_line</span> <span class="o">=</span> <span class="n">lines</span><span class="o">.</span><span class="n">next</span> 
+  <span class="n">current_line_is_blank</span> <span class="o">=</span> <span class="n">current_line</span><span class="o">.</span><span class="n">chomp</span><span class="o">.</span><span class="n">empty?</span>
+
+  <span class="k">case</span> <span class="n">line_numbering_style</span>
+  <span class="k">when</span> <span class="ss">:all_lines</span>
+    <span class="n">print_labeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+    <span class="n">increment_line_number</span>  
+  <span class="k">when</span> <span class="ss">:significant_lines</span>
+    <span class="k">if</span> <span class="n">current_line_is_blank</span>
+      <span class="n">print_unlabeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+    <span class="k">else</span>
+      <span class="n">print_labeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+      <span class="n">increment_line_number</span>
+    <span class="k">end</span>
+  <span class="k">else</span>
+    <span class="n">print_unlabeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+    <span class="n">increment_line_number</span>
+  <span class="k">end</span>
+
+  <span class="k">if</span> <span class="n">squeeze_extra_newlines</span> <span class="o">&amp;&amp;</span> <span class="n">current_line_is_blank</span>
+     <span class="n">lines</span><span class="o">.</span><span class="n">next</span> <span class="k">while</span> <span class="n">lines</span><span class="o">.</span><span class="n">peek</span><span class="o">.</span><span class="n">chomp</span><span class="o">.</span><span class="n">empty?</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I see some warning signs in this:</p>
+
+<ul>
+<li>The method is getting a bit long</li>
+<li>It's called <code>render_line()</code> but it operates on a set of <code>lines</code> (printing one and possibly discarding others)</li>
+<li>There's some duplication, like the two places where it prints a labeled line and then increments the line number</li>
+<li>The nested conditionals make it hard for me to reason about</li>
+<li>It's part of some flow control you can't even see by reading it</li>
+</ul><p>To explain that last point, this code works by calling <code>next()</code> on the passed <code>Enumerator</code>.  That method will raise <code>StopIteration</code> when the list of items is exhausted.  So that raise is happening here, either on the first line or the next-to-last line.  But it's being handled elsewhere, in fact, the <code>render()</code> method rescues it:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+  <span class="vi">@line_number</span> <span class="o">=</span> <span class="mi">1</span>
+
+  <span class="n">lines</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">lines</span>
+  <span class="kp">loop</span> <span class="p">{</span> <span class="n">render_line</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="p">}</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Do you see a <code>rescue</code> clause there?  It's a bit hidden.  In Ruby 1.9, <code>loop()</code> was enhanced to quietly catch <code>StopIteration</code> and use it as a sign to halt the iteration.  I'm fine with that in practice, but once you break it across two methods, like it is in this case, it seems to hide some pretty deep magic.</p>
+
+<p>I want to try to fix this section, but I need to do it in pieces.  First, I want to address the confusing flow control.  Greg talks about the reason for selecting an <code>Enumerator</code> in his article and it definitely makes sense, but I'm hoping that reverting to a normal <code>each()</code> can help me clean up the flow.  I'm going to try that.</p>
+
+<p>The hard part about switching to <code>each()</code> is this chunk of code towards the end of <code>render_line()</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">if</span> <span class="n">squeeze_extra_newlines</span> <span class="o">&amp;&amp;</span> <span class="n">current_line_is_blank</span>
+   <span class="n">lines</span><span class="o">.</span><span class="n">next</span> <span class="k">while</span> <span class="n">lines</span><span class="o">.</span><span class="n">peek</span><span class="o">.</span><span class="n">chomp</span><span class="o">.</span><span class="n">empty?</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>We have to think about what that is doing.  It's looking forward at upcoming lines and discarding those lines as long as they are don't need to be shown.  The trick is to reverse that.  If we remove the need to see into the future, <code>each()</code> will work just fine.  Without <code>peek()</code> though, it's going to hand us some lines we don't want.  We will have to skip over those <strong>before</strong> we process them.  Put another way, if we move this code to the head of the loop, we can drop the <code>peek()</code> and switch to Ruby's normal <code>next</code> keyword.</p>
+
+<p>This should allow me to get the process into one normal iterator.  Given that, I plan to drop <code>render_line()</code> altogether.  I'm hoping to get <code>render()</code> clean enough that it won't be needed.  Here's my first pass at switching to a normal iterator:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+  <span class="vi">@line_number</span> <span class="o">=</span> <span class="mi">1</span>
+
+  <span class="n">data</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">current_line</span><span class="o">|</span>
+    <span class="n">current_line_is_blank</span> <span class="o">=</span> <span class="n">current_line</span><span class="o">.</span><span class="n">chomp</span><span class="o">.</span><span class="n">empty?</span>
+
+    <span class="k">if</span> <span class="n">squeeze_extra_newlines</span> <span class="o">&amp;&amp;</span> <span class="n">current_line_is_blank</span>
+       <span class="k">next</span>
+    <span class="k">end</span>
+
+    <span class="k">case</span> <span class="n">line_numbering_style</span>
+    <span class="k">when</span> <span class="ss">:all_lines</span>
+      <span class="n">print_labeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+      <span class="n">increment_line_number</span>  
+    <span class="k">when</span> <span class="ss">:significant_lines</span>
+      <span class="k">if</span> <span class="n">current_line_is_blank</span>
+        <span class="n">print_unlabeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+      <span class="k">else</span>
+        <span class="n">print_labeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+        <span class="n">increment_line_number</span>
+      <span class="k">end</span>
+    <span class="k">else</span>
+      <span class="n">print_unlabeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+      <span class="n">increment_line_number</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I'm liking that flow better, but don't get too excited.  Greg's tests are giving me the thumbs down for this version:</p>
+
+<pre><code>$ ruby tests.rb 
+tests.rb:62:in `&lt;main&gt;': Failed 'cat -s == rcat -s' (RuntimeError)
+</code></pre>
+
+<p>This proves I didn't understand the <code>peek()</code> and <code>next()</code> combo as well as I thought I did.  Things like this are why it's so critical to have working tests while you are refactoring.</p>
+
+<p>OK, so what's the problem here?  Well, it's because this code use to be at the end of the loop, meaning that it was checked after a line was processed.  That means the first blank line made it through.  Then it stopped the rest.  Under my new setup though, I stop all of them.  No good.</p>
+
+<p>I need to track another state variable to fix that.  This code will do the trick:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+  <span class="vi">@line_number</span> <span class="o">=</span> <span class="mi">1</span>
+  <span class="n">in_blank_run</span> <span class="o">=</span> <span class="kp">false</span>
+
+  <span class="n">data</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">current_line</span><span class="o">|</span>
+    <span class="n">current_line_is_blank</span> <span class="o">=</span> <span class="n">current_line</span><span class="o">.</span><span class="n">chomp</span><span class="o">.</span><span class="n">empty?</span>
+
+    <span class="k">if</span> <span class="n">squeeze_extra_newlines</span> <span class="o">&amp;&amp;</span> <span class="n">in_blank_run</span> <span class="o">&amp;&amp;</span> <span class="n">current_line_is_blank</span>
+       <span class="k">next</span>
+    <span class="k">end</span>
+
+    <span class="n">in_blank_run</span> <span class="o">=</span> <span class="n">current_line_is_blank</span>
+
+    <span class="k">case</span> <span class="n">line_numbering_style</span>
+    <span class="k">when</span> <span class="ss">:all_lines</span>
+      <span class="n">print_labeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+      <span class="n">increment_line_number</span>  
+    <span class="k">when</span> <span class="ss">:significant_lines</span>
+      <span class="k">if</span> <span class="n">current_line_is_blank</span>
+        <span class="n">print_unlabeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+      <span class="k">else</span>
+        <span class="n">print_labeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+        <span class="n">increment_line_number</span>
+      <span class="k">end</span>
+    <span class="k">else</span>
+      <span class="n">print_unlabeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+      <span class="n">increment_line_number</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That does indeed get the tests passing again.</p>
+
+<p>Now, at first glance, it probably looks like I have made things worse.  That's a little true.  However, I mostly have the code in one place now and that makes it easier to do extractions.  I'm betting that will help me clean things up even more.</p>
+
+<p>I said "mostly have the code in one place" because there's an instance variable involved:  <code>@line_number</code>.  That means other methods can modify it on me.  It turns out they do.  In fact, that's <code>increment_line_number()</code>'s job.  I'm going to inline that method and switch to using a local variable to make sure I have this code under my control:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+  <span class="n">line_number</span>  <span class="o">=</span> <span class="mi">1</span>
+  <span class="n">in_blank_run</span> <span class="o">=</span> <span class="kp">false</span>
+
+  <span class="n">data</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">current_line</span><span class="o">|</span>
+    <span class="n">current_line_is_blank</span> <span class="o">=</span> <span class="n">current_line</span><span class="o">.</span><span class="n">chomp</span><span class="o">.</span><span class="n">empty?</span>
+
+    <span class="k">if</span> <span class="n">squeeze_extra_newlines</span> <span class="o">&amp;&amp;</span> <span class="n">in_blank_run</span> <span class="o">&amp;&amp;</span> <span class="n">current_line_is_blank</span>
+       <span class="k">next</span>
+    <span class="k">end</span>
+
+    <span class="n">in_blank_run</span> <span class="o">=</span> <span class="n">current_line_is_blank</span>
+
+    <span class="k">case</span> <span class="n">line_numbering_style</span>
+    <span class="k">when</span> <span class="ss">:all_lines</span>
+      <span class="n">print_labeled_line</span><span class="p">(</span><span class="n">line_number</span><span class="p">,</span> <span class="n">current_line</span><span class="p">)</span>
+      <span class="n">line_number</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">when</span> <span class="ss">:significant_lines</span>
+      <span class="k">if</span> <span class="n">current_line_is_blank</span>
+        <span class="n">print_unlabeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+      <span class="k">else</span>
+        <span class="n">print_labeled_line</span><span class="p">(</span><span class="n">line_number</span><span class="p">,</span> <span class="n">current_line</span><span class="p">)</span>
+        <span class="n">line_number</span> <span class="o">+=</span> <span class="mi">1</span>
+      <span class="k">end</span>
+    <span class="k">else</span>
+      <span class="n">print_unlabeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+      <span class="n">line_number</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I also had to update <code>print_labeled_line()</code>, so I could pass it the label:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">print_labeled_line</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+  <span class="nb">print</span> <span class="s2">"%6d</span><span class="se">\t</span><span class="s2">%s"</span> <span class="o">%</span> <span class="o">[</span><span class="n">label</span><span class="p">,</span> <span class="n">line</span><span class="o">]</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The tests still pass and I now have all the code in one place.  I'm ready to start making this code pretty.</p>
+
+<p>Those two state variables are tipping me off that a new object is called for here.  That's what objects do, track state, so that's a way to predict that they are needed.  I'll start by building an object that can track the line numbers.  I was lazy and just put this new object in the same file for now.  I can graduate it to its own file when the time comes.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">RendererStatus</span>
+  <span class="k">def</span> <span class="nf">initialize</span>
+    <span class="vi">@lineno</span> <span class="o">=</span> <span class="mi">1</span>
+  <span class="k">end</span>
+
+  <span class="kp">attr_reader</span> <span class="ss">:lineno</span>
+
+  <span class="k">def</span> <span class="nf">increment</span>
+    <span class="vi">@lineno</span> <span class="o">+=</span> <span class="mi">1</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+  <span class="n">in_blank_run</span> <span class="o">=</span> <span class="kp">false</span>
+
+  <span class="n">data</span><span class="o">.</span><span class="n">each_with_object</span><span class="p">(</span><span class="no">RendererStatus</span><span class="o">.</span><span class="n">new</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">current_line</span><span class="p">,</span> <span class="n">status</span><span class="o">|</span>
+    <span class="n">current_line_is_blank</span> <span class="o">=</span> <span class="n">current_line</span><span class="o">.</span><span class="n">chomp</span><span class="o">.</span><span class="n">empty?</span>
+
+    <span class="k">if</span> <span class="n">squeeze_extra_newlines</span> <span class="o">&amp;&amp;</span> <span class="n">in_blank_run</span> <span class="o">&amp;&amp;</span> <span class="n">current_line_is_blank</span>
+       <span class="k">next</span>
+    <span class="k">end</span>
+
+    <span class="n">in_blank_run</span> <span class="o">=</span> <span class="n">current_line_is_blank</span>
+
+    <span class="k">case</span> <span class="n">line_numbering_style</span>
+    <span class="k">when</span> <span class="ss">:all_lines</span>
+      <span class="n">print_labeled_line</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">lineno</span><span class="p">,</span> <span class="n">current_line</span><span class="p">)</span>
+      <span class="n">status</span><span class="o">.</span><span class="n">increment</span>
+    <span class="k">when</span> <span class="ss">:significant_lines</span>
+      <span class="k">if</span> <span class="n">current_line_is_blank</span>
+        <span class="n">print_unlabeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+      <span class="k">else</span>
+        <span class="n">print_labeled_line</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">lineno</span><span class="p">,</span> <span class="n">current_line</span><span class="p">)</span>
+        <span class="n">status</span><span class="o">.</span><span class="n">increment</span>
+      <span class="k">end</span>
+    <span class="k">else</span>
+      <span class="n">print_unlabeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+      <span class="n">status</span><span class="o">.</span><span class="n">increment</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The <code>RendererStatus</code> object is trivial at this point.  It just tracks a counter.  But this gives me a place to hang status questions in the future and that should help me clean things up.  Note that I push it through my loop using the new <code>each_with_object()</code> iterator in Ruby 1.9.</p>
+
+<p>Now, it's time to start busting up that central <code>case</code> statement.  The main problem with it is that it's doing two separate things:  printing content and bumping the counter.  I want to handle those separately, to cut out the repetition.  Here's the split:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+  <span class="n">in_blank_run</span> <span class="o">=</span> <span class="kp">false</span>
+
+  <span class="n">data</span><span class="o">.</span><span class="n">each_with_object</span><span class="p">(</span><span class="no">RendererStatus</span><span class="o">.</span><span class="n">new</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">current_line</span><span class="p">,</span> <span class="n">status</span><span class="o">|</span>
+    <span class="n">current_line_is_blank</span> <span class="o">=</span> <span class="n">current_line</span><span class="o">.</span><span class="n">chomp</span><span class="o">.</span><span class="n">empty?</span>
+
+    <span class="k">if</span> <span class="n">squeeze_extra_newlines</span> <span class="o">&amp;&amp;</span> <span class="n">in_blank_run</span> <span class="o">&amp;&amp;</span> <span class="n">current_line_is_blank</span>
+       <span class="k">next</span>
+    <span class="k">end</span>
+
+    <span class="n">in_blank_run</span> <span class="o">=</span> <span class="n">current_line_is_blank</span>
+
+    <span class="k">case</span> <span class="n">line_numbering_style</span>
+    <span class="k">when</span> <span class="ss">:all_lines</span>
+      <span class="n">print_labeled_line</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">lineno</span><span class="p">,</span> <span class="n">current_line</span><span class="p">)</span>
+    <span class="k">when</span> <span class="ss">:significant_lines</span>
+      <span class="k">if</span> <span class="n">current_line_is_blank</span>
+        <span class="n">print_unlabeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+      <span class="k">else</span>
+        <span class="n">print_labeled_line</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">lineno</span><span class="p">,</span> <span class="n">current_line</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">else</span>
+      <span class="n">print_unlabeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">unless</span> <span class="n">line_numbering_style</span> <span class="o">==</span> <span class="ss">:significant_lines</span> <span class="o">&amp;&amp;</span>
+           <span class="n">current_line_is_blank</span>
+      <span class="n">status</span><span class="o">.</span><span class="n">increment</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Now that they are separate, it's also easy to collapse the nested <code>case</code>/<code>if</code> logic:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+  <span class="n">in_blank_run</span> <span class="o">=</span> <span class="kp">false</span>
+
+  <span class="n">data</span><span class="o">.</span><span class="n">each_with_object</span><span class="p">(</span><span class="no">RendererStatus</span><span class="o">.</span><span class="n">new</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">current_line</span><span class="p">,</span> <span class="n">status</span><span class="o">|</span>
+    <span class="n">current_line_is_blank</span> <span class="o">=</span> <span class="n">current_line</span><span class="o">.</span><span class="n">chomp</span><span class="o">.</span><span class="n">empty?</span>
+
+    <span class="k">if</span> <span class="n">squeeze_extra_newlines</span> <span class="o">&amp;&amp;</span> <span class="n">in_blank_run</span> <span class="o">&amp;&amp;</span> <span class="n">current_line_is_blank</span>
+       <span class="k">next</span>
+    <span class="k">end</span>
+
+    <span class="n">in_blank_run</span> <span class="o">=</span> <span class="n">current_line_is_blank</span>
+
+    <span class="k">if</span> <span class="n">line_numbering_style</span> <span class="o">==</span> <span class="ss">:all_lines</span> <span class="o">||</span>
+       <span class="p">(</span> <span class="n">line_numbering_style</span> <span class="o">==</span> <span class="ss">:significant_lines</span> <span class="o">&amp;&amp;</span>
+         <span class="o">!</span><span class="n">current_line_is_blank</span> <span class="p">)</span>
+      <span class="n">print_labeled_line</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">lineno</span><span class="p">,</span> <span class="n">current_line</span><span class="p">)</span>
+    <span class="k">else</span>
+      <span class="n">print_unlabeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">unless</span> <span class="n">line_numbering_style</span> <span class="o">==</span> <span class="ss">:significant_lines</span> <span class="o">&amp;&amp;</span>
+           <span class="n">current_line_is_blank</span>
+      <span class="n">status</span><span class="o">.</span><span class="n">increment</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That's better, but these conditional checks aren't very sexy.  Let's add a couple of query methods and clean those up:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">squeeze_extra_newlines?</span>
+  <span class="vi">@squeeze_extra_newlines</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">number_all_lines?</span>
+  <span class="vi">@line_numbering_style</span> <span class="o">==</span> <span class="ss">:all_lines</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">number_significant_lines?</span>
+  <span class="vi">@line_numbering_style</span> <span class="o">==</span> <span class="ss">:significant_lines</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+  <span class="n">in_blank_run</span> <span class="o">=</span> <span class="kp">false</span>
+
+  <span class="n">data</span><span class="o">.</span><span class="n">each_with_object</span><span class="p">(</span><span class="no">RendererStatus</span><span class="o">.</span><span class="n">new</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">current_line</span><span class="p">,</span> <span class="n">status</span><span class="o">|</span>
+    <span class="n">current_line_is_blank</span> <span class="o">=</span> <span class="n">current_line</span><span class="o">.</span><span class="n">chomp</span><span class="o">.</span><span class="n">empty?</span>
+
+    <span class="k">next</span> <span class="k">if</span> <span class="n">squeeze_extra_newlines?</span> <span class="o">&amp;&amp;</span>
+            <span class="n">in_blank_run</span>            <span class="o">&amp;&amp;</span>
+            <span class="n">current_line_is_blank</span>
+
+    <span class="n">in_blank_run</span> <span class="o">=</span> <span class="n">current_line_is_blank</span>
+
+    <span class="k">if</span> <span class="n">number_all_lines?</span> <span class="o">||</span> <span class="p">(</span> <span class="n">number_significant_lines?</span> <span class="o">&amp;&amp;</span>
+                              <span class="o">!</span><span class="n">current_line_is_blank</span> <span class="p">)</span>
+      <span class="n">print_labeled_line</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">lineno</span><span class="p">,</span> <span class="n">current_line</span><span class="p">)</span>
+    <span class="k">else</span>
+      <span class="n">print_unlabeled_line</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">unless</span> <span class="n">number_significant_lines?</span> <span class="o">&amp;&amp;</span> <span class="n">current_line_is_blank</span>
+      <span class="n">status</span><span class="o">.</span><span class="n">increment</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The tests are still passing and the code is getting a lot easier to understand.  In fact, if you look at what's still not gorgeous, it all has to do with the blank line tracking.  We already know where that state belongs too.  We built an object just for that purpose.  Let's fold that last variable into our status tracking:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">RendererStatus</span>
+  <span class="k">def</span> <span class="nf">initialize</span>
+    <span class="vi">@lineno</span>       <span class="o">=</span> <span class="mi">0</span>
+    <span class="vi">@in_blank_run</span> <span class="o">=</span> <span class="kp">false</span>
+    <span class="vi">@significant</span>  <span class="o">=</span> <span class="kp">true</span>
+  <span class="k">end</span>
+
+  <span class="kp">attr_reader</span> <span class="ss">:lineno</span>
+
+  <span class="k">def</span> <span class="nf">in_blank_run?</span>
+    <span class="vi">@in_blank_run</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">significant?</span>
+    <span class="vi">@significant</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">insignificant?</span>
+    <span class="o">!</span><span class="n">significant?</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">extra_newline?</span>
+    <span class="n">in_blank_run?</span> <span class="o">&amp;&amp;</span> <span class="n">insignificant?</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">squeeze</span><span class="p">,</span> <span class="n">only_count_significant</span><span class="p">)</span>
+    <span class="vi">@in_blank_run</span> <span class="o">=</span> <span class="o">!</span><span class="n">significant?</span>
+    <span class="vi">@significant</span>  <span class="o">=</span> <span class="o">!</span><span class="n">line</span><span class="o">.</span><span class="n">chomp</span><span class="o">.</span><span class="n">empty?</span>
+    <span class="vi">@lineno</span>      <span class="o">+=</span> <span class="mi">1</span> <span class="k">unless</span> <span class="p">(</span><span class="n">squeeze</span> <span class="o">&amp;&amp;</span> <span class="n">extra_newline?</span><span class="p">)</span> <span class="o">||</span>
+                             <span class="p">(</span><span class="n">only_count_significant</span> <span class="o">&amp;&amp;</span> <span class="n">insignificant?</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That's becoming a fair bit of code, but note that it's all trivial.  This just answers very basic questions and the method names are such that you can probably understand the checks without even reading the implementations.</p>
+
+<p>The proof is in the pudding though.  Look what that does to our iterator:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+  <span class="n">data</span><span class="o">.</span><span class="n">each_with_object</span><span class="p">(</span><span class="no">RendererStatus</span><span class="o">.</span><span class="n">new</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">line</span><span class="p">,</span> <span class="n">status</span><span class="o">|</span>
+    <span class="n">status</span><span class="o">.</span><span class="n">update</span><span class="p">(</span> <span class="n">line</span><span class="p">,</span> <span class="n">squeeze_extra_newlines?</span><span class="p">,</span>
+                         <span class="n">number_significant_lines?</span> <span class="p">)</span>
+    <span class="k">next</span> <span class="k">if</span> <span class="n">squeeze_extra_newlines?</span> <span class="o">&amp;&amp;</span> <span class="n">status</span><span class="o">.</span><span class="n">extra_newline?</span>
+
+    <span class="k">if</span> <span class="n">number_all_lines?</span> <span class="o">||</span> <span class="p">(</span> <span class="n">number_significant_lines?</span> <span class="o">&amp;&amp;</span>
+                              <span class="n">status</span><span class="o">.</span><span class="n">significant?</span> <span class="p">)</span>
+      <span class="n">print_labeled_line</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">lineno</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+    <span class="k">else</span>
+      <span class="n">print_unlabeled_line</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I shortened <code>current_line</code> to <code>line</code>, added a call to <code>RendererStatus#update()</code>, and switched the remaining references to use the <code>status</code> object.  I'll let you be the judge, but I find this version easier to digest.  I can almost read what it does in plain English and I like that.  When I do need to peek at a method, it's very easy to understand.  It would also be easier to cover in unit tests.</p>
+
+<p>Having added a <code>RendererStatus</code> object makes the choice of the <code>Display</code> name stick out even more.  That made me decide that it was worth it to rename it to a <code>Renderer</code>.  There are no surprises in that process, so I won't bore you by showing more code.</p>
+
+<h4>Try, Try Again</h4>
+
+<p>This is the second time I have tried this refactoring.  I did it once, right after Greg released the code.  You can find the results of that in <a href="https://github.com/JEG2/rcat">the master branch of my fork on GitHub</a>.</p>
+
+<p>I started over for this article and I think I did an even better job this time.  I've pushed these changes into <a href="https://github.com/JEG2/rcat/tree/ritr_refactoring">a ritr_refactoring branch</a> in that same repository.  You can take a look at that to see the final product or to see how I organized the commits.</p>
+
+<p>The point is, I got better by retrying this exercise.  You will too.  Always be refactoring code, even code you have refactored before.  You'll learn more as you go and hopefully make the code easier on the eyes with every pass.  That's our goal!</p>
+        
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/refactoring-rcat">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Iterators">Iterators</a> &amp; <a href="/tags/Refactoring">Refactoring</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/refactoring-rcat#comments">5 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (5)</span></h5>
+
+    <ol>
+        <li id="comment_503">
+    <div class="avatar"><img alt="Gregory Brown" height="70" src="http://www.gravatar.com/avatar/31e038e4e9330f6c75ccfd1fca8010ee?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="503">
+      <span class="c_name"><a href="https://github.com/sandal">Gregory Brown</a></span>
+      <span class="c_date">January 13th, 2012</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/refactoring-rcat#comment_503">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks for writing this one James. It's great to see a Practicing Ruby article cited elsewhere, with the code from it improved. Agreed with many of the suggestions you made here, with the possible exception of capturing <code>SystemExit</code> in tests. </p>
+
+<p>The point I was trying to make about testing being difficult when you have <code>exit</code> calls buried in your call stack is that it makes manual testing hard too. I've scratched my head a hundred times trying to figure out why some code wasn't doing what I expected, only to find out that an <code>exit</code> call was to blame. An interesting thing I learned from this article is that attempting to <code>rescue SystemExit</code> might shed light on that sort of heisenbug, but I'd still prefer to never create it for the user in the first place :)</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/refactoring-rcat/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="AYo0/s5ViwaZqGQvmoaHkI2toF/t7xLcpaTbP3B39S0=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="503" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Frefactoring-rcat" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Frefactoring-rcat" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_503" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_506">
+    <div class="avatar"><img alt="Jacob Tjoernholm" height="70" src="http://www.gravatar.com/avatar/03b2f61afde989e8e9dee2bcb8472868?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="506">
+      <span class="c_name"><a href="https://github.com/chopmo">Jacob Tjoernholm</a></span>
+      <span class="c_date">January 14th, 2012</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/refactoring-rcat#comment_506">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>James, </p>
+
+<p>(I sent you this in an email and you encouraged me to share it on the site, so here goes :))</p>
+
+<p>I was a bit surprised by the way you refactored <code>rcat</code>. Not that I didn't like it, and I definitely learned from it. But I had expected you to go for a more object oriented design, splitting the responsibilities into separate classes. </p>
+
+<p>In case you're interested, I had a go at using decorators for the refactoring. Here is my revised <code>Display</code> class: </p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Display</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+    <span class="vi">@line_numbering_style</span>   <span class="o">=</span> <span class="n">params</span><span class="o">[</span><span class="ss">:line_numbering_style</span><span class="o">]</span>
+    <span class="vi">@squeeze_extra_newlines</span> <span class="o">=</span> <span class="n">params</span><span class="o">[</span><span class="ss">:squeeze_extra_newlines</span><span class="o">]</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">create_printer</span>
+    <span class="n">printer</span> <span class="o">=</span> <span class="no">LinePrinter</span><span class="o">.</span><span class="n">new</span>
+    <span class="n">printer</span> <span class="o">=</span> <span class="no">LineNumberer</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">printer</span><span class="p">,</span> <span class="ss">:mode</span> <span class="o">=&gt;</span> <span class="vi">@line_numbering_style</span><span class="p">)</span> <span class="k">if</span> <span class="vi">@line_numbering_style</span>
+    <span class="n">printer</span> <span class="o">=</span> <span class="no">ExtraNewlineSqueezer</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">printer</span><span class="p">)</span> <span class="k">if</span> <span class="vi">@squeeze_extra_newlines</span>
+    <span class="n">printer</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">printer</span> <span class="o">=</span> <span class="n">create_printer</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">line</span><span class="o">|</span>
+      <span class="n">printer</span><span class="o">.</span><span class="n">print_line</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The complete file including decorators is at <a href="https://gist.github.com/1565178">https://gist.github.com/1565178</a> and the repo is at <a href="https://github.com/chopmo/rcat">https://github.com/chopmo/rcat</a>.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/refactoring-rcat/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="AYo0/s5ViwaZqGQvmoaHkI2toF/t7xLcpaTbP3B39S0=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="506" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Frefactoring-rcat" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Frefactoring-rcat" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_506" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_507">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="507">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">January 14th, 2012</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/refactoring-rcat#comment_507">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Everyone should take a careful look at Jacob's work.  It's a very clean refactoring that shows off the beauty of a good object oriented design.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/refactoring-rcat/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="AYo0/s5ViwaZqGQvmoaHkI2toF/t7xLcpaTbP3B39S0=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="507" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Frefactoring-rcat" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Frefactoring-rcat" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_507" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_508">
+    <div class="avatar"><img alt="Gregory Brown" height="70" src="http://www.gravatar.com/avatar/31e038e4e9330f6c75ccfd1fca8010ee?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="508">
+      <span class="c_name"><a href="https://github.com/sandal">Gregory Brown</a></span>
+      <span class="c_date">January 14th, 2012</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/refactoring-rcat#comment_508">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Jacob:</p>
+
+<p>Nice work. I think the general idea of using decorators would definitely clean up that code. However, the extensive use of <code>super()</code> makes me wonder if a composition based approach would have been better than inheritance here.</p>
+
+<p>In any case, thanks for working on this! It's fun to see all the different approaches to this problem.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/refactoring-rcat/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="AYo0/s5ViwaZqGQvmoaHkI2toF/t7xLcpaTbP3B39S0=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="508" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Frefactoring-rcat" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Frefactoring-rcat" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_508" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_509">
+    <div class="avatar"><img alt="Jacob Tjoernholm" height="70" src="http://www.gravatar.com/avatar/03b2f61afde989e8e9dee2bcb8472868?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="509">
+      <span class="c_name"><a href="https://github.com/chopmo">Jacob Tjoernholm</a></span>
+      <span class="c_date">January 17th, 2012</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/refactoring-rcat#comment_509">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Right, now I see what you mean. Would be interesting to try using composition instead, maybe I'll revisit this some day. And thanks to you for the original code!</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/rubies-in-the-rough/refactoring-rcat/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="AYo0/s5ViwaZqGQvmoaHkI2toF/t7xLcpaTbP3B39S0=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="509" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Frefactoring-rcat" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Frefactoring-rcat" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_509" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/rubies-in-the-rough/refactoring-rcat/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="AYo0/s5ViwaZqGQvmoaHkI2toF/t7xLcpaTbP3B39S0=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Frefactoring-rcat" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Frefactoring-rcat" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

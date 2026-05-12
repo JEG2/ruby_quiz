@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Language Comparisons / Erlang Message Passing</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Let&#39;s take a look at something another programming language does well and see how we might bring at least some elements these features to Ruby.">
+    <meta name="keywords"    content="polyglot programming, Concurrency, Erlang, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/language-comparisons/erlang-message-passing/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/language-comparisons">Language Comparisons</a></h1>
+            <span>Comparisons of programming languages, usually Ruby and something else.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>13</h4>
+    <span>
+      AUG<br>
+      2007
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Erlang Message Passing</h3>
+        
+        <p>Like many <a href="http://www.pragmaticprogrammer.com/">Pragmatic Programmer</a> fans, I've been having a look at <a href="http://www.erlang.org/">Erlang</a> recently by working my way through <a href="http://www.pragmaticprogrammer.com/titles/jaerlang/">Programming Erlang</a>.  In the book, the author includes a challenge:  build a message ring of <em>processes</em> of size M and send a message around the ring N times, timing how long this takes.  The author also suggests doing this in other languages and comparing the results.  Having now done this, I can tell you that it is an interesting exercise.</p>
+
+<p>First, the Erlang results.  Here's a sample run that creates 30,000 processes and sends a message around that ring 1,000 times:</p>
+
+<pre><code>$ erl -noshell -s solution start 30000 1000
+Creating 30000 processes (32768 allowed)...
+Done.
+Timer started.
+Sending a message around the ring 1000 times...
+Done:  success
+Time in seconds:  29
+</code></pre>
+
+<p>So we see about 30,000,000 message passes there in roughly 30 seconds.  I should also note that Erlang creates those processes very, very fast.  It's possible to raise the process limit shown there, but I'm more interested in comparing what these languages can do out of the box.</p>
+
+<p>Now Ruby doesn't have an equivalent to Erlang processes, so we need to decide what the proper replacement is.  The first thing I tried was <code>fork()</code>ing some Unix processes:</p>
+
+<pre><code>$ ruby forked_mring.rb 100 10000
+Creating 100 processes...
+Timer started.
+Sending a message around the ring 10000 times...
+Done.
+Done:  success.
+Time in seconds:  32
+</code></pre>
+
+<p>You should notice here the small number of processes I could create using the default limits imposed by my operating system.  Again, it's possible to raise this limit but I don't think I'm going to get it up to 30,000 very easily.  I did get these processes very quickly though, again.</p>
+
+<p>So here we are passing 1,000,000 messages in about the same amount of time.</p>
+
+<p>In an attempt to bypass the low process limit, I wrote another implementation with Ruby's threads.  The results of that aren't too impressive though:</p>
+
+<pre><code>$ ruby threaded_mring.rb 100 1000
+Using the standard Ruby thread library.
+Creating 100 processes...
+Timer started.
+Sending a message around the ring 1000 times...
+Done:  success.
+Time in seconds:  32
+$ ruby threaded_mring.rb 1000 4
+Using the standard Ruby thread library.
+Creating 1000 processes...
+Timer started.
+Sending a message around the ring 4 times...
+Done:  success.
+Time in seconds:  30
+</code></pre>
+
+<p>You should see from the second run that it is possible to create quite a few more threads, but I need to mention that creating that many took around 15 seconds.  Sadly, both of these runs paint an ugly picture:  introducing synchronization just kills performance.  Using the fastthread library doesn't help as much as we would like:</p>
+
+<pre><code>$ ruby -rubygems threaded_mring.rb 100 1000
+Using the fastthread library.
+Creating 100 processes...
+Timer started.
+Sending a message around the ring 1000 times...
+Done:  success.
+Time in seconds:  28
+$ ruby -rubygems threaded_mring.rb 1000 5
+Using the fastthread library.
+Creating 1000 processes...
+Timer started.
+Sending a message around the ring 5 times...
+Done:  success.
+Time in seconds:  29
+</code></pre>
+
+<p>So at best, we're passing 100,000 and 5,000 messages in our roughly 30 second timeframe, depending on how many processes we need.</p>
+
+<p>Am I suggesting we all switch to Erlang?  No.  I've enjoyed seeing how the other side lives and I've learned a lot from getting into the functional mindset.  Parts of Erlang are very impressive and concurrency is definitely one of them.  It hasn't been enough to win me over from Ruby yet though.  I couldn't ever see myself doing my day to day work without The Red Lady.</p>
+
+<p>What I would love to see is some way to manage Erlang-like concurrency in Ruby.  We could have some great fun building servers with that, I think.</p>
+
+<p>I'll share the Erlang code here so the people that know the language better than me can provide corrections.  First, here's the code the spawns processes and passes messages:</p>
+
+<div class="highlight highlight-erlang"><pre><span class="p">-</span><span class="ni">module</span><span class="p">(</span><span class="n">mring</span><span class="p">).</span>
+<span class="p">-</span><span class="ni">export</span><span class="p">([</span><span class="n">build</span><span class="o">/</span><span class="mi">1</span><span class="p">,</span> <span class="n">send_and_receive</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">round_and_round</span><span class="o">/</span><span class="mi">3</span><span class="p">]).</span>
+
+<span class="nf">build</span><span class="p">(</span><span class="nv">RingSize</span><span class="p">)</span> <span class="o">-&gt;</span>
+  <span class="nv">ParentPid</span> <span class="o">=</span> <span class="n">self</span><span class="p">(),</span>
+  <span class="nb">spawn</span><span class="p">(</span><span class="k">fun</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">build</span><span class="p">(</span><span class="nv">RingSize</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="nv">ParentPid</span><span class="p">)</span> <span class="k">end</span><span class="p">).</span>
+
+<span class="nf">build</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span>        <span class="nv">StartPid</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">forward</span><span class="p">(</span><span class="nv">StartPid</span><span class="p">);</span>
+<span class="nf">build</span><span class="p">(</span><span class="nv">RingSize</span><span class="p">,</span> <span class="nv">StartPid</span><span class="p">)</span> <span class="o">-&gt;</span>
+  <span class="nv">ChildPid</span> <span class="o">=</span> <span class="nb">spawn</span><span class="p">(</span><span class="k">fun</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">build</span><span class="p">(</span><span class="nv">RingSize</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="nv">StartPid</span><span class="p">)</span> <span class="k">end</span><span class="p">),</span>
+  <span class="n">forward</span><span class="p">(</span><span class="nv">ChildPid</span><span class="p">).</span>
+
+<span class="nf">forward</span><span class="p">(</span><span class="nv">Pid</span><span class="p">)</span> <span class="o">-&gt;</span>
+  <span class="k">receive</span>
+    <span class="p">{</span><span class="n">message</span><span class="p">,</span> <span class="nv">Text</span><span class="p">,</span> <span class="nv">PassCount</span><span class="p">}</span> <span class="o">-&gt;</span>
+      <span class="nv">Pid</span> <span class="o">!</span> <span class="p">{</span><span class="n">message</span><span class="p">,</span> <span class="nv">Text</span><span class="p">,</span> <span class="nv">PassCount</span> <span class="o">+</span> <span class="mi">1</span><span class="p">},</span>
+      <span class="n">forward</span><span class="p">(</span><span class="nv">Pid</span><span class="p">)</span>
+  <span class="k">end</span><span class="p">.</span>
+
+<span class="nf">send_and_receive</span><span class="p">(</span><span class="nv">Ring</span><span class="p">,</span> <span class="nv">Text</span><span class="p">)</span> <span class="o">-&gt;</span>
+  <span class="nv">Ring</span> <span class="o">!</span> <span class="p">{</span><span class="n">message</span><span class="p">,</span> <span class="nv">Text</span><span class="p">,</span> <span class="mi">0</span><span class="p">},</span>
+  <span class="k">receive</span> <span class="nv">Returned</span> <span class="o">-&gt;</span> <span class="nv">Returned</span> <span class="k">end</span><span class="p">.</span>
+
+<span class="nf">round_and_round</span><span class="p">(_,</span> <span class="p">_,</span> <span class="mi">0</span><span class="p">)</span>                    <span class="o">-&gt;</span> <span class="n">success</span><span class="p">;</span>
+<span class="nf">round_and_round</span><span class="p">(</span><span class="nv">Ring</span><span class="p">,</span> <span class="nv">ProcessCount</span><span class="p">,</span> <span class="nv">Repeat</span><span class="p">)</span> <span class="o">-&gt;</span>
+  <span class="nv">Check</span> <span class="o">=</span> <span class="s">"Checking the ring..."</span><span class="p">,</span>
+  <span class="k">case</span> <span class="n">send_and_receive</span><span class="p">(</span><span class="nv">Ring</span><span class="p">,</span> <span class="s">"Checking the ring..."</span><span class="p">)</span> <span class="k">of</span>
+    <span class="p">{</span><span class="n">message</span><span class="p">,</span> <span class="nv">Check</span><span class="p">,</span> <span class="nv">ProcessCount</span><span class="p">}</span> <span class="o">-&gt;</span>
+      <span class="n">round_and_round</span><span class="p">(</span><span class="nv">Ring</span><span class="p">,</span> <span class="nv">ProcessCount</span><span class="p">,</span> <span class="nv">Repeat</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="nv">Unexpected</span>                     <span class="o">-&gt;</span> <span class="p">{</span><span class="n">failure</span><span class="p">,</span> <span class="nv">Unexpected</span><span class="p">}</span>
+  <span class="k">end</span><span class="p">.</span>
+</pre></div>
+
+<p>Next, we have a little helper I wrote to time things.  I'm pretty confident there must be a better way to do this, but all my attempts to find it failed.  Help me Erlang Jedi:</p>
+
+<div class="highlight highlight-erlang"><pre><span class="p">-</span><span class="ni">module</span><span class="p">(</span><span class="n">stopwatch</span><span class="p">).</span>
+<span class="p">-</span><span class="ni">export</span><span class="p">([</span><span class="n">time_this</span><span class="o">/</span><span class="mi">1</span><span class="p">,</span> <span class="n">time_and_print</span><span class="o">/</span><span class="mi">1</span><span class="p">]).</span>
+
+<span class="nf">time_this</span><span class="p">(</span><span class="nv">Fun</span><span class="p">)</span> <span class="o">-&gt;</span>
+  <span class="p">{</span><span class="nv">StartMega</span><span class="p">,</span> <span class="nv">StartSec</span><span class="p">,</span> <span class="nv">StartMicro</span><span class="p">}</span> <span class="o">=</span> <span class="n">now</span><span class="p">(),</span>
+  <span class="nv">Fun</span><span class="p">(),</span>
+  <span class="p">{</span><span class="nv">EndMega</span><span class="p">,</span> <span class="nv">EndSec</span><span class="p">,</span> <span class="nv">EndMicro</span><span class="p">}</span> <span class="o">=</span> <span class="n">now</span><span class="p">(),</span>
+  <span class="p">(</span><span class="nv">EndMega</span> <span class="o">*</span> <span class="mi">1000000</span>   <span class="o">+</span> <span class="nv">EndSec</span>   <span class="o">+</span> <span class="nv">EndMicro</span> <span class="ow">div</span> <span class="mi">1000000</span><span class="p">)</span> <span class="o">-</span>
+  <span class="p">(</span><span class="nv">StartMega</span> <span class="o">*</span> <span class="mi">1000000</span> <span class="o">+</span> <span class="nv">StartSec</span> <span class="o">+</span> <span class="nv">StartMicro</span> <span class="ow">div</span> <span class="mi">1000000</span><span class="p">).</span>
+
+<span class="nf">time_and_print</span><span class="p">(</span><span class="nv">Fun</span><span class="p">)</span> <span class="o">-&gt;</span>
+  <span class="nn">io</span><span class="p">:</span><span class="nf">format</span><span class="p">(</span><span class="s">"Timer started.</span><span class="si">~n</span><span class="s">"</span><span class="p">),</span>
+  <span class="nv">Time</span> <span class="o">=</span> <span class="n">time_this</span><span class="p">(</span><span class="nv">Fun</span><span class="p">),</span>
+  <span class="nn">io</span><span class="p">:</span><span class="nf">format</span><span class="p">(</span><span class="s">"Time in seconds:  </span><span class="si">~p~n</span><span class="s">"</span><span class="p">,</span> <span class="p">[</span><span class="nv">Time</span><span class="p">]).</span>
+</pre></div>
+
+<p>Finally we have the application code that glues these modules together:</p>
+
+<div class="highlight highlight-erlang"><pre><span class="p">-</span><span class="ni">module</span><span class="p">(</span><span class="n">solution</span><span class="p">).</span>
+<span class="p">-</span><span class="ni">export</span><span class="p">([</span><span class="n">start</span><span class="o">/</span><span class="mi">1</span><span class="p">]).</span>
+
+<span class="nf">start</span><span class="p">([</span><span class="nv">ProcessesArg</span><span class="p">,</span> <span class="nv">CyclesArg</span><span class="p">])</span> <span class="o">-&gt;</span>
+  <span class="nv">Processes</span> <span class="o">=</span> <span class="nb">list_to_integer</span><span class="p">(</span><span class="nb">atom_to_list</span><span class="p">(</span><span class="nv">ProcessesArg</span><span class="p">)),</span>
+  <span class="nv">Cycles</span>    <span class="o">=</span> <span class="nb">list_to_integer</span><span class="p">(</span><span class="nb">atom_to_list</span><span class="p">(</span><span class="nv">CyclesArg</span><span class="p">)),</span>
+
+  <span class="nn">io</span><span class="p">:</span><span class="nf">format</span><span class="p">(</span> <span class="s">"Creating </span><span class="si">~p</span><span class="s"> processes (</span><span class="si">~p</span><span class="s"> allowed)...</span><span class="si">~n</span><span class="s">"</span><span class="p">,</span>
+             <span class="p">[</span><span class="nv">Processes</span><span class="p">,</span> <span class="nn">erlang</span><span class="p">:</span><span class="nb">system_info</span><span class="p">(</span><span class="n">process_limit</span><span class="p">)]),</span>
+  <span class="nv">Ring</span> <span class="o">=</span> <span class="nn">mring</span><span class="p">:</span><span class="nf">build</span><span class="p">(</span><span class="nv">Processes</span><span class="p">),</span>
+  <span class="nn">io</span><span class="p">:</span><span class="nf">format</span><span class="p">(</span><span class="s">"Done.</span><span class="si">~n</span><span class="s">"</span><span class="p">),</span>
+
+  <span class="nn">stopwatch</span><span class="p">:</span><span class="nf">time_and_print</span><span class="p">(</span>
+    <span class="k">fun</span><span class="p">()</span> <span class="o">-&gt;</span>
+      <span class="nn">io</span><span class="p">:</span><span class="nf">format</span><span class="p">(</span><span class="s">"Sending a message around the ring </span><span class="si">~p</span><span class="s"> times...</span><span class="si">~n</span><span class="s">"</span><span class="p">,</span> <span class="p">[</span><span class="nv">Cycles</span><span class="p">]),</span>
+      <span class="nv">Result</span> <span class="o">=</span> <span class="nn">mring</span><span class="p">:</span><span class="nf">round_and_round</span><span class="p">(</span><span class="nv">Ring</span><span class="p">,</span> <span class="nv">Processes</span><span class="p">,</span> <span class="nv">Cycles</span><span class="p">),</span>
+      <span class="nn">io</span><span class="p">:</span><span class="nf">format</span><span class="p">(</span><span class="s">"Done:  </span><span class="si">~p~n</span><span class="s">"</span><span class="p">,</span> <span class="p">[</span><span class="nv">Result</span><span class="p">])</span>
+    <span class="k">end</span>
+  <span class="p">),</span>
+
+  <span class="nn">init</span><span class="p">:</span><span class="nf">stop</span><span class="p">().</span>
+</pre></div>
+
+<p>You will see the Ruby solutions in <a href="http://www.rubyquiz.com/quiz135.html">this week's Ruby Quiz</a>.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="language-comparisons/erlang-message-passing">
+  In: <a href="/language-comparisons/">Language Comparisons</a>
+  <span>|</span>
+  Tags: <a href="/tags/Concurrency/">Concurrency</a> &amp; <a href="/tags/Erlang/">Erlang</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/language-comparisons/erlang-message-passing#comments">15 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (15)</span></h5>
+
+    <ol>
+        <li id="comment_111">
+    <div class="avatar"><img alt="Ricky Clarkson" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="111">
+      <span class="c_name"><a href="http://rickyclarkson.blogspot.com">Ricky Clarkson</a></span>
+      <span class="c_date">August 14th, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/erlang-message-passing#comment_111">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>While I'm interested in Erlang, I don't think it's fair to compare languages based on OS threads.  Instead, in your favourite language, emulate Erlang's processes.  An event queue would suffice.</p>
+
+<p>I use a similar technique for simulating a computer network, and find it very fast (that said, I think Erlang's model would tend to simplify my networking code).</p></div>
+    <ol>
+      
+        <li id="comment_114">
+    <div class="avatar"><img alt="teki321" height="70" src="http://www.gravatar.com/avatar/58c96acb2f3841bc5f3d9bc2bc60b188?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="114">
+      <span class="c_name"><a href="mailto:teki321@gmail.com">teki321</a></span>
+      <span class="c_date">August 15th, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/erlang-message-passing#comment_114">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><blockquote>
+<p>While I'm interested in Erlang, I don't think it's fair to compare languages based on OS threads.</p>
+</blockquote>
+
+<p>Ruby doesn't have native threads.</p>
+
+<p>My really hacky version which models the Erlang way:<br><a href="http://snippets.dzone.com/posts/show/4421">http://snippets.dzone.com/posts/show/4421</a></p>
+
+<p>It performs much better, but this functionality should be part of the ruby interpreter.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_120">
+    <div class="avatar"><img alt="Helge" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="120">
+      <span class="c_name">Helge</span>
+      <span class="c_date">August 16th, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/erlang-message-passing#comment_120">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><blockquote>
+<p>While I'm interested in Erlang, I don't think it's fair to compare languages based on OS threads. Instead, in your favourite language, emulate Erlang's processes. An event queue would suffice.</p>
+</blockquote>
+
+<p>An event queue would not be fair either.</p>
+
+<p>Erlang processes are more advanced than simple queues; they will automatically spread themselves out among the available processor cores on a machine. This means a cleverly written program will automatically run faster if you get another processor core in your compy. By using an event queue instead, it would still run on a single core.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_112">
+    <div class="avatar"><img alt="Jay Web" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="112">
+      <span class="c_name"><a href="http://blog.votanweb.com">Jay Web</a></span>
+      <span class="c_date">August 14th, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/erlang-message-passing#comment_112">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Ruby and Erlang are both awesome languages.  Just out of curiosity, which one had fewer lines of code?</p></div>
+    <ol>
+      
+        <li id="comment_113">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="113">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">August 14th, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/erlang-message-passing#comment_113">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I abstracted the Erlang code a little more because I'm less comfortable there and have to move in baby steps.  Taking that into account, there wasn't a huge difference.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_115">
+    <div class="avatar"><img alt="Per Melin" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="115">
+      <span class="c_name">Per Melin</span>
+      <span class="c_date">August 15th, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/erlang-message-passing#comment_115">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Instead of your stopwatch, you can use timer:tc/3:<br><a href="http://www.erlang.org/doc/man/timer.html">http://www.erlang.org/doc/man/timer.html</a></p>
+
+<p>But if you do want to build your own timer it's usually easier to start with <code>erlang:statistics(runtime)</code> and <code>erlang:statistics(wall_clock)</code>:<br><a href="http://www.erlang.org/doc/apps/kernel/index.html">http://www.erlang.org/doc/apps/kernel/index.html</a></p></div>
+    <ol>
+      
+        <li id="comment_116">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="116">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">August 15th, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/erlang-message-passing#comment_116">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I did try to use the <code>statistics()</code> function at first, but I couldn't seem to figure out how to get correct answers out of it.  I'm sure it was my fault though.  Thanks for the timer link, that's very helpful.</p></div>
+    <ol>
+      
+        <li id="comment_119">
+    <div class="avatar"><img alt="Per Melin" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="119">
+      <span class="c_name">Per Melin</span>
+      <span class="c_date">August 15th, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/erlang-message-passing#comment_119">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><div class="highlight highlight-erlang"><pre><span class="nb">statistics</span><span class="p">(</span><span class="n">wall_clock</span><span class="p">).</span>
+<span class="c">% Do stuff</span>
+<span class="p">{_,</span> <span class="nv">Delta</span><span class="p">}</span> <span class="o">=</span> <span class="nb">statistics</span><span class="p">(</span><span class="n">wall_clock</span><span class="p">).</span>
+</pre></div>
+
+<p>Delta now holds the number of ms since you last called <code>statistics(wall_clock)</code>.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_117">
+    <div class="avatar"><img alt="Patrick Wright" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="117">
+      <span class="c_name">Patrick Wright</span>
+      <span class="c_date">August 15th, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/erlang-message-passing#comment_117">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>There are a couple of papers that talk about how the Actors model is<br>
+implemented in Scala:<br><a href="http://lamp.epfl.ch/%7Ephaller/doc/haller07actorsunify.pdf">http://lamp.epfl.ch/~phaller/doc/haller07actorsunify.pdf</a> and<br><a href="http://lamp.epfl.ch/%7Ephaller/doc/haller06jmlc.pdf">http://lamp.epfl.ch/~phaller/doc/haller06jmlc.pdf</a>.  See also<br><a href="http://lamp.epfl.ch/%7Ephaller/actors.html">http://lamp.epfl.ch/~phaller/actors.html</a> for other links. Would be<br>
+interesting to compare on your machine.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_118">
+    <div class="avatar"><img alt="Alex Payne" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="118">
+      <span class="c_name">Alex Payne</span>
+      <span class="c_date">August 15th, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/erlang-message-passing#comment_118">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>So, a couple things you might be interested in:</p>
+
+<p>The Omnibus Concurrency Library for Ruby, which provides Actor-style<br>
+concurrency: <a href="http://rubyforge.org/projects/concurrent/">http://rubyforge.org/projects/concurrent/</a></p>
+
+<p>Erlectricity, a Ruby to Erlang bridge: <a href="http://code.google.com/p/erlectricity/">http://code.google.com/p/erlectricity/</a></p>
+
+<p>Rebar, another Ruby to Erlang bridge:<br><a href="http://rubyisawesome.com/2007/4/30/calling-erlang-from-ruby-teaser">http://rubyisawesome.com/2007/4/30/calling-erlang-from-ruby-teaser</a></p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_121">
+    <div class="avatar"><img alt="Dan Croak" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="121">
+      <span class="c_name"><a href="http://giantrobots.thoughtbot.com">Dan Croak</a></span>
+      <span class="c_date">August 16th, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/erlang-message-passing#comment_121">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>When might Erlang-to-Ruby bridges be needed or wanted in a Ruby or Rails app?</p></div>
+    <ol>
+      
+        <li id="comment_122">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="122">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">August 23rd, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/erlang-message-passing#comment_122">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I doubt the need for an Erlang bridge comes up often in a Rails application, but generally speaking such a thing could be useful anytime massive concurrency is called for.</p>
+
+<p>I know Campfire has a C backend, but that might have been a place where Erlang could have been used to good effect.</p></div>
+    <ol>
+      
+        <li id="comment_131">
+    <div class="avatar"><img alt="Thibaut Barrère" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="131">
+      <span class="c_name"><a href="http://www.dotnetguru2.org/tbarrere">Thibaut Barrère</a></span>
+      <span class="c_date">September 15th, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/erlang-message-passing#comment_131">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><blockquote>
+<p>I doubt the need for an Erlang bridge comes up often in a Rails application, but generally speaking such a thing could be useful anytime massive concurrency is called for.</p>
+</blockquote>
+
+<p>I'm reading the same book in almost the same timeframe, and that lead me to the same conclusions :)</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_202">
+    <div class="avatar"><img alt="Mark River" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="202">
+      <span class="c_name">Mark River</span>
+      <span class="c_date">September 28th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/erlang-message-passing#comment_202">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>How much does Ruby 1.9 change things? Could we do this same thing with a single process and single thread and instead use a bazillion fibers? </p>
+
+<p>What capabilities do you get get with an Erlang thread? Do you get something like Thread Local Storage? If not then maybe a Ruby 1.9 fibers is a functional equivalent to an Erlang thead.</p></div>
+    <ol>
+      
+        <li id="comment_203">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="203">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">September 29th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/language-comparisons/erlang-message-passing#comment_203">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I don't think just Fiber is going to get us all the way to Erlang style parallelism.  I feel it's are more a coroutine than an Erlang process.</p>
+
+<p>However, matz was recently discussing <a href="http://lsrc2008.confreaks.com/09-yukihiro-matz-matsumoto-ruby-past-present-and-future.html">the plan for Ruby 2.0</a> and it seems that Ruby is definitely going to head down this road in the future…</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

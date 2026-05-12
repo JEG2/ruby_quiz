@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / The Standard Library</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Digging into those helpful libraries that ship with Ruby.">
+    <meta name="keywords"    content="standard library, std lib, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/the-standard-library/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/the-standard-library">The Standard Library</a></h1>
+            <span>Digging into those helpful libraries that ship with Ruby.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+            <ul class="blog-list">
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>13</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/the-standard-library/the-secret-shell-helper"><h3 class="blog-title">The Secret Shell Helper</h3></a>
+          <p>Someone pops onto the Ruby Talk mailing list fairly regularly asking how to break up content like:</p>
+
+<pre><code>one "two" "a longer three"
+</code></pre>
+
+<p>They expect to end with a three element <code>Array</code>, where the third item will contain spaces.  They generally expect the quotes will have been removed as well.</p>
+
+<p>If your needs are very, very simple you may be able to handle this with a regular expression:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">data</span> <span class="o">=</span> <span class="s1">'one "two" "a longer three"'</span>
+<span class="nb">p</span> <span class="n">data</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/"([^"]*)"|(\S+)/</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="o">.</span><span class="n">compact</span>
+<span class="c1"># &gt;&gt; ["one", "two", "a longer three"]</span>
+</pre></div>
+
+<p>That just searches for either a set of quotes with some non-quote characters between them or a run of non-whitespace characters.  Those are the two possibilities for the fields.  Note that the two separate capture here mean <code>scan()</code> will returns contents in the form:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">[[</span><span class="kp">nil</span><span class="p">,</span> <span class="s2">"one"</span><span class="o">]</span><span class="p">,</span> <span class="o">[</span><span class="s2">"two"</span><span class="p">,</span> <span class="kp">nil</span><span class="o">]</span><span class="p">,</span> <span class="o">[</span><span class="s2">"a longer three"</span><span class="p">,</span> <span class="kp">nil</span><span class="o">]]</span>
+</pre></div>
+
+<p>That's why I added a <code>flatten()</code> and <code>compact()</code> to get down to the actual matches.</p>
+
+<p>The regular expression approach can get pretty complex though if any kind of escaping for quotes is involved.  When that happens, you may need to step up to a parser.</p><p><a href="/the-standard-library/the-secret-shell-helper">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="the-standard-library/the-secret-shell-helper">
+  In: <a href="/the-standard-library">The Standard Library</a>
+  <span>|</span>
+  Tags: <a href="/tags/FasterCSV">FasterCSV</a>, <a href="/tags/Hidden%20Features">Hidden Features</a> &amp; <a href="/tags/Unix%20Shells">Unix Shells</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-standard-library/the-secret-shell-helper#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>29</h4>
+    <span>
+      FEB<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/the-standard-library/a-bug-today-only"><h3 class="blog-title">A Bug, Today Only</h3></a>
+          <p>I had to debug some tests that just started failing first thing this morning.  I guess I should have procrastinated though, because they would have magically fixed themselves tomorrow morning.  The cause of the one day only bug:  Leap Year Day, of course.</p>
+
+<p>If you run the following code on a day like today, February 29th 2008, <code>Date</code> will choke on your invalid date:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"date"</span>  
+
+<span class="k">class</span> <span class="nc">Date</span>
+  <span class="c1"># Returns a Date in the past +year_offset+ years ago.</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">years_ago</span><span class="p">(</span><span class="n">year_offset</span><span class="p">)</span>
+    <span class="n">now</span> <span class="o">=</span> <span class="n">today</span>
+    <span class="no">Date</span><span class="o">.</span><span class="n">civil</span><span class="p">(</span><span class="n">now</span><span class="o">.</span><span class="n">year</span> <span class="o">-</span> <span class="n">year_offset</span><span class="p">,</span> <span class="n">now</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">now</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="nb">puts</span> <span class="no">Date</span><span class="o">.</span><span class="n">years_ago</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+<p>I came up with the following fix, which is accurate enough for my purposes:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"date"</span>
+
+<span class="k">class</span> <span class="nc">Date</span>   <span class="c1"># Returns a Date in the past +year_offset+ years ago.</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">years_ago</span><span class="p">(</span><span class="n">year_offset</span><span class="p">)</span>
+    <span class="n">today</span> <span class="o">-</span> <span class="mi">365</span> <span class="o">*</span> <span class="n">year_offset</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="nb">puts</span> <span class="no">Date</span><span class="o">.</span><span class="n">years_ago</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+<p>I'm not 100% sure that covers all cases though, so use with caution.  Date's are tricky business!</p>
+        </div>
+        <div class="meta-info" data-slug="the-standard-library/a-bug-today-only">
+  In: <a href="/the-standard-library">The Standard Library</a>
+  <span>|</span>
+  Tags: <a href="/tags/Bugs">Bugs</a>, <a href="/tags/Date%2FTime">Date/Time</a> &amp; <a href="/tags/Leap%20Year">Leap Year</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-standard-library/a-bug-today-only#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>30</h4>
+    <span>
+      JUL<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/the-standard-library/pstore-meets-yaml"><h3 class="blog-title">PStore Meets YAML</h3></a>
+          <p>I love the <code>PStore</code> standard library.  It's a very graceful interface to get some fairly robust serialized mini-database handling in just a few lines.  With it you get:</p>
+
+<ol>
+<li> Transactions with commit and rollbacks (automatic on exception).</li>
+<li> File locking, shared and exclusive.</li>
+<li> Multiprocessing safety.</li>
+</ol><p><code>PStore</code> does even more, including some file mode checking and MD5 hashing to avoid unneeded writes, but the above are the major selling points for me.</p>
+
+<p>Now, if I had to level any one complaint at <code>PStore</code>, it would be that because it uses <code>Marshal</code> under the hood it doesn't create files you can easily browse or tweak by hand.  (<code>Marshal</code> is a feature, don't get me wrong.  It's fast, which is very helpful.)  Sometimes though I want <code>PStore</code> protection with the <code>YAML</code> file format.</p>
+
+<p>I'm embarrassed to admit that I use to use a hack for this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"pstore"</span>
+<span class="nb">require</span> <span class="s2">"yaml"</span>
+<span class="k">class</span> <span class="nc">PStore</span><span class="p">;</span> <span class="no">Marshal</span> <span class="o">=</span> <span class="no">YAML</span><span class="p">;</span> <span class="k">end</span>
+</pre></div>
+
+<p>That just redefines the <code>Marshal</code> constant in a scope that should only alter <code>PStore</code>.  The library only uses <code>dump()</code> and <code>load()</code> and those methods work the same with <code>Marshal</code> and <code>YAML</code>.</p><p><a href="/the-standard-library/pstore-meets-yaml">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="the-standard-library/pstore-meets-yaml">
+  In: <a href="/the-standard-library">The Standard Library</a>
+  <span>|</span>
+  Tags: <a href="/tags/Hidden%20Features">Hidden Features</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-standard-library/pstore-meets-yaml#comments">2 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>8</h4>
+    <span>
+      JUL<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/the-standard-library/the-books-are-wrong-about-logger"><h3 class="blog-title">The Books are Wrong About Logger</h3></a>
+          <p>I've read several books that introduced the standard <code>Logger</code> library and they all agree on one thing:  you can't customize the output.  That's so last version in thinking!  Behold…</p>
+
+<p>Here's a trivial <code>Logger</code> script, showing basic functionality:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"logger"</span>
+
+<span class="k">def</span> <span class="nf">expensive_error_report</span>
+  <span class="nb">sleep</span> <span class="mi">3</span>  <span class="c1"># Heavy Computation Simulation (patent pending)</span>
+  <span class="s2">"YOU BROKE IT!"</span>
+<span class="k">end</span>
+
+<span class="n">log</span>       <span class="o">=</span> <span class="no">Logger</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">STDOUT</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="no">Logger</span><span class="o">::</span><span class="no">INFO</span>  <span class="c1"># set out output level above the DEBUG default</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"We're not in the verbose debug mode."</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"We do see informative logs though."</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">log</span><span class="o">.</span><span class="n">error?</span>  <span class="c1"># check that this will be printed, before waste time</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">expensive_error_report</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>If you run that you will see:</p>
+
+<pre><code>I, [2006-07-08T11:17:19.531943 #340]  INFO -- : We do see informative logs though.
+E, [2006-07-08T11:17:22.532424 #340] ERROR -- : YOU BROKE IT!
+</code></pre>
+
+<p>Now everyone has always known you can format the date and time display using a <code>strftime()</code> compatible pattern:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"logger"</span>
+
+<span class="k">def</span> <span class="nf">expensive_error_report</span>
+  <span class="nb">sleep</span> <span class="mi">3</span>
+  <span class="s2">"YOU BROKE IT!"</span>
+<span class="k">end</span>
+
+<span class="n">log</span>                 <span class="o">=</span> <span class="no">Logger</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">STDOUT</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">level</span>           <span class="o">=</span> <span class="no">Logger</span><span class="o">::</span><span class="no">INFO</span>
+<span class="n">log</span><span class="o">.</span><span class="n">datetime_format</span> <span class="o">=</span> <span class="s2">"%Y-%m-%d %H:%M "</span>  <span class="c1"># simplify time output</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"We're not in the verbose debug mode."</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"We do see informative logs though."</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">log</span><span class="o">.</span><span class="n">error?</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">expensive_error_report</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div><p><a href="/the-standard-library/the-books-are-wrong-about-logger">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="the-standard-library/the-books-are-wrong-about-logger">
+  In: <a href="/the-standard-library">The Standard Library</a>
+  <span>|</span>
+  Tags: <a href="/tags/Hidden%20Features">Hidden Features</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-standard-library/the-books-are-wrong-about-logger#comments">7 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>4</h4>
+    <span>
+      JAN<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/the-standard-library/pathname-and-enumerator"><h3 class="blog-title">Pathname and Enumerator</h3></a>
+          <p>I'm always digging around in Ruby's standard library looking for new toys.  It's one-stop-shopping for geeks.  I love it.</p>
+
+<p>There really are some great tools in there that can help you do your work easier.  Let me tell you a little about two I am using on a current application.</p>
+
+<h4>Pathname</h4>
+
+<p>Pop Quiz:  Which would you rather work with?</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span> <span class="n">some_dir</span>
+  <span class="n">data</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span> <span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">some_dir</span><span class="p">),</span>
+                               <span class="s2">"another_dir"</span><span class="p">,</span>
+                               <span class="no">File</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">some_file</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Or:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">if</span> <span class="n">some_dir</span><span class="o">.</span><span class="n">exist?</span>
+  <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">some_dir</span><span class="o">.</span><span class="n">dirname</span> <span class="o">+</span> <span class="s2">"another_dir"</span> <span class="o">+</span> <span class="n">some_file</span><span class="o">.</span><span class="n">basename</span><span class="p">)</span><span class="o">.</span><span class="n">read</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>If you prefer the second version, the <code>Pathname</code> library is for you.</p>
+
+<p>Ruby's file manipulations are usually fine for normal work, but anytime I start messing with directories I really start feeling the pain.  For that kind of work, I find <code>Pathname</code> to be a superior interface.  My current project makes great use of the methods in the above example as well as <code>Pathname#entries</code>, <code>Pathname#relative_path_from</code>, and more.</p><p><a href="/the-standard-library/pathname-and-enumerator">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="the-standard-library/pathname-and-enumerator">
+  In: <a href="/the-standard-library">The Standard Library</a>
+  <span>|</span>
+  Tags: <a href="/tags/Object%20Orientation">Object Orientation</a> &amp; <a href="/tags/Iterators">Iterators</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-standard-library/pathname-and-enumerator#comments">1 Comment</a>
+</div>
+
+      </li>
+</ul>
+
+
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

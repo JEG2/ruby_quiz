@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Terminal Tricks / Curses Windows, Pads, and Panels</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This article looks at the abstractions curses provides for managing drawing your content to various parts of the screen.">
+    <meta name="keywords"    content="Curses, Terminal I/O, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/terminal-tricks/curses-windows-pads-and-panels/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/terminal-tricks">Terminal Tricks</a></h1>
+            <span>A deep dive into the ways we can get fancy output out of our terminals.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>11</h4>
+    <span>
+      MAR<br>
+      2015
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Curses Windows, Pads, and Panels</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/terminal-tricks/basic-curses/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/terminal-tricks/a-curses-application/">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p>In <a href="http://graysoftinc.com/terminal-tricks/basic-curses">the previous article</a>, I showed how you can accomplish some terminal input and output operations using the <code>(n)curses(w)</code> library.  What I showed for output were mostly low-level writing routines though.  Included in <code>curses</code> are some higher level abstractions that can be used to manage your program's output.  This time, I want to show some of those tools.</p>
+
+<h4>Windows</h4>
+
+<p>The primary abstraction used in <code>curses</code> is the concept of a <code>window</code>.  We actually already used them last time, but we stuck with <code>stdscr</code> (<em>standard screen</em>) which is just a window that fills the entire terminal.  That's more for using <code>curses</code> without thinking much about windows.</p>
+
+<p>When you want them though, you can section off the terminal screen into rectangular chunks.  Each chunk is a window that you can print output inside of.  Here's the most basic example that I could dream up:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>
+
+<span class="k">begin</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">cbreak</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">noecho</span>
+
+  <span class="n">window</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">newwin</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># make a new window</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="s2">"Hello world!"</span><span class="p">)</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>  <span class="c1"># still need this</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wrefresh</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The main new bit in this code is the call to <code>newwin()</code>.  As you can probably guess, this creates a new window.  The window can contain the number of lines and characters specified in this call, <code>5</code> and <code>15</code> respectively in the code above.  The other two numbers specify where this window is to be located on the screen:  <code>4</code> lines down and <code>2</code> characters indented.  (Remember, <code>curses</code> favors putting row before column.)</p>
+
+<p>The two calls to <code>wrefresh()</code> may surprise you.  <code>curses</code> still creates the <code>stdscr</code> and you can kind of think of it as backdrop of our output.  We still need to <em>draw</em> it to clear the contents behind our window.  Then our window can be drawn on top of that.  Honestly though, the way I've done it here isn't ideal.</p>
+
+<p>I used <code>wrefresh()</code> because we talked about it last time, but it doesn't make much sense, once multiple windows are involved.  The reason is that <code>curses</code> maintains a kind of staged drawing pipeline.  First, an in-memory virtual screen is <em>refreshed</em> with any new contents.  Then the actual screen is <em>updated</em> with the contents of the virtual screen.  <code>wrefresh()</code> confusingly triggers both of these steps.  So the code above refreshes, updates, then refreshes and updates again right away.  It would make more sense to just refresh the contents of both windows into the virtual screen, then update the real screen one time.  To do that, we switch these two lines:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>  <span class="c1"># still need this</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wrefresh</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>to the more efficient:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>  <span class="c1"># still need this</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">doupdate</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>I'm guessing the added <code>nout</code> stands for <em>no output</em>, but the purpose of <code>wnoutrefresh()</code> is to refresh without an automatic update.  We do that for both windows, then we call for the update with the surprisingly well named <code>doupdate()</code>.  <strong>You'll want to separate refresh and update operations when using multiple <code>curses</code> windows.</strong></p>
+
+<p>Now if you run that code, you'll probably see the not-too-impressive output:</p>
+
+<pre><code>
+
+
+
+  Hello world!
+</code></pre>
+
+<p>It doesn't look like much yet, does it?  You can kind of see that my window is displaced from the top left corner due to the extra whitespace, but you can't really see the majority of the window itself because the parts that don't have content are invisible.  Let's see if we can fix that;</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>
+
+<span class="k">begin</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">cbreak</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">noecho</span>
+
+  <span class="n">window</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">newwin</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># draw a box</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="s2">"Hello world!"</span><span class="p">)</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">doupdate</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The sadly cryptic call to <code>wborder()</code> asks <code>curses</code> to draw a box around our window.  That gives us the possibly surprising output of:</p>
+
+<pre><code>
+
+
+
+  Hello world!--+
+  |             |
+  |             |
+  |             |
+  +-------------+
+</code></pre>
+
+<p>Your border may not look exactly like mine.  More on why that is a little later.  I'm also going to delay a discussion of the eight magic <code>0</code>'s.  We're having enough trouble trying to get the border in the right place for now and those arguments won't help.</p>
+
+<p>The good news is that we can now see our window.  The bad news is that the border was drawn inside our content space and then we wrote over it.  Oops.  Knowing that you can write over the border could be potentially useful for titling windows, but I was hoping to see some content inside a box.</p>
+
+<p>It's possibly interesting to note that reversing these two operations:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># draw a box</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="s2">"Hello world!"</span><span class="p">)</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>to:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="s2">"Hello world!"</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># draw a box</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>still fails to produce the desired results.  Instead we see:</p>
+
+<pre><code>
+
+
+
+  +-------------+
+  |             |
+  |             |
+  |             |
+  +-------------+
+</code></pre>
+
+<p>In this case, our content was added, then drawn over by the box.  Not helpful, right?</p>
+
+<p>The two operations that I actually wanted were these:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">mvwaddstr</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"Hello world!"</span><span class="p">)</span>  <span class="c1"># move then add content</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>I've changed the content to be drawn a little down and in from the top of the window to put it inside the border.  That gives the result I've been trying to achieve:</p>
+
+<pre><code>
+
+
+
+  +-------------+
+  |Hello world! |
+  |             |
+  |             |
+  +-------------+
+</code></pre>
+
+<p>Seeing these border complications made me wonder what would happen if you overran the boundaries of a window.  The answer is not what I expected, so we better talk about how that works:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>
+
+<span class="k">begin</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">cbreak</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">noecho</span>
+
+  <span class="n">window</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">newwin</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">mvwaddstr</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"123456</span><span class="se">\n</span><span class="s2">7890</span><span class="se">\n</span><span class="s2">abcd</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>  <span class="c1"># overflow</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">doupdate</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This code produces, well, a mess:</p>
+
+<pre><code>+----+
+|12345
+6
+7890
+</code></pre>
+
+<p>Again we see that we can overwrite a border here.  We also see that excess content on a line is hard wrapped to the next line.  However, excess lines are discarded.</p>
+
+<p>I wouldn't describe at least two of those operations as desirable.  Probably the easiest workaround, in this case, is to swap the order of operations and let the border win:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">mvwaddstr</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"123456</span><span class="se">\n</span><span class="s2">7890</span><span class="se">\n</span><span class="s2">abcd</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>This gets things looking more normal, but it's still probably not desirable:</p>
+
+<pre><code>+----+
+|1234|
+|    |
++----+
+</code></pre>
+
+<p>We now see nothing on the second line because the content that was there, a lone wrapped <code>6</code>, was overwritten by the border and the following newline pushed everything else down a line.  This put our second line of content under the bottom border and pushed the rest into oblivion.</p>
+
+<p>Honestly though, this issue is worse than it seems.  Remember this?</p>
+
+<pre><code>+----+
+|12345
+6
+7890
+</code></pre>
+
+<p>We know that the <code>5</code> ate one piece of the right side border, but what happened to the other one?  Let's try a simpler experiment:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">mvwaddstr</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"1</span><span class="se">\n</span><span class="s2">2"</span><span class="p">)</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>This yields:</p>
+
+<pre><code>+----+
+|1
+2    |
++----+
+</code></pre>
+
+<p>Newlines break borders.  Not ideal.  Again we could draw the box last, but there are just two many issues here to easily get around.  <strong>My advice:  strip newlines out of the content you write into <code>curses</code> windows (use move operations instead).</strong></p>
+
+<p>We'll come back to better ways of protecting your borders from being overwritten, but first let's think a little more on those characters that were thrown into oblivion.</p>
+
+<h4>Pads</h4>
+
+<p>Many applications are going to have more content than will fit in a <code>curses</code> window.  Using a plain window, you'll need to manage that content in some data structure and regularly redraw the currently visible portion into the window.  That's one option.</p>
+
+<p>Another option is to use a <em>pad</em> instead of a window.  In <code>curses</code>, a pad is a window that can hold more content than it shows.  You then just tell <code>curses</code> which portion of the content to show on the screen.  I thought that sounded pretty awesome when I first heard about it, but it's not without tradeoffs.  Let's walk through an example and I'll try to point out the good and not-so-good parts:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>
+
+<span class="k">begin</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">cbreak</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">noecho</span>
+
+  <span class="n">pad</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">newpad</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>  <span class="c1"># instead of newwin()</span>
+  <span class="c1">#</span>
+  <span class="c1"># Create some data like:</span>
+  <span class="c1">#</span>
+  <span class="c1">#   00AA</span>
+  <span class="c1">#   11BB</span>
+  <span class="c1">#   22CC</span>
+  <span class="c1">#   33DD</span>
+  <span class="c1">#</span>
+  <span class="mi">4</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">mvwaddstr</span><span class="p">(</span> <span class="n">pad</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"</span><span class="si">#{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span>
+                                       <span class="p">(</span><span class="s2">"A"</span><span class="o">.</span><span class="n">codepoints</span><span class="o">.</span><span class="n">first</span> <span class="o">+</span> <span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">chr</span> <span class="o">*</span> <span class="mi">2</span> <span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">pnoutrefresh</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># instead of wnoutrefresh()</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">doupdate</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">pnoutrefresh</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">doupdate</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The comments point out the main differences here.  First, pads are created with <code>newpad()</code>, and unlike <code>newwin()</code>, that does not take screen location arguments.  You only pass the sizes for the content area.</p>
+
+<p>Once created a pad is <strong>mostly</strong> a window.  You can generally use the same functions that you use on windows, as I have with <code>mvwaddstr()</code> in the code above.</p>
+
+<p>The exception is that the <code>*refresh()</code> functions do not work on pads.  Instead you'll need to call <code>prefresh()</code> or <code>pnoutrefresh()</code> (<code>p</code> for <em>pad</em>).  These functions require some extra arguments.  The first two, after the pad, are the coordinates of the top left corner in your content that you wish to display.  The next two are the coordinates you would have normally passed to <code>newwin()</code> for the top left corner to use on the screen.  The last two give the lower right corner for the screen.  The lower right corner of the content is inferred using the size of the box on screen.</p>
+
+<p>Let's see how this works in action.  If I run that code, it will show me the upper left corner of the content before I push a button:</p>
+
+<pre><code>00
+11
+</code></pre>
+
+<p>When I push the button, it skips past the first <code>getch()</code> to the second <code>pnoutrefresh()</code>.  Those coordinates shift the view into the middle of the content:</p>
+
+<pre><code>1B
+2C
+</code></pre>
+
+<p>The ability to move around some content like that is awesome, if you ask me, but the means for doing it, via the <code>*refresh()</code> calls, feels strange to me.  I don't think I would often have a desire to shift the visible window around on the screen, which seems to be the case these coordinates are optimized for.  Instead, I think I would prefer to keep passing the visible corners into <code>newpad()</code>, as I do <code>newwin()</code>, and then just update which portion of the content is currently shown.  I would also prefer to set the content coordinates outside of the refresh mechanism and have them stick through redraws until I change them again.  The reason for that gets us to the first major drawback of pads.</p>
+
+<p>We've talked about how our code triggers the various stages of the redraw pipeline.  Sometimes though, <code>curses</code> itself triggers redraws.  This can happen because of terminal scrolling or the need to echo out some input.  However, because all of the coordinates decisions of pads are tied to the refresh stage, <code>curses</code> won't know the current numbers to use.  As such pads cannot be automatically updated.</p>
+
+<p>The other reason I'm not super sold on pads is that they still don't make it very easy to update the content they hold.  You have to set a fixed size on the content portion, then rewrite that content as needed using the same tools you do for windows.  That means it's easy to add lines onto the end, assuming you still have the room, but adding a line at the beginning would mean rewriting all of the content in the pad.  That doesn't seem superior to using windows.</p>
+
+<p>As you can see, it's all tradeoffs.  If I needed to scroll some static content or move the visible window around the screen for some reason (<a href="http://en.wikipedia.org/wiki/Fog_of_war#Simulations_and_games">fog of war</a> in a <a href="http://en.wikipedia.org/wiki/Roguelike">roguelike</a> game?), I might reach for a pad.  Otherwise, I'm pretty sure the content will need to be in a separate data structure anyway and I can probably use a window just as easily.</p>
+
+<h4>Borders</h4>
+
+<p>Remember all of that hand waving I did about borders in my early examples?  Well, it's time to make good on those promised explanations.</p>
+
+<p>Here's a trivial border example to refresh your memory:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>
+
+<span class="k">begin</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">cbreak</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">noecho</span>
+
+  <span class="n">window</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">newwin</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">doupdate</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>In one terminal, that draws this box for me:</p>
+
+<pre><code>+----+
+|    |
+|    |
++----+
+</code></pre>
+
+<p>In a different terminal, presumably with better encoding defaults set, I get:</p>
+
+<pre><code>┌────┐
+│    │
+│    │
+└────┘
+</code></pre>
+
+<p>The differences occur because the eight <code>0</code>'s tell <code>curses</code> that we'll accept the default character for that position.  It seems the chosen default can vary depending on the environment.</p>
+
+<p>Each <code>0</code> represents a different character in the border.  Probably the easiest way to see which character each argument represents is just to have <code>curses</code> show you.  Change this line:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>to this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="n">n</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">codepoints</span><span class="o">.</span><span class="n">first</span> <span class="p">})</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>You should see this cheatsheet:</p>
+
+<pre><code>533336
+1    2
+1    2
+744448
+</code></pre>
+
+<p>Using these locations, you can make whatever fancy border you would like.  For example, this code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span>
+    <span class="n">window</span><span class="p">,</span>
+    <span class="s2">"&gt;"</span><span class="o">.</span><span class="n">codepoints</span><span class="o">.</span><span class="n">first</span><span class="p">,</span>
+    <span class="s2">"&lt;"</span><span class="o">.</span><span class="n">codepoints</span><span class="o">.</span><span class="n">first</span><span class="p">,</span>
+    <span class="s2">"v"</span><span class="o">.</span><span class="n">codepoints</span><span class="o">.</span><span class="n">first</span><span class="p">,</span>
+    <span class="s2">"^"</span><span class="o">.</span><span class="n">codepoints</span><span class="o">.</span><span class="n">first</span><span class="p">,</span>
+    <span class="s2">"</span><span class="se">\\</span><span class="s2">"</span><span class="o">.</span><span class="n">codepoints</span><span class="o">.</span><span class="n">first</span><span class="p">,</span>
+    <span class="s2">"/"</span><span class="o">.</span><span class="n">codepoints</span><span class="o">.</span><span class="n">first</span><span class="p">,</span>
+    <span class="s2">"/"</span><span class="o">.</span><span class="n">codepoints</span><span class="o">.</span><span class="n">first</span><span class="p">,</span>
+    <span class="s2">"</span><span class="se">\\</span><span class="s2">"</span><span class="o">.</span><span class="n">codepoints</span><span class="o">.</span><span class="n">first</span>
+  <span class="p">)</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>gives us a Tie-fighter looking window:</p>
+
+<pre><code>\vvvv/
+&gt;    &lt;
+&gt;    &lt;
+/^^^^\
+</code></pre>
+
+<p>The real thing you need to catch from these examples is that characters are specified as <code>Integer</code>s, not <code>String</code>s.  The examples I've shown so far are just for ASCII characters.  You can generally use <em>wide</em> characters (read:  Unicode) instead, with uglier code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="n">chars</span> <span class="o">=</span> <span class="no">Hash</span><span class="o">[</span> <span class="o">%</span><span class="n">i</span><span class="o">[</span><span class="no">ULCORNER</span> <span class="no">LLCORNER</span> <span class="no">URCORNER</span> <span class="no">LRCORNER</span> <span class="no">HLINE</span> <span class="no">VLINE</span><span class="o">].</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span>
+    <span class="n">char</span>            <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">WinStruct</span><span class="o">::</span><span class="no">CCharT</span><span class="o">.</span><span class="n">new</span>
+    <span class="n">char</span><span class="o">[</span><span class="ss">:chars</span><span class="o">][</span><span class="mi">0</span><span class="o">]</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">const_get</span><span class="p">(</span><span class="s2">"WACS_</span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="o">[</span><span class="nb">name</span><span class="p">,</span> <span class="n">char</span><span class="o">]</span>
+  <span class="p">}</span> <span class="o">]</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder_set</span><span class="p">(</span>
+    <span class="n">window</span><span class="p">,</span>
+    <span class="n">chars</span><span class="o">[</span><span class="ss">:VLINE</span><span class="o">]</span><span class="p">,</span>
+    <span class="n">chars</span><span class="o">[</span><span class="ss">:VLINE</span><span class="o">]</span><span class="p">,</span>
+    <span class="n">chars</span><span class="o">[</span><span class="ss">:HLINE</span><span class="o">]</span><span class="p">,</span>
+    <span class="n">chars</span><span class="o">[</span><span class="ss">:HLINE</span><span class="o">]</span><span class="p">,</span>
+    <span class="n">chars</span><span class="o">[</span><span class="ss">:ULCORNER</span><span class="o">]</span><span class="p">,</span>
+    <span class="n">chars</span><span class="o">[</span><span class="ss">:URCORNER</span><span class="o">]</span><span class="p">,</span>
+    <span class="n">chars</span><span class="o">[</span><span class="ss">:LLCORNER</span><span class="o">]</span><span class="p">,</span>
+    <span class="n">chars</span><span class="o">[</span><span class="ss">:LRCORNER</span><span class="o">]</span>
+  <span class="p">)</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>That code gives me the fancier box, even on the terminal that defaulted to using <code>+</code>, <code>-</code>, and <code>|</code>.  The two steps for using Unicode are that you need to construct and fill in <code>FFI::NCurses::WinStruct::CCharT</code> objects for each character and pass those to <code>wborder_set()</code>, instead of <code>wborder()</code>.</p>
+
+<p>For this example, I've used a set of constants defined by <code>curses</code>:  <code>WACS_VLINE</code>, <code>WACS_HLINE</code>, etc.  These are the wide character defaults for box drawing.  You could substitute the codepoints for any Unicode characters you need.</p>
+
+<h4>Subwindows</h4>
+
+<p>OK, so we know it's easy for our content to clobber our borders.  I also found myself wanting to answer questions like, "Could I introduce some HTML-like padding between a border and the content?"  The solution to both of these problems is <em>subwindows</em>.</p>
+
+<p>A subwindow is just another window.  However, it has a parent window, so to speak, and it actually occupies a space inside that parent window.  Let's show that in some code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>
+
+<span class="k">begin</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">cbreak</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">noecho</span>
+
+  <span class="n">window</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">newwin</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+  <span class="n">content</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">derwin</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># create a subwindow</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="s2">"123456</span><span class="se">\n</span><span class="s2">7890</span><span class="se">\n</span><span class="s2">abcd</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">touchwin</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>  <span class="c1"># do this before refreshing subwindows</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">doupdate</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The comment points out the line that creates the subwindow.  On that line, the <code>2, 4</code> arguments define the content size, just as they would for a normal window.  The following <code>2, 2</code> arguments then position it using offsets from the parent window.  (There are other ways to create subwindows, but they use absolute coordinates and I find that confusing.)</p>
+
+<p>The other new element here is the added call to <code>touchwin()</code>.  I don't think it's actually needed in this case, because the full window was just refreshed on the line above (because it was the first refresh of <code>window</code>), but the documentation does recommend <em>touching</em> before any refresh of a subwindow.</p>
+
+<p>I suppose that means we should discuss the concept of touching.  <code>curses</code> aims to be efficient, so it tries to just refresh changed characters in a window.  This means it needs to keep track of what has and has not changed.  If you overwrite some content, obviously it changed and <code>curses</code> knows that, without your help.  However, in scenarios where you have windows laying on top of other windows, a change in the front window could require some refreshing of the back window.  For example, any whitespace placed in the front window may allow some content of the back window to bleed through.  If those characters aren't touched, <code>curses</code> won't know that it needs to redraw them.</p>
+
+<p>Now, the tool I used above, <code>touchwin()</code>, is crude.  It just says, "This window may have changed."  <code>curses</code> is forced to refresh all characters in the window for this call.  You can be a little more specific and indicate which rows may have changed.  This would save <code>curses</code> some work.  To do that, we would change this line:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">touchwin</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>  <span class="c1"># do this before refreshing subwindows</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>to:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">touchline</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># absolute y, line count</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>I have no idea why this function is called <code>touch<b>line</b>()</code> and yet affects many <strong>lines</strong>.  Also, I'm not aware of a way to specify the columns affected.  It seems the best you can do is full rows.</p>
+
+<p>Anyway, that code prints content in a window with padding and an intact border:</p>
+
+<pre><code>+------+
+|      |
+| 1234 |
+| 56   |
+|      |
++------+
+</code></pre>
+
+<p>Notice that my content contained nasty newlines, but the window frame is unaffected.  <strong>This is the power of subwindows, in my opinion.  You can use them to separate different kinds of content (including borders) and keep them from interfering with each other.</strong></p>
+
+<p>Could you do this magic trick with normal windows layered on top of each other?  Yes.  The only differences are that you would need to use absolute coordinates everywhere.  (Subwindows are a mixed bag in comparison.  I can create them with relative coordinates, but I still need to manage touching using absolute coordinates.)  Also the documentation says that subwindows share some memory with their parent windows.  I'm not sure how much that helps in cases like the code above where they are never truly drawing on top of each other, but it sounds nice.</p>
+
+<h4>Panels</h4>
+
+<p>Once you start managing overlapping windows and/or subwindows, keeping track of things like touching and refreshing can get pretty complex.  <code>curses</code> itself doesn't offer much relief for that, but there is another library, called <code>panel</code>, that is very commonly installed with <code>curses</code>, and it does address this problem.  Luckily for us, <code>ffi-ncurses</code> wraps both libraries.</p>
+
+<p>First, let's look at some problematic code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>
+
+<span class="k">begin</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">cbreak</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">noecho</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">keypad</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="kp">true</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">curs_set</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># hide the cursor</span>
+
+  <span class="n">moveable</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">newwin</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span><span class="n">moveable</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+  <span class="mi">3</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">y</span><span class="o">|</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">mvwaddstr</span><span class="p">(</span><span class="n">moveable</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"mmm"</span><span class="p">)</span>
+  <span class="k">end</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wmove</span><span class="p">(</span><span class="n">moveable</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+  <span class="n">stationary</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">newwin</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span><span class="n">stationary</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+  <span class="mi">13</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">y</span><span class="o">|</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">mvwaddstr</span><span class="p">(</span><span class="n">stationary</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"sss"</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">moveable</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stationary</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">doupdate</span>
+
+  <span class="kp">loop</span> <span class="k">do</span>
+    <span class="n">y</span>     <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getbegy</span><span class="p">(</span><span class="n">moveable</span><span class="p">)</span>
+    <span class="n">x</span>     <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getbegx</span><span class="p">(</span><span class="n">moveable</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getmaxy</span><span class="p">(</span><span class="n">moveable</span><span class="p">)</span>
+
+    <span class="k">case</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>
+    <span class="k">when</span> <span class="s2">"q"</span><span class="o">.</span><span class="n">codepoints</span><span class="o">.</span><span class="n">first</span>
+      <span class="k">break</span>
+    <span class="k">when</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">KeyDefs</span><span class="o">::</span><span class="no">KEY_LEFT</span>
+      <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">mvwin</span><span class="p">(</span><span class="n">moveable</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">when</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">KeyDefs</span><span class="o">::</span><span class="no">KEY_RIGHT</span>
+      <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">mvwin</span><span class="p">(</span><span class="n">moveable</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">moveable</span><span class="p">)</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stationary</span><span class="p">)</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">doupdate</span>
+  <span class="k">end</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This code has a moveable window (filled with <code>m</code>'s) and a stationary window (filled with <code>s</code>'s).  The left and right arrow keys can be used to push the moveable window in those directions via the <code>mvwin()</code> function.</p>
+
+<p>The code is lengthy but hopefully not too tricky.  After the typical setup, with a first-seen-here mode used to make the cursor invisible, the two chunks of code just create and fill windows.  The next chunk does the initial display.  Then we go into a <code>loop</code> where we respond to the keys by moving the window in the indicated direction and redrawing.</p>
+
+<p>This code doesn't really work yet.  If I run it and nudge the moveable window right for a while, then back to the left, my screen looks like this:</p>
+
+<pre><code>          +---+
+          |sss|
+          |sss|
+          |sss|
+          |sss|
++++++---+++++s|
+|||||mmm|||||s|
+|||||mmm|||||s|
+|||||mmm|||||s|
++++++---+++++s|
+          |sss|
+          |sss|
+          |sss|
+          |sss|
+          +---+
+</code></pre>
+
+<p>You can see that the old locations aren't being properly cleared.  We should understand the reason for this now.  We need to touch the affected windows so <code>curses</code> will refresh their content.  The fix is to add to this refreshing code inside the <code>loop</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">moveable</span><span class="p">)</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stationary</span><span class="p">)</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">doupdate</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>Here are the additions:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">touchline</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>      <span class="c1"># update the background</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">moveable</span><span class="p">)</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">touchline</span><span class="p">(</span><span class="n">stationary</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>  <span class="c1"># update the other window</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stationary</span><span class="p">)</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">doupdate</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>This gives us smooth movement:</p>
+
+<pre><code>          +---+
+          |sss|
+          |sss|
+          |sss|
+          |sss|
+       +--|sss|
+       |mm|sss|
+       |mm|sss|
+       |mm|sss|
+       +--|sss|
+          |sss|
+          |sss|
+          |sss|
+          |sss|
+          +---+
+</code></pre>
+
+<p>If we would prefer to see the moving window on top, we could reorder the refreshes:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">touchline</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>      <span class="c1"># update the background</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">touchline</span><span class="p">(</span><span class="n">stationary</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>  <span class="c1"># update the other window</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">stationary</span><span class="p">)</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wnoutrefresh</span><span class="p">(</span><span class="n">moveable</span><span class="p">)</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">doupdate</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>Then I see this:</p>
+
+<pre><code>          +---+
+          |sss|
+          |sss|
+          |sss|
+          |sss|
+        +---+s|
+        |mmm|s|
+        |mmm|s|
+        |mmm|s|
+        +---+s|
+          |sss|
+          |sss|
+          |sss|
+          |sss|
+          +---+
+</code></pre>
+
+<p>That all works, but it's kind of a lot to keep track of.  Plus we're just dealing with two windows so far.  More windows could add a lot more complexity.</p>
+
+<p>That's where <code>panel</code> comes in.  It provides a stack of panels and once you place windows in that stack, <code>panel</code> will manage the refresh order and touching for you.  <code>stdscr</code> is not explicitly part of the stack, but it is managed for you as well.  Let's rewrite the code to use this extra abstraction:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>
+
+<span class="k">begin</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">cbreak</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">noecho</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">keypad</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="kp">true</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">curs_set</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+  <span class="n">moveable</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">newwin</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span><span class="n">moveable</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+  <span class="mi">3</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">y</span><span class="o">|</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">mvwaddstr</span><span class="p">(</span><span class="n">moveable</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"mmm"</span><span class="p">)</span>
+  <span class="k">end</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wmove</span><span class="p">(</span><span class="n">moveable</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+  <span class="n">stationary</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">newwin</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wborder</span><span class="p">(</span><span class="n">stationary</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+  <span class="mi">13</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">y</span><span class="o">|</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">mvwaddstr</span><span class="p">(</span><span class="n">stationary</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"sss"</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="c1"># construct the panels, back to front</span>
+  <span class="n">panels</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+  <span class="n">panels</span> <span class="o">&lt;&lt;</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">new_panel</span><span class="p">(</span><span class="n">moveable</span><span class="p">)</span>
+  <span class="n">panels</span> <span class="o">&lt;&lt;</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">new_panel</span><span class="p">(</span><span class="n">stationary</span><span class="p">)</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">update_panels</span>  <span class="c1"># touch and refresh all panels as needed</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">doupdate</span>       <span class="c1"># then update normally</span>
+
+  <span class="kp">loop</span> <span class="k">do</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getbegy</span><span class="p">(</span><span class="n">moveable</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getbegx</span><span class="p">(</span><span class="n">moveable</span><span class="p">)</span>
+
+    <span class="k">case</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>
+    <span class="k">when</span> <span class="s2">"q"</span><span class="o">.</span><span class="n">codepoints</span><span class="o">.</span><span class="n">first</span>
+      <span class="k">break</span>
+    <span class="k">when</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">KeyDefs</span><span class="o">::</span><span class="no">KEY_LEFT</span>
+      <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">move_panel</span><span class="p">(</span><span class="n">panels</span><span class="o">.</span><span class="n">first</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># move panels not windows</span>
+    <span class="k">when</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">KeyDefs</span><span class="o">::</span><span class="no">KEY_RIGHT</span>
+      <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">move_panel</span><span class="p">(</span><span class="n">panels</span><span class="o">.</span><span class="n">first</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">update_panels</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">doupdate</span>
+  <span class="k">end</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The comments again point out the major differences, but they are:</p>
+
+<ol>
+<li>We now construct the stack of panels</li>
+<li>We replace all touching and refreshing code with a single function call</li>
+<li>We need to move panels instead of windows so the panel can manage changes</li>
+</ol><p>As you can see, it's less code and it still works the same.  Because we don't have to handle touching with this approach, we can stop worrying about the oddity of needing absolute coordinates for our subwindows as well.</p>
+
+<p>This version will show the moveable window behind the stationary one, because that's the order we built the stack in.  To swap them, we could reorder the stack building code, or just use one of <code>panel</code>'s reordering functions like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="c1"># construct the panels, back to front</span>
+  <span class="n">panels</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+  <span class="n">panels</span> <span class="o">&lt;&lt;</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">new_panel</span><span class="p">(</span><span class="n">moveable</span><span class="p">)</span>
+  <span class="n">panels</span> <span class="o">&lt;&lt;</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">new_panel</span><span class="p">(</span><span class="n">stationary</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">top_panel</span><span class="p">(</span><span class="n">panels</span><span class="o">.</span><span class="n">first</span><span class="p">)</span>  <span class="c1"># move panel to the top</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>I hope you'll agree that panels are a lot easier to manage than the manual triggering of touches and refreshing.  <strong>My last piece of advice is probably pretty obvious:  prefer panels for managing window ordering.</strong></p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/terminal-tricks/basic-curses/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/terminal-tricks/a-curses-application/">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="terminal-tricks/curses-windows-pads-and-panels">
+  In: <a href="/terminal-tricks/">Terminal Tricks</a>
+  <span>|</span>
+  Tags: <a href="/tags/Curses/">Curses</a> &amp; <a href="/tags/Terminal%20I%2FO/">Terminal I/O</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/terminal-tricks/curses-windows-pads-and-panels#comments">2 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (2)</span></h5>
+
+    <ol>
+        <li id="comment_570">
+    <div class="avatar"><img alt="Duane Voth" height="70" src="https://avatars.githubusercontent.com/u/153577?v=3" width="70" /></div>
+    <div class="comment-info" data-comment-id="570">
+      <span class="c_name"><a href="https://github.com/duanev">Duane Voth</a></span>
+      <span class="c_date">September 14th, 2015</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/terminal-tricks/curses-windows-pads-and-panels#comment_570">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>James, do you have some example code that shows how to use prefresh on a panel (basically a movable log window).  The docs on prefresh are really thin ...  Nice overview btw!</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_571">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="https://avatars.githubusercontent.com/u/5639?v=4" width="70" /></div>
+    <div class="comment-info" data-comment-id="571">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">September 14th, 2015</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/terminal-tricks/curses-windows-pads-and-panels#comment_571">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I only know of the coverage in <a href="http://www.freebsd.org/cgi/man.cgi?apropos=0&amp;sektion=3&amp;query=curs_pad&amp;manpath=FreeBSD+7.0-current&amp;format=html">the man page</a>.  Sorry.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

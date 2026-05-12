@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Terminal Tricks / Random Access Terminal</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="A look at the special codes your terminal understands, its modes of operation, and how we can use those details to do fancy I/O.">
+    <meta name="keywords"    content="Hidden Features, Terminal I/O, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/terminal-tricks/random-access-terminal/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/terminal-tricks">Terminal Tricks</a></h1>
+            <span>A deep dive into the ways we can get fancy output out of our terminals.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>30</h4>
+    <span>
+      JAN<br>
+      2015
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Random Access Terminal</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/terminal-tricks/basic-curses/">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p>I've recently been playing around with fancy terminal output in Ruby.  I've learned quite a bit about this arcane magic.  I've also realized that the documentation is pretty spotty.  I want to see if I can improve that with a few blog posts, so let's dive right in.</p>
+
+<h4>Output</h4>
+
+<p>Program output typically happens in a linear order from top to bottom.  For example, this code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">puts</span> <span class="s2">"onez"</span>
+<span class="nb">puts</span> <span class="s2">"twos"</span>
+<span class="nb">puts</span> <span class="s2">"threes"</span>
+</pre></div>
+
+<p>generates this output:</p>
+
+<pre><code>onez
+twos
+threes
+</code></pre>
+
+<p>But what if you need to change some output?  Could you replace the <code>z</code> above with an <code>s</code> if you needed to?  Yes, but it can get a little involved.</p>
+
+<h5>ANSI Escape Codes</h5>
+
+<p>In many cases, we just push some characters to <code>$stdout</code> (the stream <code>Kernel#puts</code> is writing to above) and your terminal program happily shows them to the user.  However, your terminal is watching these characters for <a href="http://en.wikipedia.org/wiki/ANSI_escape_code">special sequences</a> that it understands.  Some of those sequences of characters can cause your terminal to take actions other than just writing some output to the screen.</p>
+
+<p>For example, there are sequences that move the cursor (the point where output is written) to different locations.  Using those special codes, we could change the <code>z</code> in our example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">CSI</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\e</span><span class="s2">["</span>
+
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"onez"</span>
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"twos"</span>
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"threes"</span>
+
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">write</span> <span class="s2">"</span><span class="si">#{</span><span class="no">CSI</span><span class="si">}</span><span class="s2">3A"</span>  <span class="c1"># move up three lines</span>
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">write</span> <span class="s2">"</span><span class="si">#{</span><span class="no">CSI</span><span class="si">}</span><span class="s2">3C"</span>  <span class="c1"># move right three characters</span>
+
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">write</span> <span class="s2">"s"</span>         <span class="c1"># overwrite the 'z'</span>
+
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">write</span> <span class="s2">"</span><span class="si">#{</span><span class="no">CSI</span><span class="si">}</span><span class="s2">3B"</span>  <span class="c1"># move down three lines (after our output)</span>
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">write</span> <span class="s2">"</span><span class="si">#{</span><span class="no">CSI</span><span class="si">}</span><span class="s2">4D"</span>  <span class="c1"># move back four characters (to the start of the line)</span>
+</pre></div>
+
+<p>If you run that code, it will initially produce the output from the previous example.  It will then move the cursor to the <code>z</code>, overwrite it with an <code>s</code>, and return the cursor to where it was.  This likely happens too fast for you to see the change, but you can insert <code>sleep()</code> calls if you want to watch it work.</p>
+
+<p>All of the escapes used in this example are commands used to move the cursor around by a specific number of lines or characters in an indicated direction.  Note that I switched to using the <code>write()</code> method when I started using escapes.  <code>puts()</code> would have printed my escape followed by a newline (moving me away from where I wanted to be).</p>
+
+<p>I used relative positioning commands above, meaning that I moved from where I knew the cursor was to where I wanted it be.  I couldn't move to some absolute coordinates, because I don't know what else is on your screen when the program is run.  You probably have at least a command prompt above the output and I have no idea how big that is.  Now, if I clear the screen before I generate output, I could go on to treat it like a known grid of coordinates:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">CSI</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\e</span><span class="s2">["</span>
+
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">write</span> <span class="s2">"</span><span class="si">#{</span><span class="no">CSI</span><span class="si">}</span><span class="s2">2J"</span>    <span class="c1"># clear screen</span>
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">write</span> <span class="s2">"</span><span class="si">#{</span><span class="no">CSI</span><span class="si">}</span><span class="s2">1;1H"</span>  <span class="c1"># move to top left corner</span>
+
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"onez"</span>
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"twos"</span>
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"threes"</span>
+
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">write</span> <span class="s2">"</span><span class="si">#{</span><span class="no">CSI</span><span class="si">}</span><span class="s2">s"</span>     <span class="c1"># save cursor position</span>
+
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">write</span> <span class="s2">"</span><span class="si">#{</span><span class="no">CSI</span><span class="si">}</span><span class="s2">1;4H"</span>  <span class="c1"># move to line 1, character 4</span>
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">write</span> <span class="s2">"s"</span>           <span class="c1"># overwrite the 'z'</span>
+
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">write</span> <span class="s2">"</span><span class="si">#{</span><span class="no">CSI</span><span class="si">}</span><span class="s2">u"</span>     <span class="c1"># restore cursor position</span>
+</pre></div>
+
+<p>This is the same trick, but using absolute positioning and some other fancy codes to <em>save</em> and <em>restore</em> the cursor's position.  The movement escape used here, <code>CSIy;xH</code>, allows us to jump directly to any position on the screen.  The top left corner is <code>1;1</code> with <code>y</code> counting lines down and <code>x</code> counting characters to the right.</p>
+
+<p>Clearing the screen can be a little tricky.  First, you can clear part or all of it.  I chose all here with the <code>2</code> in <code>CSI2J</code>.  You also need to remember though that clearing the screen doesn't usually change the position of the cursor.  That's why I sent it back to the top left corner after the clear.</p>
+
+<p>This code was pretty eye opening to me.  It helped me to realize that a terminal doesn't have to be treated as a sequence of lines.  It can alternately be treated like a drawing canvas with coordinates used to represent each spot that a character can be placed.</p>
+
+<p><strong>WARNING</strong>:  terminals vary in exactly which codes they support.  Most of the examples I'm showing will probably work on most UNIX-like terminals.  I've tested them on my own UNIX box, but even there I found minor differences.  For example, the code above works as expected in my normal terminal, but the terminal emulation mode I often use in Emacs doesn't seem to honor the save and restore cursor codes.  It can be quite a bit of work to properly support the various kinds of terminals you can encounter.</p>
+
+<h6>Colors</h6>
+
+<p>It probably goes without saying that there are codes to change the color of your output and do other fancy graphic tricks.  These can get slightly complex because they require a little math to indicate choice of foreground or background colors.  They can also involve multiple codes at once when you want to select the <em>bright</em> version of a color.  Here's a pretty trivial example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">CSI</span>    <span class="o">=</span> <span class="s2">"</span><span class="se">\e</span><span class="s2">["</span>
+<span class="no">COLORS</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="ss">black</span><span class="p">:</span>   <span class="mi">0</span><span class="p">,</span>
+  <span class="ss">red</span><span class="p">:</span>     <span class="mi">1</span><span class="p">,</span>
+  <span class="ss">green</span><span class="p">:</span>   <span class="mi">2</span><span class="p">,</span>
+  <span class="ss">yellow</span><span class="p">:</span>  <span class="mi">3</span><span class="p">,</span>
+  <span class="ss">blue</span><span class="p">:</span>    <span class="mi">4</span><span class="p">,</span>
+  <span class="ss">magenta</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+  <span class="ss">cyan</span><span class="p">:</span>    <span class="mi">6</span><span class="p">,</span>
+  <span class="ss">white</span><span class="p">:</span>   <span class="mi">7</span>
+<span class="p">}</span>
+
+<span class="k">def</span> <span class="nf">color</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">foreground</span><span class="p">,</span> <span class="n">background</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+  <span class="n">colored</span>  <span class="o">=</span> <span class="n">color_name_to_escape_code</span><span class="p">(</span><span class="n">foreground</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+  <span class="n">colored</span> <span class="o">&lt;&lt;</span> <span class="n">color_name_to_escape_code</span><span class="p">(</span><span class="n">background</span><span class="p">,</span> <span class="mi">40</span><span class="p">)</span> <span class="k">if</span> <span class="n">background</span>
+  <span class="n">colored</span> <span class="o">&lt;&lt;</span> <span class="n">content</span>
+  <span class="n">colored</span> <span class="o">&lt;&lt;</span> <span class="s2">"</span><span class="si">#{</span><span class="no">CSI</span><span class="si">}</span><span class="s2">0m"</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">color_name_to_escape_code</span><span class="p">(</span><span class="nb">name</span><span class="p">,</span> <span class="n">layer</span><span class="p">)</span>
+  <span class="n">short_name</span> <span class="o">=</span> <span class="nb">name</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sr">/\Abright_/</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+  <span class="n">color</span>      <span class="o">=</span> <span class="no">COLORS</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">short_name</span><span class="o">.</span><span class="n">to_sym</span><span class="p">)</span>
+  <span class="n">escape</span>     <span class="o">=</span> <span class="s2">"</span><span class="si">#{</span><span class="no">CSI</span><span class="si">}#{</span><span class="n">layer</span> <span class="o">+</span> <span class="n">color</span><span class="si">}</span><span class="s2">"</span>
+  <span class="n">escape</span>    <span class="o">&lt;&lt;</span> <span class="s2">";1"</span> <span class="k">if</span> <span class="n">short_name</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="nb">name</span><span class="o">.</span><span class="n">size</span>
+  <span class="n">escape</span>    <span class="o">&lt;&lt;</span> <span class="s2">"m"</span>
+  <span class="n">escape</span>
+<span class="k">end</span>
+
+<span class="o">[</span> <span class="o">[</span><span class="s2">"C"</span><span class="p">,</span> <span class="ss">:red</span><span class="o">]</span><span class="p">,</span>
+  <span class="o">[</span><span class="s2">"O"</span><span class="p">,</span> <span class="ss">:bright_red</span><span class="o">]</span><span class="p">,</span>
+  <span class="o">[</span><span class="s2">"L"</span><span class="p">,</span> <span class="ss">:bright_yellow</span><span class="o">]</span><span class="p">,</span>
+  <span class="o">[</span><span class="s2">"O"</span><span class="p">,</span> <span class="ss">:bright_green</span><span class="o">]</span><span class="p">,</span>
+  <span class="o">[</span><span class="s2">"R"</span><span class="p">,</span> <span class="ss">:bright_blue</span><span class="o">]</span><span class="p">,</span>
+  <span class="o">[</span><span class="s2">"S"</span><span class="p">,</span> <span class="ss">:blue</span><span class="o">]</span><span class="p">,</span>
+  <span class="o">[</span><span class="s2">"!"</span><span class="p">,</span> <span class="ss">:bright_magenta</span><span class="o">]</span> <span class="o">].</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">char</span><span class="p">,</span> <span class="n">color</span><span class="o">|</span>
+  <span class="vg">$stdout</span><span class="o">.</span><span class="n">write</span> <span class="n">color</span><span class="p">(</span><span class="n">char</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="ss">:white</span><span class="p">)</span>
+<span class="k">end</span>
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">puts</span>
+</pre></div>
+
+<p>If you run that, you should see not-quite-a-rainbow of colored letters on white, regardless of the default color settings in your terminal.</p>
+
+<p>It's pretty important to remember to issue a reset code (<code>CSI0m</code>) after playing with graphic settings like this.  If your program exits without doing so, the terminal could be left in some pretty garish states.  You can see that my <code>color()</code> method sets some colors, writes the desired content, then immediately resets.  This process minimizes the chances of me bleeding over graphics changes into other output.</p>
+
+<p>Visit that link I gave earlier on <a href="http://en.wikipedia.org/wiki/ANSI_escape_code">ANSI escape codes</a> for specifics about any of the sequences I've used here, a good description of what the <code>CSI</code> is, and more.</p>
+
+<h5>The Status Line Trick</h5>
+
+<p>While ANSI codes allow you to do pretty much any output trick you can dream up with enough effort, there's another trick that just so easy it's worth knowing for the times when it can save you some work.</p>
+
+<p>We usually end lines of output with a newline character (<code>\n</code>).  <code>Kernel#puts</code> does this for us automatically.  The exact effect of that character depends on the mode your terminal is currently in.  We'll cover that more below, but there's another way to end lines.  You could use the carriage return (<code>\r</code>) character.  (In truth, using both characters is also an option.  Again, I'll go into that below.)</p>
+
+<p>A <code>\r</code> does move the cursor back to the beginning of the line, but it does not advance to the next line.  This gives you a simple way to overwrite the content you previously placed on the last line only.  That can come in handy for updating a status line or progress bar.</p>
+
+<p>Here's a contrived example that just shows progress while it pretends to do some work:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">chunks</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="vg">$stdout</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"Time left:"</span>
+<span class="kp">loop</span> <span class="k">do</span>
+  <span class="vg">$stdout</span><span class="o">.</span><span class="n">write</span> <span class="s2">"|</span><span class="si">#{</span><span class="s1">'#'</span> <span class="o">*</span> <span class="n">chunks</span><span class="si">}#{</span><span class="s1">' '</span> <span class="o">*</span> <span class="p">(</span><span class="mi">10</span> <span class="o">-</span> <span class="n">chunks</span><span class="p">)</span><span class="si">}</span><span class="s2">|</span><span class="se">\r</span><span class="s2">"</span>
+
+  <span class="k">if</span> <span class="n">chunks</span> <span class="o">==</span> <span class="mi">10</span>
+    <span class="vg">$stdout</span><span class="o">.</span><span class="n">puts</span>
+    <span class="k">break</span>
+  <span class="k">end</span>
+
+  <span class="n">next_chunk</span> <span class="o">=</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="p">(</span><span class="mi">10</span> <span class="o">-</span> <span class="n">chunks</span><span class="p">))</span>
+  <span class="nb">sleep</span> <span class="n">next_chunk</span>
+  <span class="n">chunks</span> <span class="o">+=</span> <span class="n">next_chunk</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Sample output from partway through a run looks like this:</p>
+
+<pre><code>Time left:
+|#####     |
+</code></pre>
+
+<p>You may need to run it to appreciate the result, but the last line just keeps updating with the bar of <code>#</code>'s, growing each time.  Notice that there is a final <code>puts()</code> when we exit the <code>loop()</code>, so the new command prompt won't erase the progress bar.  You may or may not wish to do that in your own programs.</p>
+
+<h4>Input</h4>
+
+<p>I'll be honest and admit that I covered output first because it's easier.  Buckle up and we'll see if can survive the jump into input.</p>
+
+<p>I've mentioned before that <a href="http://graysoftinc.com/my-projects/i-just-want-one-character">programmers often ask how to read a single character from the keyboard</a> and it can get tricky.  This time I'm going to try to explain what's really going on without hiding behind a library that simplifies the process.  I'll also show you some fancy new ways to accomplish the task.</p>
+
+<h5>Terminal Modes</h5>
+
+<p>Your terminal can operate in <a href="http://en.wikipedia.org/wiki/POSIX_terminal_interface#History">a variety of modes</a>.  The default <em>cooked mode</em> has several effects.  One of those effects is that input is buffered until you press the return key.  This buffering allows you to edit content you are entering—using arrow keys, backspace/delete keys, etc.—without all programs needing to handle all of those special cases.  That's a great feature, right up to the point where you just want to read one character.</p>
+
+<p>Watch what happens when I try:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="kp">loop</span> <span class="k">do</span>
+  <span class="n">char</span> <span class="o">=</span> <span class="vg">$stdin</span><span class="o">.</span><span class="n">getc</span>
+  <span class="nb">puts</span> <span class="s2">"You typed:  </span><span class="si">#{</span><span class="n">char</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span>
+  <span class="k">break</span> <span class="k">if</span> <span class="n">char</span> <span class="o">==</span> <span class="sc">?q</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Here's some output from a run of that program:</p>
+
+<pre><code>a
+You typed:  "a"
+You typed:  "\n"
+q
+You typed:  "q"
+</code></pre>
+
+<p>What you need to catch here is that I pushed an <code>a</code>, but my program wouldn't acknowledge it, until I pressed return too.  Then it read both characters.  The <code>q</code> was treated the same way, the program just ended before showing the second newline.</p>
+
+<p>If we really want to do this right, we've got to get out of cooked mode (or at least disable its line buffering feature).  In older Ruby code, you had three choices for doing this:  shell out to <code>stty</code> (tricky to get right), make very arcane C-style calls to <code>ioctl()</code> (a nightmare), or use a gem that hid the details from you (your best bet, by far).  Now you understand <a href="http://graysoftinc.com/my-projects/i-just-want-one-character">my old advice</a> to just use <code>HighLine</code>.  But I have good news!  Ruby is older and wiser now.</p>
+
+<h6>A New Standard Library</h6>
+
+<p>The easiest approach to reading just one character is to switch into <em>raw mode</em> (or a similar mode) and try again.  However, this change will affect your program's output as well due to other features of cooked mode.  Given that, your best bet is to jump into raw mode, grab a character, and return to cooked mode immediately.</p>
+
+<p>Ruby now ships with a standard library that will do exactly that:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"io/console"</span>
+
+<span class="kp">loop</span> <span class="k">do</span>
+  <span class="n">char</span> <span class="o">=</span> <span class="vg">$stdin</span><span class="o">.</span><span class="n">getch</span>
+  <span class="nb">puts</span> <span class="s2">"You typed:  </span><span class="si">#{</span><span class="n">char</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span>
+  <span class="k">break</span> <span class="k">if</span> <span class="n">char</span> <span class="o">==</span> <span class="sc">?q</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Behold the magic:</p>
+
+<pre><code>You typed:  "a"
+You typed:  "q"
+</code></pre>
+
+<p>There are no newlines this time because the computer is now responding the instant I press a key.  Victory.  Sort of.</p>
+
+<p>Even this tiny dip of our toes into raw mode has changed other things.  You don't see what I typed <em>echoed</em> before the program provides its own output as it was before.  This is another feature of cooked mode and you'll need to do your own echoing when reading like this, if you need it.</p>
+
+<p>Here's another change that happens when I push control-C:</p>
+
+<pre><code>You typed:  "\u0003"
+</code></pre>
+
+<p>As you can see, it no longer interrupts my process.  In fact, all of the control sequences have lost their magic powers (control-D to close <code>$stdin</code> and control-Z to suspend the program, for example).  You will now need to handle these keystrokes yourself if you want them to have some effect.  (Please do support control-C at the very least!)</p>
+
+<p>Terminals have another mode that helps with this control keystroke issue, called <em>cbreak mode</em>.  It gives you a near raw mode experience, but with these low-level keystrokes still handled.  It makes me very sad to report that <code>io/console</code> doesn't yet support this handy mode.</p>
+
+<p>Still, <code>io/console</code> is great to have.  You can read about what it can do in <a href="http://www.ruby-doc.org/stdlib-2.2.0/libdoc/io/console/rdoc/IO.html">the API documentation</a> and <a href="https://github.com/nobu/io-console">its README</a>.  Here's one more simple example of how easy <code>io/console</code> can make things, like finding the screen size:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"io/console"</span>
+
+<span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="vg">$stdout</span><span class="o">.</span><span class="n">winsize</span>
+<span class="nb">puts</span> <span class="s2">"Columns:  </span><span class="si">#{</span><span class="n">cols</span><span class="si">}</span><span class="s2">, Rows:  </span><span class="si">#{</span><span class="n">rows</span><span class="si">}</span><span class="s2">"</span>
+</pre></div>
+
+<h6>Full Raw Mode</h6>
+
+<p>Dipping into raw mode to grab characters is great when it works for your needs, but the code I've showed so far has a drawback.  <code>io/console</code>'s <code>getch()</code> is a blocking method.  It will wait for input.  This is a problem if you need to manage your own event loop, take user input when it's available, but continue making things happen when it's not.</p>
+
+<p>If there's a way to solve this problem with just <code>io/console</code>, I haven't been able to derive the proper incantation.  However, we can pull it off by pulling one more standard library into the mix.</p>
+
+<p>To show how this works, imagine that we want to prompt a user with what to do if they don't take any action for a few seconds.  Here's some code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"io/console"</span>
+<span class="nb">require</span> <span class="s2">"io/wait"</span>
+
+<span class="vg">$stdin</span><span class="o">.</span><span class="n">raw</span> <span class="k">do</span> <span class="o">|</span><span class="n">io</span><span class="o">|</span>
+  <span class="n">last_read</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+  <span class="n">prompted</span>  <span class="o">=</span> <span class="kp">false</span>
+  <span class="kp">loop</span> <span class="k">do</span>
+    <span class="n">char</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">ready?</span> <span class="o">&amp;&amp;</span> <span class="n">io</span><span class="o">.</span><span class="n">sysread</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">char</span>
+      <span class="n">last_read</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+      <span class="n">prompted</span>  <span class="o">=</span> <span class="kp">false</span>
+      <span class="nb">puts</span> <span class="s2">"You typed:  </span><span class="si">#{</span><span class="n">char</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span>
+      <span class="k">break</span> <span class="k">if</span> <span class="n">char</span> <span class="o">==</span> <span class="sc">?q</span>
+    <span class="k">else</span>
+      <span class="k">if</span> <span class="o">!</span><span class="n">prompted</span> <span class="o">&amp;&amp;</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="n">last_read</span> <span class="o">&gt;</span> <span class="mi">3</span>
+        <span class="nb">puts</span> <span class="s2">"Please type a character."</span>
+        <span class="n">prompted</span> <span class="o">=</span> <span class="kp">true</span>
+      <span class="k">end</span>
+      <span class="nb">sleep</span> <span class="mi">0</span><span class="o">.</span><span class="mi">1</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This time I used <code>io/console</code> to put the whole program into raw mode.  Cooked mode is restored when the block passed to <code>raw()</code> exits.</p>
+
+<p>The other library I used is <code>io/wait</code>.  It adds a <code>ready?()</code> method to <code>$stdin</code> that will return <code>true</code> when there's content waiting to be read.  I pull that content out a byte at a time using the low-level <code>sysread()</code> to avoid any buffering.</p>
+
+<p>This kind of works, but we've picked up a new issue:</p>
+
+<pre><code>Please type a character.
+                        You typed:  "a"
+                                       You typed:  "q"
+</code></pre>
+
+<p>See how my output is now staggered?</p>
+
+<p>Yet another feature of cooked mode is that newlines in your program's output are translated to a carriage return newline sequence (<code>\r\n</code>).  Rubyists are used to <code>puts()</code>ing out some content, with a newline added, and seeing the cursor move to the beginning of the next line.  But a newline doesn't really do that by itself.</p>
+
+<p>The newline character means move down a line.  As we saw earlier, a carriage return sends you to the beginning of the current line.  So it's really the combined effect of both that we're used to being normal.</p>
+
+<p>My output above has only the newline effect, because we're in raw mode and the translation to a two character sequence isn't active.  That explains the problem and gives us a way around it.  In raw mode, you'll need to manually end lines with <code>\r\n</code> when you want to move to the beginning of the next line.</p>
+
+<p>Here's a fixed version of the code above:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"io/console"</span>
+<span class="nb">require</span> <span class="s2">"io/wait"</span>
+
+<span class="vg">$stdin</span><span class="o">.</span><span class="n">raw</span> <span class="k">do</span> <span class="o">|</span><span class="n">io</span><span class="o">|</span>
+  <span class="n">last_read</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+  <span class="n">prompted</span>  <span class="o">=</span> <span class="kp">false</span>
+  <span class="kp">loop</span> <span class="k">do</span>
+    <span class="n">char</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">ready?</span> <span class="o">&amp;&amp;</span> <span class="n">io</span><span class="o">.</span><span class="n">sysread</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">char</span>
+      <span class="n">last_read</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+      <span class="n">prompted</span>  <span class="o">=</span> <span class="kp">false</span>
+      <span class="nb">puts</span> <span class="s2">"You typed:  </span><span class="si">#{</span><span class="n">char</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="se">\r\n</span><span class="s2">"</span>  <span class="c1"># added \r\n</span>
+      <span class="k">break</span> <span class="k">if</span> <span class="n">char</span> <span class="o">==</span> <span class="sc">?q</span>
+    <span class="k">else</span>
+      <span class="k">if</span> <span class="o">!</span><span class="n">prompted</span> <span class="o">&amp;&amp;</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="n">last_read</span> <span class="o">&gt;</span> <span class="mi">3</span>
+        <span class="nb">puts</span> <span class="s2">"Please type a character.</span><span class="se">\r\n</span><span class="s2">"</span>   <span class="c1"># added \r\n</span>
+        <span class="n">prompted</span> <span class="o">=</span> <span class="kp">true</span>
+      <span class="k">end</span>
+      <span class="nb">sleep</span> <span class="mi">0</span><span class="o">.</span><span class="mi">1</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The comments show the two minor changes to the code.</p>
+
+<p>And now the output looks more typical:</p>
+
+<pre><code>Please type a character.
+You typed:  "a"
+You typed:  "q"
+</code></pre>
+
+<p>We've handled a lot of cases, but there are still issues with a raw approach like this.  I'll show you one more.  Watch what happens when I press an arrow key while running our latest program:</p>
+
+<pre><code>You typed:  "\e"
+You typed:  "["
+You typed:  "A"
+</code></pre>
+
+<p>Ugh.  That's all one keystroke, but we pulled it out as separate bytes.  This means we wouldn't be able to have conditionals in our program check for this keypress.</p>
+
+<p>Can we fix it?  Sure.  We can add some more code to detect these escape sequences and combine them into a single <code>String</code>.  Here's what that might look like:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"io/console"</span>
+<span class="nb">require</span> <span class="s2">"io/wait"</span>
+
+<span class="no">CSI</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\e</span><span class="s2">["</span>
+
+<span class="k">def</span> <span class="nf">get_char_or_sequence</span><span class="p">(</span><span class="n">io</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">io</span><span class="o">.</span><span class="n">ready?</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">sysread</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">while</span> <span class="p">(</span> <span class="no">CSI</span><span class="o">.</span><span class="n">start_with?</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>                        <span class="o">||</span>
+            <span class="p">(</span> <span class="n">result</span><span class="o">.</span><span class="n">start_with?</span><span class="p">(</span><span class="no">CSI</span><span class="p">)</span>                      <span class="o">&amp;&amp;</span>
+              <span class="o">!</span><span class="n">result</span><span class="o">.</span><span class="n">codepoints</span><span class="o">[-</span><span class="mi">1</span><span class="o">].</span><span class="n">between?</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">126</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span> <span class="o">&amp;&amp;</span>
+          <span class="p">(</span><span class="n">next_char</span> <span class="o">=</span> <span class="n">get_char_or_sequence</span><span class="p">(</span><span class="n">io</span><span class="p">))</span>
+      <span class="n">result</span> <span class="o">&lt;&lt;</span> <span class="n">next_char</span>
+    <span class="k">end</span>
+    <span class="n">result</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="vg">$stdin</span><span class="o">.</span><span class="n">raw</span> <span class="k">do</span> <span class="o">|</span><span class="n">io</span><span class="o">|</span>
+  <span class="n">last_read</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+  <span class="n">prompted</span>  <span class="o">=</span> <span class="kp">false</span>
+  <span class="kp">loop</span> <span class="k">do</span>
+    <span class="n">char</span> <span class="o">=</span> <span class="n">get_char_or_sequence</span><span class="p">(</span><span class="n">io</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">char</span>
+      <span class="n">last_read</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+      <span class="n">prompted</span>  <span class="o">=</span> <span class="kp">false</span>
+      <span class="nb">puts</span> <span class="s2">"You typed:  </span><span class="si">#{</span><span class="n">char</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="se">\r\n</span><span class="s2">"</span>
+      <span class="k">break</span> <span class="k">if</span> <span class="n">char</span> <span class="o">==</span> <span class="sc">?q</span>
+    <span class="k">else</span>
+      <span class="k">if</span> <span class="o">!</span><span class="n">prompted</span> <span class="o">&amp;&amp;</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="n">last_read</span> <span class="o">&gt;</span> <span class="mi">3</span>
+        <span class="nb">puts</span> <span class="s2">"Please type a character.</span><span class="se">\r\n</span><span class="s2">"</span>
+        <span class="n">prompted</span> <span class="o">=</span> <span class="kp">true</span>
+      <span class="k">end</span>
+      <span class="nb">sleep</span> <span class="mi">0</span><span class="o">.</span><span class="mi">1</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>All of the new code here is in the <code>get_char_or_sequence()</code> method.  The <code>while</code> loop in there checks to see if a read character looks like the start of a <code>CSI</code> sequence and keeps reading, assuming there's more input, until we've seen the full <code>CSI</code>.  Then, if what we've read starts with a <code>CSI</code> and there's still more input, we keep reading until we see a termination character for the sequence.</p>
+
+<p>The end result?  We can now treat arrow keys as a single unit (as long as our terminal returns them as ANSI escape sequences with a leading <code>CSI</code>):</p>
+
+<pre><code>You typed:  "\e[A"
+</code></pre>
+
+<p>That's progress.  There's definitely more we could handle though, like non-<code>CSI</code> escape sequences and larger Unicode characters.  This rabbit hole goes pretty deep.  You'll need to decide how many such cases you need to handle for your programs needs.</p>
+
+<p>If you have to deal with many of the various topics covered by this post, you may want to consider using a gem that can handle some of them for you.  They can really smooth over some of these edge cases.  The details of that are another blog post, but my hope is that this article starts to at least get you familiar with what's involved in fancy terminal I/O.</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/terminal-tricks/basic-curses/">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="terminal-tricks/random-access-terminal">
+  In: <a href="/terminal-tricks/">Terminal Tricks</a>
+  <span>|</span>
+  Tags: <a href="/tags/Hidden%20Features/">Hidden Features</a> &amp; <a href="/tags/Terminal%20I%2FO/">Terminal I/O</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/terminal-tricks/random-access-terminal#comments">2 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (2)</span></h5>
+
+    <ol>
+        <li id="comment_568">
+    <div class="avatar"><img alt="Janko Marohnić" height="70" src="https://avatars.githubusercontent.com/u/795488?v=3" width="70" /></div>
+    <div class="comment-info" data-comment-id="568">
+      <span class="c_name"><a href="https://github.com/janko-m">Janko Marohnić</a></span>
+      <span class="c_date">February 28th, 2015</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/terminal-tricks/random-access-terminal#comment_568">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>It's so awesome to read this and remember the exact same logical path I was going through when I was figuring all of these things out. But you also explained some things that I didn't understand, for example why the output is messed up in raw mode. Thank you for the blog post, you really covered everything.</p>
+
+<p>I wanted to comment on the last problem, that is how to read multi-byte keystrokes, like arrow keys. At first I also went with the similar approach, using kind of a state machine like you did, but I knew there had to be a better way.</p>
+
+<p>So the problem is, you can't read only one byte, because then you need to read multibyte keystrokes in multiple takes, and you also can't read multiple bytes, because then single-byte keypresses won't give enough bytes for read to terminate. When I was just reading through <code>IO</code>'s methods, I accidentally came accross a <code>IO#readpartial</code> method. It turns out that this actually does exactly what I wanted:</p>
+
+<div class="highlight highlight-rb"><pre><span class="vg">$stdin</span><span class="o">.</span><span class="n">readpartial</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="c1">#=&gt; reads at *most* 5 bytes</span>
+</pre></div>
+
+<p>I chose the number "5" somewhat arbitrarily, I just assumed that no keypress will have more than 5 bytes. I still don't like that I have to use a magic number, but it works great :)</p></div>
+    <ol>
+      
+        <li id="comment_569">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="https://avatars.githubusercontent.com/u/5639?v=4" width="70" /></div>
+    <div class="comment-info" data-comment-id="569">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">February 28th, 2015</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/terminal-tricks/random-access-terminal#comment_569">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Ah, that's a great point.  I'm not totally sure your magic <code>5</code> is sufficient, but I do like your strategy.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

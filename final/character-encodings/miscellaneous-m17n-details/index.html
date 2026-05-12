@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Character Encodings / Miscellaneous M17n Details</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This post covers various side details of the new encoding engine.  It&#39;s kind of a grab bag of topics that you should also know about when writing character encoding savvy code.">
+    <meta name="keywords"    content="encodings, m17n, Multilingualization, Unicode, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/character-encodings/miscellaneous-m17n-details/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/character-encodings">Character Encodings</a></h1>
+            <span>My extensive coverage of a complex topic all programmers should study a little.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>15</h4>
+    <span>
+      APR<br>
+      2009
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Miscellaneous M17n Details</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/character-encodings/ruby-19s-three-default-encodings/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/character-encodings/understanding-m17n-multilingualization/">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/character-encodings/what-ruby-19-gives-us/">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p>We've now discussed the core of Ruby 1.9's m17n (multilingualization) engine.  <code>String</code> and <code>IO</code> are where you will see the big changes.  The new m17n system is a big beast though with a lot of little details.  Let's talk a little about some side topics that also relate to how we work with character encodings in Ruby 1.9.</p>
+
+<h4>More Features of the Encoding Class</h4>
+
+<p>You've seen me using <code>Encoding</code> objects all over the place in my explanations of m17n, but we haven't talked much about them.  They are very simple, mainly just being a named representation of each <code>Encoding</code> inside Ruby.  As such, <code>Encoding</code> is a storage place for some tools you may find handy when working with them.</p>
+
+<p>First, you can receive a <code>list()</code> of all <code>Encoding</code> objects Ruby has loaded in the form of an <code>Array</code>:</p>
+
+<pre><code>$ ruby -e 'puts Encoding.list.first(3), "..."'
+ASCII-8BIT
+UTF-8
+US-ASCII
+...
+</code></pre>
+
+<p>If you're just interested in a specific <code>Encoding</code>, you can <code>find()</code> it by name:</p>
+
+<pre><code>$ ruby -e 'p Encoding.find("UTF-8")'
+#&lt;Encoding:UTF-8&gt;
+$ ruby -e 'p Encoding.find("No-Such-Encoding")'
+-e:1:in `find': unknown encoding name - No-Such-Encoding (ArgumentError)
+    from -e:1:in `&lt;main&gt;'
+</code></pre>
+
+<p>As you can see, Ruby raises an <code>ArgumentError</code> if it doesn't know about a given <code>Encoding</code>.</p>
+
+<p>Some <code>Encoding</code> objects also have more than one name.  These <code>aliases()</code> can be used interchangeably to refer to the same <code>Encoding</code>.  For example, <code>ASCII</code> is an alias for <code>US-ASCII</code>:</p>
+
+<pre><code>$ ruby -e 'puts Encoding.aliases["ASCII"]'
+US-ASCII
+$ ruby -e 'p Encoding.find("ASCII") == Encoding.find("US-ASCII")' 
+true
+</code></pre>
+
+<p>The <code>aliases()</code> method returns a <code>Hash</code> keyed with the alternate names Ruby knows about. The values are the actual <code>Encoding</code> name that alias refers to.  You can use either a name or an alias when referring to an <code>Encoding</code> by name, like with calls to <code>Encoding::find()</code> or <code>IO::open()</code>.</p>
+
+<p>Finally, there's one more gotcha you should be aware of if you're going to write some code that supports a large set of Ruby's <code>Encoding</code>s.  Ruby ships with a few <code>dummy?()</code> <code>Encoding</code>s that don't have character handling completely implemented.  These are used for stateful <code>Encoding</code>s.  You will want to filter them out of <code>Encoding</code>s you try to support to avoid running into problems:</p>
+
+<pre><code>$ ruby -e 'puts "Dummy Encodings:", Encoding.list.select(&amp;:dummy?).map(&amp;:name)'
+Dummy Encodings:
+ISO-2022-JP
+ISO-2022-JP-2
+UTF-7
+</code></pre>
+
+<h4>String Escapes</h4>
+
+<p>In Ruby 1.8 you would sometimes see byte escapes used to insert raw bytes into a <code>String</code>.  For example, you can choose to build the <code>String</code> <code>"…"</code> with the following byte escapes:</p>
+
+<pre><code>$ ruby -v -KU -e 'p "\xe2\x80\xa6"'
+ruby 1.8.6 (2009-03-31 patchlevel 368) [i686-darwin9.6.0]
+"…"
+</code></pre>
+
+<p>The same tactic still works on Ruby 1.9, but remember that <code>Encoding</code>s are still going to play into this as we've been discussing:</p>
+
+<pre><code>$ cat utf8_escapes.rb 
+# encoding: UTF-8
+str = "\xe2\x80\xa6"
+p [str.encoding, str, str.valid_encoding?]
+$ ruby -v utf8_escapes.rb 
+ruby 1.9.1p0 (2009-01-30 revision 21907) [i386-darwin9.6.0]
+[#&lt;Encoding:UTF-8&gt;, "…", true]
+$ cat invalid_escapes.rb 
+# encoding: UTF-8
+str = "\xe2\x80"
+p [str.encoding, str, str.valid_encoding?]
+$ ruby -v invalid_escapes.rb 
+ruby 1.9.1p0 (2009-01-30 revision 21907) [i386-darwin9.6.0]
+[#&lt;Encoding:UTF-8&gt;, "\xE2\x80", false]
+</code></pre>
+
+<p>Notice that I got the requested bytes in both cases.  However, those <code>String</code>s were assigned the source <code>Encoding</code> as normal.  In the first case, that built a valid UTF-8 <code>String</code>.  However, the second case is invalid and may later cause me fits as I try to use the <code>String</code>.</p>
+
+<p>There are a couple of exceptions though, where a <code>String</code> escape can actually change the <code>Encoding</code> of the literal.  First, you'll likely remember that using a multibyte character is not allowed if you don't change the source <code>Encoding</code>:</p>
+
+<pre><code>$ cat bad_code.rb 
+"abc…"
+$ ruby -v bad_code.rb 
+ruby 1.9.1p0 (2009-01-30 revision 21907) [i386-darwin9.6.0]
+bad_code.rb:1: invalid multibyte char (US-ASCII)
+bad_code.rb:1: invalid multibyte char (US-ASCII)
+</code></pre>
+
+<p>However, a special case is made for <code>\x##</code> escapes:</p>
+
+<pre><code>$ cat ascii_escapes.rb 
+puts "Source Encoding:  #{__ENCODING__}"
+str = "abc\xe2\x80\xa6"
+p [str.encoding, str, str.valid_encoding?]
+$ ruby -v ascii_escapes.rb 
+ruby 1.9.1p0 (2009-01-30 revision 21907) [i386-darwin9.6.0]
+Source Encoding:  US-ASCII
+[#&lt;Encoding:ASCII-8BIT&gt;, "abc\xE2\x80\xA6", true]
+</code></pre>
+
+<p>Notice that the <code>Encoding</code> of the <code>String</code> was upgraded to ASCII-8BIT to accommodate the bytes.  We'll talk a lot more about that special <code>Encoding</code> later in this post, but for now just make note of the fact that this exception gives you an easy way to work with binary data.</p>
+
+<p>Octal escapes (<code>\###</code>), control escapes (<code>\cx</code> or <code>\C-x</code>), meta escapes (<code>\M-x</code>), and meta-control escapes (<code>\M-\C-x</code>) all follow the same rules as the hex escapes (<code>\x##</code>) we've just been discussing.</p>
+
+<p>The other exception is the <code>\u####</code> escape that can be used to enter Unicode characters by codepoint.  When you use this escape, the <code>String</code> gets a UTF-8 <code>Encoding</code> regardless of the current source <code>Encoding</code>:</p>
+
+<pre><code>$ cat ascii_u_escape.rb 
+str = "\u2026"
+p [str.encoding, str]
+$ ruby -v ascii_u_escape.rb 
+ruby 1.9.1p0 (2009-01-30 revision 21907) [i386-darwin9.6.0]
+[#&lt;Encoding:UTF-8&gt;, "…"]
+$ cat sjis_u_escape.rb 
+# encoding: Shift_JIS
+str = "\u2026"
+p [str.encoding, str]
+$ ruby -v sjis_u_escape.rb 
+ruby 1.9.1p0 (2009-01-30 revision 21907) [i386-darwin9.6.0]
+[#&lt;Encoding:UTF-8&gt;, "…"]
+$ cat utf8_u_escape.rb 
+# encoding: UTF-8
+str = "\u2026"
+p [str.encoding, str]
+$ ruby -v utf8_u_escape.rb 
+ruby 1.9.1p0 (2009-01-30 revision 21907) [i386-darwin9.6.0]
+[#&lt;Encoding:UTF-8&gt;, "…"]
+</code></pre>
+
+<p>Notice how the <code>String</code> received a UTF-8 <code>Encoding</code> in all three cases, regardless of the current source <code>Encoding</code>.  This exception gives you an easy way to work with UTF-8 data, no matter what your native <code>Encoding</code> is.</p>
+
+<p>The Unicode escape can be followed by exactly four hex digits as I've shown above, or you can use an alternate form <code>\u{#…}</code> where you place between one and six hex digits between the braces.  Both forms have the same effect on the <code>String</code>'s <code>Encoding</code>.</p>
+
+<h4>Working with Binary Data</h4>
+
+<p>Not all data is textual data.  Ruby's <code>String</code> class can also be used to hold raw byte sequences.  For example, you may want to work with the raw bytes of a PNG image.</p>
+
+<p>Ruby 1.9 has an <code>Encoding</code> for this which basically just means treat my data as raw bytes.  You can think of this <code>Encoding</code> as a way to shut off character handling and just work with bytes:</p>
+
+<pre><code>$ cat raw_bytes.rb 
+# encoding: UTF-8
+str = "Résumé"
+def str.inspect
+  { data:     dup,
+    encoding: encoding.name,
+    chars:    size,
+    bytes:    bytesize }.inspect
+end
+p str
+str.force_encoding("BINARY")
+p str
+$ ruby raw_bytes.rb 
+{:data=&gt;"Résumé", :encoding=&gt;"UTF-8", :chars=&gt;6, :bytes=&gt;8}
+{:data=&gt;"R\xC3\xA9sum\xC3\xA9", :encoding=&gt;"ASCII-8BIT", :chars=&gt;8, :bytes=&gt;8}
+</code></pre>
+
+<p>See how switching the <code>Encoding</code> (without changing the data) shut off Ruby's concept of characters?  The character count became the same as the byte count and Ruby started giving a more raw version of the <code>inspect()</code> <code>String</code> to show those are just bytes.</p>
+
+<p>If you expected this <code>Encoding</code> to be called BINARY, you are half right. As you<br>
+can see I could use that name above because it is a valid alias. Ruby switched<br>
+to the real name in the <code>inspect()</code> message though.  Ruby actually refers to the<br><code>Encoding</code> as ASCII-8BIT, which leads us to another twist.</p>
+
+<p>Obviously, there's not really such a thing a "ASCII-8BIT" outside of Ruby.  Even while working with binary data though, it's not uncommon to want to make a check for some simple ASCII pieces.  For example, the first few signature bytes of a PNG image do contain the simple ASCII <code>String</code> <code>"PNG"</code>:</p>
+
+<pre><code>$ cat png_sig.rb 
+sig = "\x89PNG\r\n\C-z\n"
+png = /\A.PNG/
+
+p({sig =&gt; sig.encoding.name, png =&gt; png.encoding.name})
+
+if sig =~ png
+  puts "This data looks like a PNG image."
+end
+$ ruby png_sig.rb 
+{"\x89PNG\r\n\x1A\n"=&gt;"ASCII-8BIT", /\A.PNG/=&gt;"US-ASCII"}
+This data looks like a PNG image.
+</code></pre>
+
+<p>Ruby makes this possible by making ASCII-8BIT <code>compatible?()</code> with US-ASCII.  That allows tricks like the above where I validated the PNG signature with a simple US-ASCII <code>Regexp</code>.  Thus, ASCII-8BIT means ASCII plus some other bytes and you can choose to treat parts of it as ASCII when that helps you work with the data.</p>
+
+<p>It's worth noting that Ruby will now fallback to an ASCII-8BIT <code>Encoding</code> anytime you <code>read()</code> by bytes:</p>
+
+<pre><code>$ cat binary_fallback.rb 
+open("ascii.txt", "w+:UTF-8") do |f|
+  f.puts "abc"
+  f.rewind
+  str = f.read(2)
+  p [str.encoding.name, str]
+end
+$ ruby binary_fallback.rb 
+["ASCII-8BIT", "ab"]
+</code></pre>
+
+<p>That makes sense, because you could chop up characters when reading by bytes.  If you really need to <code>read()</code> some bytes but keep your <code>Encoding</code> you will need to set and validate it manually.  Here's one way you might do something like that:</p>
+
+<pre><code>$ cat read_to_char.rb 
+# encoding: UTF-8
+open("ascii.txt", "w+:UTF-8") do |f|
+  f.puts "Résumé"
+  f.rewind
+  str = f.read(2)
+  until str.dup.force_encoding(f.external_encoding).valid_encoding?
+    str &lt;&lt; f.read(1)
+  end
+  str.force_encoding(f.external_encoding)
+  p [str.encoding.name, str]
+end
+$ ruby read_to_char.rb 
+["UTF-8", "Ré"]
+</code></pre>
+
+<p>In that example, I just <code>read()</code> the fixed bytes I wanted and then push forward byte by byte until my data is valid in the desired <code>Encoding</code>.  I had to test a <code>dup()</code> of the data and only <code>force_encoding()</code> when I was sure I was done reading, because UTF-8 and ASCII-8BIT are not <code>compatible?()</code> and would have raised <code>Encoding::CompatibilityError</code> as I was adding on bytes.</p>
+
+<p>Working with binary data also requires you to know one more thing about Ruby's <code>IO</code> objects.  Ruby has a feature where it translates some data you read on Windows.  The translation is super simple:  <code>"\r\n"</code> sequences read from an <code>IO</code> object are simplified to a solo <code>"\n"</code>.  This features is to help make Unix scripts work well on a platform that has different line endings.  It does create a gotcha though:  when you're going to read any non-text data, be it binary data or just a non-ASCII compatible <code>Encoding</code> like UTF-16, you need to warn Ruby not to do the translation for your code to be properly cross-platform.</p>
+
+<p>By the way, this isn't new.  This was even true in the Ruby 1.8 era.</p>
+
+<p>Telling Ruby to treat the data as binary and not perform any translation (again, only active on Windows) is simple.  You can just add a <code>"b"</code> for binary to your mode <code>String</code> in a call to <code>open()</code>.  Thus you would read with something like:</p>
+
+<pre><code>open(path, "rb") do |f|
+  # ...
+end
+</code></pre>
+
+<p>or write with code like:</p>
+
+<pre><code>open(path, "wb") do |f|
+  # ...
+end
+</code></pre>
+
+<p>If you always knew about this quirk and you did a good job of always doing this, give yourself a big pat on the back because you're all set.  If you didn't, you've got a bad habit you'll need to break.  Don't feel too bad about it though.  I've known about this quirk since my Perl (which does the same thing) days and I've always tried to follow it.  However, about ten different bugs were recently filed against one of my libraries that amounted to me missing this <code>"b"</code> in several places.  It's easy to forget.</p>
+
+<p>Ruby 1.9 is much more strict about the binary flag.  It's going to complain if you don't add it when it feels it is needed.  For example:</p>
+
+<pre><code>$ cat missing_b.rb 
+# Ruby 1.9 will let this slide
+open("utf_16.txt", "w:UTF-16LE") do |f|
+  f.puts "Some data."
+end
+# but not this
+open("utf_16.txt", "r:UTF-16LE") do |f|
+  # ...
+end
+$ ruby missing_b.rb 
+missing_b.rb:6:in `initialize': ASCII incompatible encoding needs binmode
+                                (ArgumentError)
+    from missing_b.rb:6:in `open'
+    from missing_b.rb:6:in `&lt;main&gt;'
+</code></pre>
+
+<p>Of course, this is trivial to fix.  You just have to add the missing <code>"b"</code>:</p>
+
+<pre><code>$ cat with_b.rb 
+open("utf_16.txt", "wb:UTF-16LE") do |f|
+  f.puts "Some data."
+end
+open("utf_16.txt", "rb:UTF-16LE") do |f|
+  puts f.external_encoding.name
+end
+$ ruby with_b.rb 
+UTF-16LE
+</code></pre>
+
+<p>I showed the <code>external_encoding()</code> there to show that it's exactly what I specified.  However, as a reward for adding in these <code>"b"</code>'s we've been bad about leaving out in the past, Ruby will now assume you want ASCII-8BIT when you supply the <code>"b"</code> and not an <code>external_encoding()</code>:</p>
+
+<pre><code>$ cat b_means_binary.rb 
+open("utf_16.txt", "r") do |f|
+  puts "Inherited from environment:  #{f.external_encoding.name}"
+end
+open("utf_16.txt", "rb") do |f|
+  puts %Q{Using "rb":  #{f.external_encoding.name}}
+end
+$ ruby b_means_binary.rb 
+Inherited from environment:  UTF-8
+Using "rb":  ASCII-8BIT
+</code></pre>
+
+<p>It's worth nothing that Ruby 1.8 accidently helped train us to leave out the magic <code>"b"</code>.  For example, you could use <code>IO::read()</code> to slurp some data, but that method didn't provide a way to indicate that the data was binary.  In truth, you really needed this monster for a safe cross-platform read of binary data:  <code>open(path, "rb") { |f| f.read }</code>.  It's no surprise that <code>IO::read()</code> was more common.  <code>IO::readlines()</code> and <code>IO::foreach()</code> had the same issue.  The core team has acknowledged these problems with some new additions.  First, you can now pass a <code>Hash</code> as the final argument to all the methods that open an <code>IO</code> and use that to set options like <code>:mode</code> or separately <code>:external_encoding</code>, <code>:internal_encoding</code>, and <code>:binmode</code> (the name for the magic <code>"b"</code>).  Here are some examples:</p>
+
+<pre><code>File.read("utf_16.txt", mode: "rb:UTF-16LE")
+
+File.readlines("utf_16.txt", mode: "rb:UTF-16LE")
+
+File.foreach("utf_16.txt", mode: "rb:UTF-16LE") do |line|
+
+end
+
+File.open("utf_16.txt", mode: "rb:UTF-16LE") do |f|
+
+end
+
+open("utf_16.txt", mode: "rb:UTF-16LE") do |f|
+
+end
+</code></pre>
+
+<p>As one last shortcut along these lines, the new <code>IO::binread()</code> method is the same as <code>IO.read(…, mode: "rb:ASCII-8BIT")</code>.</p>
+
+<h4>Regex Encodings</h4>
+
+<p>Now that all our data has an <code>Encoding</code>, it only makes sense that our <code>Regexp</code> objects would need to be tagged as well.  That is the case, but the rules for how an <code>Encoding</code> is selected differs for <code>Regexp</code>.  Let's talk a little about how and why.</p>
+
+<p>First, let's get the big surprise out of the way:</p>
+
+<pre><code>$ cat re_encoding.rb 
+# encoding: UTF-8
+utf8_str   = "résumé"
+latin1_str = utf8_str.encode("ISO-8859-1")
+binary_str = utf8_str.dup.force_encoding("ASCII-8BIT")
+utf16_str  = utf8_str.encode("UTF-16BE")
+
+re = /\Ar.sum.\z/
+puts "Regexp.encoding.name:  #{re.encoding.name}"
+
+[utf8_str, latin1_str, binary_str, utf16_str].each do |str|
+  begin
+    result = str =~ re ? "Matches" : "Doesn't match"
+  rescue Encoding::CompatibilityError
+    result = "Can't match non-ASCII compatible?() Encoding"
+  end
+  puts "#{result}:  #{str.encoding.name}"
+end
+$ ruby re_encoding.rb 
+Regexp.encoding.name:  US-ASCII
+Matches:  UTF-8
+Matches:  ISO-8859-1
+Doesn't match:  ASCII-8BIT
+Can't match non-ASCII compatible?() Encoding:  UTF-16BE
+</code></pre>
+
+<p>After we did all that talking about the source <code>Encoding</code> Ruby goes and ignores it on us.  You can see that the <code>Regexp</code> was set to US-ASCII instead of the UTF-8 that was in effect at the time.  Surprising though that may be, there is actually a pretty good reason for it.</p>
+
+<p>My <code>Regexp</code> literal only contained seven bit ASCII, so Ruby chose to simplify the <code>Encoding</code>.  If it left it at the source <code>Encoding</code> of UTF-8, it would be useful for checking UTF-8 data.  As it is though, it can now be used to check any ASCII <code>compatible?()</code> data.  You can see in the output that the expression was tried against three different <code>String</code>'s, because they are all ASCII <code>compatible?()</code>.  (It did fail to match one since I changed the rules of how to interpret the data and one character became two bytes, but the attempt was still made.)  The fourth match could not be attempted, because UTF-16 is not ASCII <code>compatible?()</code>.</p>
+
+<p>Of course, if your <code>Regexp</code> includes eight bit characters, you use the special escapes that change an <code>Encoding</code>, or you apply one of the old Ruby 1.8 style <code>Encoding</code> options, you can get a non-ASCII <code>Encoding</code>:</p>
+
+<pre><code>$ cat encodings.rb 
+# encoding: UTF-8
+res = [
+  /…\z/,       # source Encoding
+  /\A\uFEFF/,  # special escape
+  /abc/u       # Ruby 1.8 option
+]
+puts res.map { |re| [re.encoding.name, re.inspect].join(" ") }
+$ ruby encodings.rb
+UTF-8 /…\z/
+UTF-8 /\A\uFEFF/
+UTF-8 /abc/
+</code></pre>
+
+<p>I used <code>/u</code> which you will probably remember as a way to get a UTF-8 <code>Regexp</code> <a href="http://blog.grayproductions.net/articles/bytes_and_characters_in_ruby_18">from the old Ruby 1.8 system</a>.  The <code>/e</code> (for EUC_JP) and <code>/s</code> (for a Shift_JIS extension called Windows-31J) options still work too.  Ruby 1.9 also still supports the old <code>/n</code> option, but <a href="http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/23204">it has some warning tossing exceptions for legacy reasons</a> and I recommend just avoiding it going forward.  You can build an ASCII-8BIT <code>Regexp</code> in another way I'll show in just a moment.</p>
+
+<p>As of Ruby 1.9.2, this concept of a lenient <code>Regexp</code>, one that will match any ASCII <code>compatible?()</code> <code>Encoding</code>, has a new name:</p>
+
+<pre><code>$ cat fixed_encoding.rb 
+[/a/, /a/u].each do |re|
+  puts "%-10s %s" % [ re.encoding, re.fixed_encoding? ? "fixed" :
+                                                        "not fixed" ]
+end
+$ ruby fixed_encoding.rb 
+US-ASCII   not fixed
+UTF-8      fixed
+</code></pre>
+
+<p>A <code>fixed_encoding?()</code> <code>Regexp</code> is one that will raise an <code>Encoding::CompatibilityError</code> if matched against any <code>String</code> that contains a different <code>Encoding</code> from the <code>Regexp</code> itself, as long as the <code>String</code> isn't <code>ascii_only?()</code>.  If <code>fixed_encoding?()</code> returns <code>false</code>, the <code>Regexp</code> can be used against any ASCII <code>compatible?()</code> <code>Encoding</code>.  There's also a new constant with this name that can be used to disable the ASCII downgrading:</p>
+
+<pre><code>$ cat force_re_encoding.rb 
+puts Regexp.new("abc".force_encoding("UTF-8")).encoding.name
+puts Regexp.new( "abc".force_encoding("UTF-8"),
+                 Regexp::FIXEDENCODING ).encoding.name
+$ ruby force_re_encoding.rb 
+US-ASCII
+UTF-8
+</code></pre>
+
+<p>Note how a <code>Regexp</code> will take the <code>Encoding</code> of the <code>String</code> passed to <code>Regexp::new()</code> when <code>Regexp::FIXEDENCODING</code> is set.  You can use this combination to build a <code>Regexp</code> in any <code>Encoding</code> you need, including the ASCII-8BIT I mentioned earlier.</p>
+
+<p>Once your <code>Regexp</code> is at least compatible to your data's <code>Encoding</code>, pattern matches function as they always have.  (Well, in truth, Ruby 1.9 brings us a powerful new regular expression engine called Oniguruma, but that's another topic for another time.)  Under average circumstances, Ruby 1.9's <code>Regexp</code> <code>Encoding</code> selection option mean that they are compatible with a lot of data and everything should just work for you.  However, if you end up getting some errors at match time, you may need to abandon the simple <code>/…/</code> literal and use the new features I've shown to build a <code>Regexp</code> that perfectly matches your data's <code>Encoding</code>.</p>
+
+<h4>Handling a BOM</h4>
+
+<p>Some multibyte <code>Encoding</code>s recommend that data in that <code>Encoding</code> begin with a <a href="http://en.wikipedia.org/wiki/Byte_order_mark">Byte Order Mark (also known as a BOM)</a> indicating the order of the bytes.  UTF-16 is a good example.</p>
+
+<p>Note that Ruby doesn't even support a UTF-16 <code>Encoding</code>.  Instead, you must pick between UTF-16BE and UTF-16LE for "Big Endian" or "Little Endian" byte order.  This indicates whether the most significant byte comes first or last:</p>
+
+<pre><code>$ ruby -e 'p "a".encode("UTF-16BE")'
+"\x00a"
+$ ruby -e 'p "a".encode("UTF-16LE")'
+"a\x00"
+</code></pre>
+
+<p>Now, when someone goes to read your UTF-16 data back, they'll need to know which byte order you used to get things right.  You could just tell them which order was used the same way you'll probably tell them that the data is UTF-16 encoded.  Or you could add a BOM to the data.</p>
+
+<p>A Unicode BOM is just the character U+FEFF at the beginning of your data.  There's no such character for the reversed bytes U+FFFE, so this makes it easy to correctly tell the order of the bytes.  Another minor advantage is that this BOM probably indicates you are reading Unicode data.  A lot of software will check for this special start of the data, use it to set the proper byte order, and then pretend it didn't even exist by removing it from the data they show users.</p>
+
+<p>Ruby 1.9 won't automatically add a BOM to your data, so you're going to need to take care of that if you want one.  Luckily, it's not too tough.  The basic idea is just to print the bytes needed at the beginning of a file.  For example, we can add a BOM to a UTF-16LE file as such:</p>
+
+<pre><code>$ cat utf16_bom.rb 
+# encoding: UTF-8
+File.open("utf16_bom.txt", "w:UTF-16LE") do |f|
+  f.puts "\uFEFFThis is UTF-16LE with a BOM."
+end
+$ ruby utf16_bom.rb 
+$ ruby -e 'p File.binread("utf16_bom.txt")[0..9]'
+"\xFF\xFET\x00h\x00i\x00s\x00"
+</code></pre>
+
+<p>Notice that I just used the Unicode escape to add the BOM character to the data.  Because my output <code>String</code> was in UTF-8, Ruby had to transcode it to UTF-16LE and that process arranged the bytes correctly for me, as you see in the sample output.</p>
+
+<p>Reading a BOM is a similar process.  We will need to pull the relevant bytes and see if they match a Unicode BOM.  When they do, we can then start reading again with the <code>Encoding</code> we matched.  We might code that up like this:</p>
+
+<pre><code>$ cat read_bom.rb 
+class File
+  UTFS = [32, 16].map { |b| %w[BE LE].map { |o| "UTF-#{b}#{o}" } }.
+                  flatten &lt;&lt; "UTF-8"
+
+  def self.open_using_unicode_bom(path, *args, &amp;blk)
+    # check the BOM to find the Encoding
+    encoding = UTFS[0..-2].find(lambda { UTFS[-1] }) do |utf|
+      bom = "\uFEFF".encode(utf)
+      binread(path, bom.bytesize).force_encoding(utf) == bom
+    end
+    # set the Encoding
+    if args.first.nil?
+      args &lt;&lt; "r#{'b' unless encoding == UTFS[-1]}:#{encoding}"
+    elsif args.first.is_a? Hash
+      args.first.merge!(external_encoding: encoding)
+    else
+      args.first.sub!(/\A([^:]*)/, "\\1:#{encoding}")
+    end
+    # hand off to open()
+    if blk
+      open(path, *args) do |f|
+        f.read_unicode_bom
+        blk[f]
+      end
+    else
+      f = open(path, *args)
+      f.read_unicode_bom
+      f
+    end
+  end
+
+  def read_unicode_bom
+    bytes = external_encoding.name[/\AUTF-?(\d+)/i, 1].to_i / 8
+    read(bytes) if bytes &gt; 1
+  end
+end
+
+# example usage with the File we created earlier
+File.open_using_unicode_bom("utf16_bom.txt") do |f|
+  line = f.gets
+  p [line.encoding, line[0..3]]
+end
+$ ruby read_bom.rb 
+[#&lt;Encoding:UTF-16LE&gt;, "T\x00h\x00i\x00s\x00"]
+</code></pre>
+
+<p>These examples just deal with Unicode BOM's, but you would handle other BOM's in a similar fashion.  Find out what bytes are needed for your <code>Encoding</code>, write those out before the data, and later check for them when reading the data back.  The <code>String</code> escapes we discussed earlier can be handy when writing the bytes and <code>binread()</code> is equally handy when checking for the BOM.</p>
+
+<p>I do recommend including a BOM in Unicode <code>Encoding</code>s like UTF-16 and UTF-32, but please don't add them to UTF-8 data.  The UTF-8 byte order is part of its specification and it never varies.  Thus you don't need a BOM to read it correctly.  If you add one, you damage one of the great UTF-8 advantages in that it can pass for US-ASCII (assuming it's all seven bit characters).</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/character-encodings/ruby-19s-three-default-encodings/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/character-encodings/understanding-m17n-multilingualization/">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/character-encodings/what-ruby-19-gives-us/">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="character-encodings/miscellaneous-m17n-details">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/miscellaneous-m17n-details#comments">4 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (4)</span></h5>
+
+    <ol>
+        <li id="comment_281">
+    <div class="avatar"><img alt="Axel Niedenhoff" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="281">
+      <span class="c_name">Axel Niedenhoff</span>
+      <span class="c_date">May 11th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/miscellaneous-m17n-details#comment_281">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>The <code>b</code> option for opening files is even present in C. Maybe that’s where it originated and all platforms building upon the standard C library have inherited it from there.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_286">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="286">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">May 27th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/miscellaneous-m17n-details#comment_286">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Another method got a neat upgrade in Ruby 1.9:  <code>Integer.chr()</code>.  You can use this method in Ruby 1.8 to convert simple byte values into single character <code>String</code>s.  However, the method is limited to single byte values.  This example shows both how it works and the limit:</p>
+
+<pre><code>$ cat chr.rb 
+p 97.chr
+p 256.chr
+$ ruby -v chr.rb 
+ruby 1.8.6 (2009-03-31 patchlevel 368) [i686-darwin9.6.0]
+"a"
+chr.rb:2:in `chr': 256 out of char range (RangeError)
+    from chr.rb:2
+</code></pre>
+
+<p>That much is unchanged in Ruby 1.9:</p>
+
+<pre><code>$ ruby_dev -v chr.rb 
+ruby 1.9.1p129 (2009-05-12 revision 23412) [i386-darwin9.6.0]
+"a"
+chr.rb:2:in `chr': 256 out of char range (RangeError)
+    from chr.rb:2:in `&lt;main&gt;'
+</code></pre>
+
+<p>However, Ruby 1.9 adds a new twist.  The method now takes an optional <code>Encoding</code> argument, or the <code>String</code> name of an <code>Encoding</code>.  If you provide an <code>Encoding</code>, the method will convert a codepoint (which you can get with <code>ord()</code> or <code>codepoints()</code>) into a <code>String</code>:</p>
+
+<pre><code>$ cat codepoint_chr.rb 
+# encoding: UTF-8
+p "é".ord
+p "é".codepoints.first
+p 233.chr("UTF-8")
+$ ruby_dev -v codepoint_chr.rb 
+ruby 1.9.1p129 (2009-05-12 revision 23412) [i386-darwin9.6.0]
+233
+233
+"é"
+</code></pre>
+
+<p>That turns out to be a pretty easy way to spot check some codepoint mappings in IRb.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_408">
+    <div class="avatar"><img alt="David Wilkie" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="408">
+      <span class="c_name">David Wilkie</span>
+      <span class="c_date">November 18th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/miscellaneous-m17n-details#comment_408">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I've read all your articles about <code>Encoding</code> in detail but I can't find a solution to the following problem.</p>
+
+<p>My app receives a string from another app such as: <code>"%e47%e14%e1a"</code>. When I unescape the HTML I end up with something like this <code>"\xE47\xE14\xE1a"</code> which correspond to the codepoints: 3655, 3604 and 3610 from the Thai Alphabet. Using Ruby 1.9.2 <code>"\xE47\xE14\xE1a".valid_encoding?</code> returns <code>false</code>, because these are the byte sequences but rather the Unicode codepoints. How can I use Ruby here to convert these codepoints to the proper strings, ็ดบ?</p></div>
+    <ol>
+      
+        <li id="comment_409">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="409">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">November 18th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/miscellaneous-m17n-details#comment_409">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I'm not sure those URL escapes are valid, which is why I believe you are having trouble.  I think the escapes are suppose to be handled by bytes, not codepoints.</p>
+
+<p>That said, this code seems to expand it correctly:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="s2">"%e47%e14%e1a"</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/%\w+/</span><span class="p">)</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">cp</span><span class="o">|</span> <span class="nb">Integer</span><span class="p">(</span><span class="s2">"0x</span><span class="si">#{</span><span class="n">cp</span><span class="o">[</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="o">-</span><span class="mi">1</span><span class="o">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="p">}</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">"U*"</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="s2">"็ดบ"</span>
+</pre></div>
+
+<p>Hope that helps.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

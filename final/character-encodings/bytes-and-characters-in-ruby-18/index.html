@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Character Encodings / Bytes and Characters in Ruby 1.8</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This is a look at the key features of Ruby 1.8&#39;s character encoding support.">
+    <meta name="keywords"    content="encodings, m17n, Multilingualization, Unicode, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/character-encodings/bytes-and-characters-in-ruby-18/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/character-encodings">Character Encodings</a></h1>
+            <span>My extensive coverage of a complex topic all programmers should study a little.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>30</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Bytes and Characters in Ruby 1.8</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/character-encodings/general-encoding-strategies/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/character-encodings/understanding-m17n-multilingualization/">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/character-encodings/the-kcode-variable-and-jcode-library/">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p>Gregory Brown said, in a training session at the Lone Star Rubyconf, "Ruby 1.8 works in bytes.  Ruby 1.9 works in characters."  The truth of Ruby 1.9 is maybe a little more complicated and we will discuss all of that eventually, but Greg is dead right about Ruby 1.8.</p>
+
+<p>In Ruby 1.8, a <code>String</code> is always just a collection of bytes.</p>
+
+<p>The important question is, how does that one golden rule relate to all that we've learned about character encodings?  Essentially, it puts all the responsibility on you as the developer.  Ruby 1.8 leaves it to you to determine what to do with those bytes and it doesn't provide a lot of encoding savvy help.  That's why knowing at least the basics of encodings is so important when working with Ruby 1.8.</p>
+
+<p>There are plusses and minuses to every system and this one is no exception.  On the side of plusses, Ruby 1.8 can pretty much support any encoding you can imagine.  After all, a character encoding is just some bytes that somehow map to a set of characters and all Ruby 1.8 <code>String</code>s are just some bytes.  If you say a <code>String</code> holds Latin-1 data and treat it as such, that's fine by Ruby.</p>
+
+<p>I won't lie to you though, there are more minuses than plusses to this approach.  Latin-1 is a pretty simple case since each byte is a character.  With many other encodings though, like the UTF-8 encoding I've recommended we rely on, things get a lot more complicated.</p>
+
+<p>Slicing up a Ruby 1.8 <code>String</code> by index means working in bytes and that means it's possible for us to accidentally break a multi-byte character.  Running regular expressions over data faces similar issues.  That's just two examples of things we commonly do, but the truth is that many <code>String</code> operations just aren't encoding safe in Ruby 1.8.  You can't even call simple things like <code>reverse()</code> on a <code>String</code> because it could break the order of those multi-byte characters.  And remember that <code>size()</code> will always count bytes, not characters.</p>
+
+<p>Ruby 1.8 is also never going to police the contents of a <code>String</code>.  That means to Ruby 1.8 a <code>String</code> with valid UTF-8 data, a <code>String</code> with broken UTF-8 data, and a <code>String</code> with some bytes in Latin-1 and some in UTF-8 are all just <code>String</code>s.  It doesn't care.  It's unlikely that the latter two are going to be of any use to you, so you will need to be the one making sure you don't create such problems.  If you got <code>String</code> data from two separate sources in different encodings, you can't just combine them with a simple <code>+</code>.</p>
+
+<p>This may be starting to sound a little bleak and it probably is.  However, Ruby 1.8 throws one major exception into the works that can help you in many cases:  the regex engine is aware of four character encodings.  Often we can use this simple fact to work with characters.</p>
+
+<p>What encodings does Ruby 1.8 know?  Here's the full list:</p>
+
+<ul>
+<li>None (n or N)</li>
+<li>EUC (e or E)</li>
+<li>Shift_JIS (s or S)</li>
+<li>UTF-8 (u or U)</li>
+</ul><p>The <em>None</em> encoding is the default in Ruby 1.8.  It's just the golden rule I've already mentioned:  treat everything as bytes.  If your encoding isn't on this list, you will need to use <em>None</em> and be darn sure you don't do anything to the data that could damage the encoding.  That's very hard and the fact is that doing significant work with an encoding not on the above list in Ruby 1.8 will be quite a challenge for you.</p>
+
+<p>Both <em>EUC</em> (Extended Unix Code) and <em>SHIFT_JIS</em> are primarily Asian character encodings.  <em>SHIFT_JIS</em> is a Japanese encoding and <em>EUC</em> is mainly used for Japanese, Korean, and simplified Chinese.  You can tell Ruby comes from Japan, can't you?  Obviously these are very helpful if you are Asian, but the rest of us won't need these much.</p>
+
+<p>Now we get to the good news:  our champion <em>UTF-8</em> made the list!  Yes, this means Ruby 1.8 has limited support for working with <em>UTF-8</em> data.  It's not comprehensive, but we get some help.</p>
+
+<p>The letters listed after each encoding are used in multiple places inside Ruby 1.8 to tell it which encoding you need to work with.  I'll point those places out as we get into the details.</p>
+
+<p>What does it mean to have a character encoding on the above list?  It means that the regex engine can recognize characters in that encoding, even if they are multibyte.  That assures us that regular expression constructs that target characters, like character classes (<code>[…]</code>) and the match-one-character shortcut (<code>.</code>), will correctly match whatever number of bytes represents one character at that place in the data.  It also changes the definition of constructs like <code>\s</code> and <code>\w</code> which can be used to match whitespace and word characters respectively.  The definition of a "word" character in Unicode is quite a bit broader than the simple ASCII character class of <code>[A-Za-z0-9_]</code>.</p>
+
+<p>Let's look at some examples of this, so you can see how it works.  I'll play around with a simple UTF-8 <code>String</code> in Ruby 1.8 and show you the various encoding effects.  Remember that the default encoding is <em>None</em>, so that's what we get if we don't ask for anything else.</p>
+
+<p>A common task in working with characters in Ruby 1.8 is to convert a <code>String</code> into an <code>Array</code> of characters.  If we can do just that much, we can work-around some of the weaknesses of Ruby 1.8's <code>String</code> always working in bytes.  Given that, this almost does what we want:</p>
+
+<pre><code>$ ruby -e 'p "Résumé".scan(/./m)'
+["R", "\303", "\251", "s", "u", "m", "\303", "\251"]
+</code></pre>
+
+<p>You probably know that <code>scan()</code> just builds an <code>Array</code> of matches for the passed <code>Regexp</code> in the <code>String</code> receiver.  The <code>/m</code> option I'm using here puts the regex engine in <em>multi-line</em> mode and in that a <code>.</code> matches all characters (it usually doesn't match newlines).</p>
+
+<p>So what went wrong above?  Well, the <code>"é"</code> characters in my <code>String</code> take two bytes in UTF-8.  The golden rule tells us Ruby 1.8 works in bytes and that's definitely what we saw.  It split up the bytes needed for those characters.  This is bad, because if I now change this <code>Array</code>, I have excellent chances of breaking my data.</p>
+
+<p>Again, that used the default <em>None</em> mode, because we didn't tell it to do otherwise.  However, if we throw the regex engine into <em>UTF-8</em> mode, we will get actual characters:</p>
+
+<pre><code>$ ruby -e 'p "Résumé".scan(/./mu)'
+["R", "\303\251", "s", "u", "m", "\303\251"]
+</code></pre>
+
+<p>Notice how the two bytes needed for the <code>"é"</code> stay together now?  (I'll show you how to get Ruby to stop escaping the content and show the actual <code>"é"</code> in <a href="/character-encodings/the-kcode-variable-and-jcode-library/">my next post</a>.)  The regex engine saw that it takes both bytes to make a character in <em>UTF-8</em>, the encoding I requested, and thus the <code>.</code>, which matches one character, is forced to grab them both.</p>
+
+<p>I chose <em>UTF-8</em> mode by adding the <code>/u</code> option to my <code>Regexp</code> literal.  You probably recognize the letter from my earlier list of encodings.  Similarly, you can use <code>/e</code> for <em>EUC</em>, <code>/s</code> for <em>Shift_JIS</em>, and even <code>/n</code> for <em>None</em> though that's the default.  <code>Regexp.new()</code> also accepts a third parameter for these encodings if you are creating expressions that way:  <code>Regexp.new(".", Regexp::MULTILINE, "u")</code>.</p>
+
+<p>Using this one simple trick, we can fix some of the unsafe <code>String</code> methods I mentioned earlier.  For example, Ruby 1.8 normally counts bytes with <code>size()</code>:</p>
+
+<pre><code>$ ruby -e 'p "Résumé".size'
+8
+</code></pre>
+
+<p>but we can now count characters, if desired:</p>
+
+<pre><code>$ ruby -e 'p "Résumé".scan(/./mu).size'
+6
+</code></pre>
+
+<p>We can also fix the dangerous <code>reverse()</code> method which would normally break our multibyte <code>"é"</code> characters by screwing up the byte order:</p>
+
+<pre><code>$ ruby -e 'p "Résumé".reverse'
+"\251\303mus\251\303R"
+</code></pre>
+
+<p><code>"\303\251"</code> is a UTF-8 <code>"é"</code>, but the <code>"\251\303"</code> we see here is broken UTF-8 data that doesn't mean anything.  We can fix that with:</p>
+
+<pre><code>$ ruby -e 'p "Résumé".scan(/./mu).reverse.join'
+"\303\251mus\303\251R"
+</code></pre>
+
+<p>This time we use the regex engine to divide the <code>String</code> into a character <code>Array</code>, then we <code>reverse()</code> that and <code>join()</code> it back into a <code>String</code>.  You can see that this kept the <code>"é"</code> bytes in the proper order.</p>
+
+<p>Really study these examples above until you understand what's going on here.  This is all the support Ruby 1.8 provides for working with characters, so you need to understand how to use it.</p>
+
+<p>Here's one last set of examples showing the other regex change I mentioned:</p>
+
+<pre><code>$ ruby -e 'p "Résumé"[/\w+/]'
+"R"
+$ ruby -e 'p "Résumé"[/\w+/u]'
+"R\303\251sum\303\251"
+</code></pre>
+
+<p>In the default <em>None</em> mode, <code>\w</code> is the same as <code>[A-Za-z0-9_]</code>.  That doesn't match the special bytes needed to build the <code>"é"</code> character, so the match ends there.  Note that <em>UTF-8</em> mode changes that though and we get the full word.</p>
+
+<p>Ruby 1.8 doesn't provide a whole lot of additional encoding support outside the regex engine.  There is one magic variable and some helpful standard libraries we will discuss in future posts, but the main part of Ruby 1.8's character encoding support is just this.</p>
+
+<p>One other small feature that may be worth a quick mention is that you can get Unicode code points using <code>String</code>'s <code>unpack()</code> method:</p>
+
+<pre><code>$ ruby -e 'p "Résumé".unpack("U*")'
+[82, 233, 115, 117, 109, 233]
+</code></pre>
+
+<p>The <code>U</code> code tells <code>unpack()</code> to convert a character into a Unicode code point and the <code>*</code> just repeats it for all characters in the <code>String</code>.</p>
+
+<p>I don't find myself needing to work with character points often, but you can use this for one interesting cheat.  The Unicode code points are a superset of the byte values used in Latin-1, so you can actually convert between the two encodings using just <code>unpack()</code> and <code>pack()</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">utf8</span> <span class="o">=</span> <span class="n">latin1</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">"C*"</span><span class="p">)</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">"U*"</span><span class="p">)</span>
+<span class="c1"># ... or ...</span>
+<span class="n">latin1</span> <span class="o">=</span> <span class="n">utf8</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">"U*"</span><span class="p">)</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">"C*"</span><span class="p">)</span>  <span class="c1"># more dangerous</span>
+</pre></div>
+
+<p>However, I'll show you a superior way to handle encoding conversions in a future post.</p>
+
+<p>It's important to remember that this is not full character encoding support.  For example, there is a long list of rules about how to correctly convert some Unicode characters to upper case, but <code>upcase()</code> doesn't know them and you cannot regex your way out of that mess.  If you need these features for a given encoding, you will need to look for an external library that meets your needs or roll your own solution.</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/character-encodings/general-encoding-strategies/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/character-encodings/understanding-m17n-multilingualization/">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/character-encodings/the-kcode-variable-and-jcode-library/">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="character-encodings/bytes-and-characters-in-ruby-18">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/bytes-and-characters-in-ruby-18#comments">11 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (11)</span></h5>
+
+    <ol>
+        <li id="comment_355">
+    <div class="avatar"><img alt="amishera" height="70" src="http://www.gravatar.com/avatar/0ad35e39bfba4a5dd52392d1caffb55f?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="355">
+      <span class="c_name"><a href="mailto:amishera@gmail.com">amishera</a></span>
+      <span class="c_date">March 26th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/bytes-and-characters-in-ruby-18#comment_355">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Mr. Gray,</p>
+
+<p>Your articles on character encodings are very informative. I have a question about this problem I am not sure how to deal with it. </p>
+
+<p>I have an html file which is encoded in UTF-8. The file contains the<br>
+following text:</p>
+
+<pre><code>It&amp;#39;s a wonderful life
+</code></pre>
+
+<p>now the character code 39 is for aphostrohpe in UTF8. so suppose I got<br>
+the 39 out of the text using:</p>
+
+<div class="highlight highlight-ruby"><pre>    <span class="n">s</span><span class="o">=</span><span class="s2">"It&amp;#39;s a wonderful life"</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="sr">/&amp;#(\d+);/</span><span class="p">,</span> <span class="s1">'\1'</span><span class="p">)</span>
+</pre></div>
+
+<p>The output is</p>
+
+<pre><code>It39s a wonderful life
+</code></pre>
+
+<p>So firstly I am having trouble making it</p>
+
+<pre><code>It\39s a wonderful life
+</code></pre>
+
+<p>Secondly I manually did this in <code>test_utf8.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">puts</span> <span class="s2">"It</span><span class="se">\3</span><span class="s2">9s a wonderful life"</span>
+</pre></div>
+
+<p>and ran it</p>
+
+<pre><code>ruby test_utf8.rb &gt; utf8.txt
+</code></pre>
+
+<p>but by opening it in the open office by setting the encoding to utf-8<br>
+the output is</p>
+
+<pre><code>It#9s a wonderful life
+</code></pre>
+
+<p>So how to correctly parse the collect and convert html character<br>
+reference to encoded characters in utf-8 and then save file?</p></div>
+    <ol>
+      
+        <li id="comment_357">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="357">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">March 26th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/bytes-and-characters-in-ruby-18#comment_357">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>This isn't really a character encoding issue.  It's about HTML escapes, as <a href="http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-talk/359737">the solution you received on Ruby Talk</a> shows.</p></div>
+    <ol>
+      
+        <li id="comment_365">
+    <div class="avatar"><img alt="amishera" height="70" src="http://www.gravatar.com/avatar/0ffc9a890d1bc862db89cca35494f2e2?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="365">
+      <span class="c_name"><a href="mailto:amishera2007@gmail.com">amishera</a></span>
+      <span class="c_date">March 31st, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/bytes-and-characters-in-ruby-18#comment_365">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Mr. Gray,</p>
+
+<p>Thanks for your reply.</p>
+
+<p>I solved the problem using this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">s</span><span class="o">.</span><span class="n">gsub!</span><span class="p">(</span><span class="sr">/#(\d+);/</span><span class="p">)</span> <span class="p">{</span> <span class="o">[</span><span class="vg">$1</span><span class="o">.</span><span class="n">to_i</span><span class="o">].</span><span class="n">pack</span><span class="p">(</span><span class="s2">"U*"</span><span class="p">)</span> <span class="p">}</span>
+</pre></div>
+
+<p>Which not only converts the HTML part ie converts <code>#39;</code> into <code>39</code> but also gets the corresponding Unicode character. But I am not sure whether this is the right approach. Or is there any other better approach?</p></div>
+    <ol>
+      
+        <li id="comment_366">
+    <div class="avatar"><img alt="amishera" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="366">
+      <span class="c_name">amishera</span>
+      <span class="c_date">March 31st, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/bytes-and-characters-in-ruby-18#comment_366">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Sorry I wanted to mean that given a number I wanted to convert to Unicode character. So like you know for ASCII we do something like</p>
+
+<div class="highlight highlight-ruby"><pre><span class="mi">39</span><span class="o">.</span><span class="n">chr</span>
+</pre></div>
+
+<p>so for doing the same thing for Unicode instead of ASCII, what is the right approach?</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_367">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="367">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">March 31st, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/bytes-and-characters-in-ruby-18#comment_367">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Your approach is correct, though I still prefer the solution you got from Ruby Talk.  It's more general and probably more correct with regard to Web encodings.  For example, the default for the Web is Latin-1, not UTF-8.  Those two encodings are codepoint compatible for all of Latin-1's range though, which is why your code above works.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_356">
+    <div class="avatar"><img alt="amishera" height="70" src="http://www.gravatar.com/avatar/0ad35e39bfba4a5dd52392d1caffb55f?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="356">
+      <span class="c_name"><a href="mailto:amishera@gmail.com">amishera</a></span>
+      <span class="c_date">March 26th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/bytes-and-characters-in-ruby-18#comment_356">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Mr. Gray,</p>
+
+<p>I have a question which I am unable to resolve. As <code>'e'</code> here is represented by 2 bytes <code>\303</code> and <code>\251</code>. But 1 byte has a maximum range 0-255. So how come 1 of the bytes is <code>303</code> which should be out of range?</p></div>
+    <ol>
+      
+        <li id="comment_358">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="358">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">March 26th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/bytes-and-characters-in-ruby-18#comment_358">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Those character escapes are octal, so <code>\303</code> is really <code>195</code>.  Good question.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_454">
+    <div class="avatar"><img alt="grillermo" height="70" src="http://www.gravatar.com/avatar/7a781dab51284428bf9a44f3e0c85b6a?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="454">
+      <span class="c_name"><a href="mailto:guillermo.siliceo@gmail.com">grillermo</a></span>
+      <span class="c_date">August 21st, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/bytes-and-characters-in-ruby-18#comment_454">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I have a question regarding the different Ruby versions.<br>
+When I ran this code</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">p</span> <span class="s2">"Résumé"</span><span class="o">[</span><span class="sr">/\w+/u</span><span class="o">]</span>
+</pre></div>
+
+<p>With Ruby 1.8 I get:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="s2">"R</span><span class="se">\303\251</span><span class="s2">sum</span><span class="se">\303\251</span><span class="s2">"</span>
+</pre></div>
+
+<p>As expected but if run it on Ruby 1.9 I only get</p>
+
+<div class="highlight highlight-ruby"><pre><span class="s2">"R"</span>
+</pre></div>
+
+<p>Why is this regex only returned the first match, how can I get all matches?</p></div>
+    <ol>
+      
+        <li id="comment_455">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="455">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">August 22nd, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/bytes-and-characters-in-ruby-18#comment_455">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Try this in 1.9:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">p</span> <span class="s2">"Résumé"</span><span class="o">[</span><span class="sr">/\p{Word}+/</span><span class="o">]</span>
+</pre></div></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_463">
+    <div class="avatar"><img alt="aashish" height="70" src="http://www.gravatar.com/avatar/3bc7b6532e1537ca139c02f091636d3b?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="463">
+      <span class="c_name"><a href="mailto:aashish.kiran@gmail.com">aashish</a></span>
+      <span class="c_date">October 28th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/bytes-and-characters-in-ruby-18#comment_463">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I am trying to install character-encoding gem on ubuntu 64bit 11.10, Ruby 1.8.7<br>
+I get error as follows <a href="http://pastie.org/2773649">http://pastie.org/2773649</a>, can you help in fixing it.<br>
+Can you mail any solution.</p></div>
+    <ol>
+      
+        <li id="comment_464">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="464">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">October 28th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/character-encodings/bytes-and-characters-in-ruby-18#comment_464">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>You are getting errors about something trying to require the <code>psych</code> library that wasn't added to Ruby until 1.9.  I suspect you have somehow corrupted your RubyGems install between using different versions, but I'm just guessing.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

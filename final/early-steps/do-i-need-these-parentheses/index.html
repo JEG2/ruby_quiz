@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Early Steps / Do I Need (These Parentheses()?)</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="I want to clarify the age old question of when it&#39;s allowed to drop the parentheses in Ruby.  I&#39;ll do that with both a simple and expanded set of rules.">
+    <meta name="keywords"    content="learning to program, guidelines, clean code, Style, Syntax, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/early-steps/do-i-need-these-parentheses/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/early-steps">Early Steps</a></h1>
+            <span>My content targeted at the newer Rubyists among us.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>13</h4>
+    <span>
+      JUN<br>
+      2006
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Do I Need (These Parentheses()?)</h3>
+        
+        <p>If you came to Ruby via the <em>Learn to Program</em> book or just don't yet have a consistent set of rules for when you do and don't need parentheses in Ruby code, this post is for you.</p>
+
+<p>I have nothing against <em>Learn to Program</em>, just to be clear.  A member of my family is learning Ruby from it and it's going pretty well.  I recommend it.  However, Chris is a little inconsistent with his use of parentheses in the code samples, and worse, he doesn't really give you a good set of rules to decide when to make the choice.  No problem.  Let me give you the rules.</p>
+
+<p>I'm a chess player.  In learning chess, you really go through two phases.  First, you learn the rules of strategy.  These will make you good because the rules are designed to help you avoid common mistakes.  Now, to get great, you go through the second phase:  learning when to break the strategy rules.  Ruby is exactly the same.</p>
+
+<p>Here's the <strong>only</strong> rule of strategy you need to learn to get good:  methods need parentheses around their arguments.</p>
+
+<p>So you want to write:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">my_method</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">go</span><span class="p">,</span> <span class="n">here</span><span class="p">)</span>  <span class="c1"># not def my_method args, go, here</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>and:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">my_method</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">go</span><span class="p">,</span> <span class="n">here</span><span class="p">)</span>  <span class="c1"># not my_method args, go, here</span>
+</pre></div>
+
+<p>I'm serious.  That's it.  You're good now.  Congratulations!  Wasn't that easy?  If you've had enough learning for one post, call it an early day and be secure in the fact that you are now knowledgeable in the Way of the Parentheses.  If you have some energy left, read on and I'll make you great…</p>
+
+<p>First, let's talk about what's not a method call.  Mainly <code>if</code> and <code>while</code> are keywords in Ruby and they don't require parentheses.  When you add them, we laugh behind your back and call you a Java programmer.  So it's:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">while</span> <span class="n">condition</span>  <span class="c1"># not while (condition)</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>and:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">if</span> <span class="n">condition</span>  <span class="c1"># not if (condition)</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>OK, here's another easy one.  I said the rule was, "…need parentheses around their <strong>arguments</strong>."  If we take that literally, we can figure out the next exception:  no arguments means parentheses aren't needed.  So it's:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="s2">"james"</span><span class="o">.</span><span class="n">capitalize</span>  <span class="c1"># not "james".capitalize()</span>
+</pre></div>
+
+<p>and:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">[</span> <span class="o">].</span><span class="n">empty?</span>  <span class="c1"># not [ ].empty?()</span>
+</pre></div>
+
+<p>Now, because you're probably using them often, we will relax the rules on <code>puts()</code> and <code>p()</code>.  You can leave them off those calls, <strong>as long as you are following the rest of these rules</strong>.  That lets us to write:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">puts</span> <span class="s2">"Something to print..."</span>  <span class="c1"># not puts("Something to print...")</span>
+</pre></div>
+
+<p>or even:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">p</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>  <span class="c1"># not p(rand(100))</span>
+</pre></div>
+
+<p>One last exception.  The question methods read very prettily without parentheses and beautiful code is always a good goal, so drop them in simple conditionals with just one question and argument.  For example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">is_a?</span> <span class="no">Whatever</span>  <span class="c1"># not if obj.is_a?(Whatever)</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Beware of that last one though.  If the condition is getting complicated, add the parentheses:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">Whatever</span><span class="p">)</span> <span class="o">||</span> <span class="n">obj</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">WhateverElse</span><span class="p">)</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Finally, beware of the gotchas.  If you have a bunch of <code>&amp;&amp;</code>s and <code>||</code>s in a conditional, use parentheses to set the order just as you would a math statement.  Also, watch out for this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">puts</span><span class="p">((</span><span class="mi">1</span> <span class="o">+</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># not puts (1 + 2) * 3</span>
+</pre></div>
+        
+      </div>
+      <div class="meta-info" data-slug="early-steps/do-i-need-these-parentheses">
+  In: <a href="/early-steps/">Early Steps</a>
+  <span>|</span>
+  Tags: <a href="/tags/Style/">Style</a> &amp; <a href="/tags/Syntax/">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/early-steps/do-i-need-these-parentheses#comments">18 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (18)</span></h5>
+
+    <ol>
+        <li id="comment_44">
+    <div class="avatar"><img alt="acrylic" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="44">
+      <span class="c_name">acrylic</span>
+      <span class="c_date">June 13th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_44">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Here is a rule I follow:</p>
+
+<p>When you are calling a method <em>without</em> an explicit receiver (like a method in your class) and it takes no parameters, use parentheses or add an explicit receiver (<code>self</code>). It is very confusing sometimes if you do not.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Foo</span>
+  <span class="k">def</span> <span class="nf">some_method</span>
+    <span class="n">blah</span><span class="p">()</span> <span class="c1"># not blah</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">blah</span> <span class="c1"># careful, won't work if #blah is private</span>
+  <span class="k">end</span>
+  <span class="k">def</span> <span class="nf">blah</span>
+    <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">user_input</span> <span class="o">=</span> <span class="nb">gets</span><span class="p">()</span> <span class="c1"># not gets</span>
+<span class="n">user_input</span> <span class="o">=</span> <span class="no">STDIN</span><span class="o">.</span><span class="n">gets</span>
+</pre></div></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_45">
+    <div class="avatar"><img alt="null" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="45">
+      <span class="c_name">null</span>
+      <span class="c_date">June 13th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_45">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Although I agree with these rules in general, it's interesting to point out that Rails (specifically the Rails documentation) seems adamantly against parentheses, (and braces on hash tables...)</p>
+
+<p>Although it makes their code almost read like English, it can be hard to understand what exactly is going on if you're new to Ruby (it seems that quite a bit of Rails programmers jump right in knowing no Ruby beforehand)</p>
+
+<p>Any insight?</p></div>
+    <ol>
+      
+        <li id="comment_46">
+    <div class="avatar"><img alt="Sudo Nimm" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="46">
+      <span class="c_name">Sudo Nimm</span>
+      <span class="c_date">June 13th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_46">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Yeah, Rails has a lot to answer for in this regard, IMHO, although at the same time I've written DSL type stuff myself that's just looked better without parens. Maybe it's just because like null said, a lot of Rails programmers see Rails before Ruby. Ho hum…</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_47">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="47">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">June 13th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_47">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>These rules are my opinion of what's correct.  Obviously, others, including the Rails core team, may not agree with me 100%.  I try to worry more about whether I am doing things right.</p>
+
+<p>Also, I'm pretty sure Ruby herself agrees with me:</p>
+
+<pre><code>$ ruby -w -e 'puts rand 100'
+-e:1: warning: parenthesize argument(s) for future version
+48
+</code></pre></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_48">
+    <div class="avatar"><img alt="Simen" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="48">
+      <span class="c_name">Simen</span>
+      <span class="c_date">June 15th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_48">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>My only rule of thumb is whenever Ruby or I have problems parsing a method call, I add parentheses. It works pretty well.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_49">
+    <div class="avatar"><img alt="James H" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="49">
+      <span class="c_name">James H</span>
+      <span class="c_date">June 15th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_49">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Given that I've been doing a lot of Rails lately and that I rather like dropping the parenthesis when possible, the rules I tend to follow are much in line with your own, however, I also tend to think of whether or not my method call is a statement, or a request for a resource.  For instance:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># link_to() is a statement: you want the end result, not access to a resource</span>
+<span class="n">link_to</span> <span class="s2">"Link Text"</span><span class="p">,</span> <span class="ss">:action</span> <span class="o">=&gt;</span> <span class="s2">"some_action"</span>
+
+<span class="c1"># find() is accessing a resource</span>
+<span class="no">User</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="ss">:first</span><span class="p">,</span> <span class="ss">:conditions</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="s2">"username = ?"</span><span class="p">,</span> <span class="n">username</span><span class="o">]</span><span class="p">)</span>
+</pre></div>
+
+<p>I <em>always</em> use parenthesis in documentation, without exception.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_53">
+    <div class="avatar"><img alt="Harry" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="53">
+      <span class="c_name">Harry</span>
+      <span class="c_date">July 12th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_53">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Last example could mention that</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">puts</span><span class="p">((</span><span class="mi">1</span> <span class="o">+</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span>
+</pre></div>
+
+<p>and</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">puts</span> <span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span>
+</pre></div>
+
+<p>and</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">puts</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span>
+</pre></div>
+
+<p>work out OK</p>
+
+<p>but</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">puts</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span>
+</pre></div>
+
+<p>is not working (by default).</p>
+
+<p>Considering <code>puts</code>' speciality I'm not even sure which one from the first three is the best.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_54">
+    <div class="avatar"><img alt="Jim" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="54">
+      <span class="c_name">Jim</span>
+      <span class="c_date">July 17th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_54">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Your rules seem to say</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">obj</span><span class="o">.</span><span class="n">my_attr</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+
+<p>is preferred to</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">obj</span><span class="o">.</span><span class="n">my_attr</span><span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+
+<p>I don't think I agree.</p></div>
+    <ol>
+      
+        <li id="comment_55">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="55">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">July 17th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_55">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Jim:  Very good point there.  I treat equal method accessors as operators and I only use parenthesis for those as needed.  Good catch.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_66">
+    <div class="avatar"><img alt="Gavin Kistner" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="66">
+      <span class="c_name"><a href="http://phrogz.net/">Gavin Kistner</a></span>
+      <span class="c_date">August 29th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_66">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Similar to Jim's comment, if you're going to update your suggestions, you might want to include the <code>#[]</code> and <code>#[]=</code> methods as no-paren aspects, also.</p></div>
+    <ol>
+      
+        <li id="comment_67">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="67">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">August 29th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_67">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Again that falls into the operators category with me, so yes we don't need parenthesis with those.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_294">
+    <div class="avatar"><img alt="Macario Ortega" height="70" src="http://www.gravatar.com/avatar/de0ce7741fa73cb692e455a939d7c761?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="294">
+      <span class="c_name"><a href="mailto:macarui@gmial.com">Macario Ortega</a></span>
+      <span class="c_date">July 10th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_294">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I grown used to not using parentheses around args in method definitions or when calling methods is just the habit but now I find easier to read, so my rule is:</p>
+
+<p>I use parenthesis only when there is ambiguity.</p>
+
+<p>I find it liberating and aesthetically pleasing not having all those parenthesis and curly braces.<br>
+The downside is that I find it harder to adjust to other people's style when collaborating.</p>
+
+<p>I agree with James H: I always use parenthesis in documentation because is the most common habit.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_452">
+    <div class="avatar"><img alt="franco" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="452">
+      <span class="c_name"><a href="http://flazz.me">franco</a></span>
+      <span class="c_date">July 26th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_452">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Is there any benefit to any of this? Macario Ortega got this right.</p>
+
+<blockquote>
+<p>I use parenthesis only when there is ambiguity…</p>
+</blockquote>
+
+<p>The minimal use of params should be to disambiguate expressions in the language's syntax i.e the parser. Additional use should aid human clarification.</p>
+
+<p>Human clarification cannot be determined by this (or any other) finite set of rules. The best effort to improve clarity is by observation and critical thinking.</p>
+
+<p>Ruby gives us the freedom to express a concept in multiple forms. Rules like these extinguish thinking about clarity, do they not?</p></div>
+    <ol>
+      
+        <li id="comment_453">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="453">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">July 26th, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_453">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Obviously, programmers will reach a point where they can distinguish which "rules" to follow in which scenarios, eventually.  Until then, they exist to give us guidelines that are meant to help us.</p>
+
+<p>I'm very for freedom and critical thinking, but I also see a lot of new programmers writing Ruby that doesn't look like Ruby.  That hinders their ability to participate in the community and get help, so there are tradeoffs.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_482">
+    <div class="avatar"><img alt="Justin Gordon" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="482">
+      <span class="c_name"><a href="http://www.railsonmaui.com">Justin Gordon</a></span>
+      <span class="c_date">August 28th, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_482">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Hi James. Listening to you on the Ruby Rogues…  Any chance that your rules about using parentheses to make the code a bit more clear somewhat depends on one's tools. Specifically, I use RubyMine and I find that having the method args in a different color than the method name seems quite sufficient for clarity.</p></div>
+    <ol>
+      
+        <li id="comment_483">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="483">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">August 28th, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_483">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>That's a fair point.  I suppose the environment does play a role.</p>
+
+<p>However, is your code still going to have the same level of readability when viewed in an environment without this feature?</p>
+
+<p>My editor also colors the arguments, but it doesn't feel sufficient to me.  I guess that just proves it's a matter of taste.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_501">
+    <div class="avatar"><img alt="Justin Gordon" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="501">
+      <span class="c_name">Justin Gordon</span>
+      <span class="c_date">February 7th, 2013</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_501">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I posted the question on StackOverflow as to <a href="http://stackoverflow.com/questions/14703024/ruby-parentheses-around-arguments-in-a-method-definition">when the parser requires parens</a>.</p>
+
+<p>The answer is almost never. My approach to parens for methods arguments and definitions is to add them when they make the syntax more clear, and for definitions, I already see the indenting to the left, blank lines or comments before. My approach for parens on method definitions is to use them when needed, which has not happened yet, given the limited cases where it's needed.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_502">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="502">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">February 7th, 2013</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/do-i-need-these-parentheses#comment_502">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I've actually changed tactics quite a bit since this post.</p>
+
+<p>Nowadays I pretty much use this rule:  if I might use the return value someday, I add parentheses.  This reduces friction when I am refactoring, since I won't need to stop add parentheses so I can chain on another method or something.  Reducing the friction to refactoring means that I refactor more.  That's almost always a good thing, in my opinion.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

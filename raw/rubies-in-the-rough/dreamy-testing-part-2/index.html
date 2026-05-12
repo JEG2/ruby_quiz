@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / Dreamy Testing (Part 2)</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This article is the conclusion of our experiment to learn hard lessons by reinventing the wheel and it delivers on the mistakes.">
+    <meta name="keywords"    content="thinking about code, software design, Test-Driven Development, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/dreamy-testing-part-2/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      DEC<br>
+      2011
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Dreamy Testing (Part 2)</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/rubies-in-the-rough/dreamy-testing-part-1">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      &nbsp;
+  </div>
+</div>
+
+        <p>In <a href="/rubies-in-the-rough/dreamy-testing-part-1">Part 1 of this article</a>, I began building out my ideal testing interface, or at least my best attempt at such a thing.</p>
+
+<p>In that article, I worked primarily on the "assertion" interface:  a file full of calls to <code>ok()</code> with a block that returns <code>true</code> or <code>false</code> to pass or fail tests.  I also built some standard test printers to show us familiar output.</p>
+
+<p>As I wrapped up, I was running this code in <code>example/basic_test.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">ok</span><span class="p">(</span><span class="s2">"Is true"</span><span class="p">)</span>  <span class="p">{</span> <span class="kp">true</span>        <span class="p">}</span>
+<span class="n">ok</span><span class="p">(</span><span class="s2">"Is false"</span><span class="p">)</span> <span class="p">{</span> <span class="kp">false</span>       <span class="p">}</span>
+<span class="n">ok</span><span class="p">(</span><span class="s2">"Is error"</span><span class="p">)</span> <span class="p">{</span> <span class="nb">fail</span> <span class="s2">"Oops"</span> <span class="p">}</span>
+</pre></div>
+
+<p>and seeing these results:</p>
+
+<pre><code>$ ruby -I lib -r ok example/basic_test.rb 
+Running tests:
+.FE
+
+0) Failure: Is false
+  example/basic_test.rb:2:in `&lt;main&gt;'
+1) Error: Is error
+  example/basic_test.rb:3:in `block in &lt;main&gt;'
+  example/basic_test.rb:3:in `&lt;main&gt;'
+
+Finished tests in 0.000300s
+3 tests, 1 failure, 1 error
+</code></pre>
+
+<p>Of course, there was still a lot missing in my code.  Let's work on adding some of the other must have features and perhaps a nicety or two.</p>
+
+<h4>Running Tests</h4>
+
+<p>In the first article, I spent a lot of time talking about how all of the references to things other than my code in tests are a distraction.  I wanted to remove as much of that as possible.  We have done pretty well on that front.</p>
+
+<p>The context of a subclass or <code>describe()</code> block are gone.  That doesn't have to mean that we don't have contexts any more, as we will see later.  It just means we don't have to explicitly declare them.</p>
+
+<p>Also, I haven't been using <code>require()</code> statements.  I'm currently getting around that with command-line switches and we know that can't last, but it does tell us that it should be reasonable to roll without them, if we think it through correctly.</p>
+
+<p>Special methods with a <code>test_</code> prefix (or calls to <code>it()</code>) have been replaced by <code>ok()</code>.  They aren't gone.  But, we dramatically simplified the idea of assertions, so I say we can count this as at least a partial win.</p>
+
+<p>Realistically, are we going to get rid of <code>test/</code> (or <code>spec/</code>) directories or files names with suffixes like <code>_test.rb</code> (or <code>_spec.rb</code>)?  Probably not.  A directory just makes sense to have.  We need somewhere for tests to live.  It also makes sense to test a file like <code>printer.rb</code> with <code>printer_test.rb</code> for multiple reasons:</p>
+
+<ul>
+<li>The file tells you what it tests</li>
+<li>Having a different file name is nice in stack traces</li>
+</ul><p>To put it another way, these are conventions of testing and if we can't beat them, we should join them.  That's the "Convention Over Configuration" idea from Rails, right?</p>
+
+<p>Given all of the above, I'm wanting to build an executable.  It can hunt for my tests for me since we know they are probably in <code>test/</code> (or <code>spec/</code>).  If nothing else, they should have a <code>_test.rb</code> (or <code>_spec.rb</code>) suffix.</p>
+
+<p>Of course, I like my executables to be all but empty.  They should just load some code and kick-off a method.  This makes everything easier to test.  An executable is just another interface to a method.  That means I can write it and forget about it.</p>
+
+<p>So, we need some global thing that serves as our entry point interface.  The word global suggests a global variable, but we aren't suppose to use those.  Don't worry, object oriented systems still have global variables, they are just renamed to singletons classes (I mean the pattern, not the special Ruby construct).  Someone is surely mad at me by now, for speaking so poorly of this pattern, but I'm afraid it gets worse.  <a href="https://practicingruby.com/articles/ruby-and-the-singleton-pattern-dont-get-along">How we even make a singleton class</a> is debatable in Ruby.  I don't want to go too far down this rabbit hole, so I'll leave my position as this:</p>
+
+<ul>
+<li>Some state is meant to be global</li>
+<li>I think this is one of those cases</li>
+<li>
+<code>module_function</code> isn't all bad and I think it's the right tool for this job</li>
+</ul><p>Therefore, I added this code in <code>lib/ok/tester.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">module</span> <span class="nn">Tester</span>
+    <span class="kp">module_function</span>
+
+    <span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+      <span class="n">paths</span> <span class="o">=</span> <span class="nb">Array</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+      <span class="n">paths</span> <span class="o">=</span> <span class="o">[</span><span class="sx">%w[spec test .]</span><span class="o">.</span><span class="n">find</span> <span class="p">{</span> <span class="o">|</span><span class="n">path</span><span class="o">|</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span> <span class="n">path</span> <span class="p">}</span><span class="o">]</span> <span class="p">\</span>
+        <span class="k">if</span> <span class="n">paths</span><span class="o">.</span><span class="n">empty?</span>
+
+      <span class="n">tests</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+      <span class="k">while</span> <span class="p">(</span><span class="n">path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">shift</span><span class="p">)</span>
+        <span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">directory?</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+          <span class="n">new_paths</span> <span class="o">=</span> <span class="no">Dir</span><span class="o">.</span><span class="n">entries</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                         <span class="o">.</span><span class="n">reject</span> <span class="p">{</span> <span class="o">|</span><span class="n">entry</span><span class="o">|</span> <span class="n">entry</span> <span class="o">=~</span> <span class="sr">/\A\./</span>        <span class="p">}</span>
+                         <span class="o">.</span><span class="n">map</span>    <span class="p">{</span> <span class="o">|</span><span class="n">entry</span><span class="o">|</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span> <span class="p">}</span>
+          <span class="n">paths</span><span class="o">.</span><span class="n">unshift</span><span class="p">(</span><span class="o">*</span><span class="n">new_paths</span><span class="p">)</span>
+        <span class="k">elsif</span> <span class="no">File</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">=~</span> <span class="sr">/\A.+_(?:spec|test)\.rb\z/</span>
+          <span class="n">tests</span> <span class="o">&lt;&lt;</span> <span class="n">path</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+
+      <span class="n">tests</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="nb">test</span><span class="o">|</span>
+        <span class="nb">load</span> <span class="nb">test</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The first chunk of the method above makes sure we have a list of things to search for tests, even defaulting the content of that list if it was empty.  The middle chuck then walks that list recursively, hunting for test files.  Those files are added to an <code>Array</code> and all sequentially invoked at the end of the method.</p>
+
+<p>Then I added this code as <code>bin/ok</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby</span>
+
+<span class="n">require_relative</span> <span class="s2">"../lib/ok"</span>
+
+<span class="no">OK</span><span class="o">::</span><span class="no">Tester</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="no">ARGV</span><span class="p">)</span>
+</pre></div>
+
+<p>Like I said, just load and call.  I also made that file executable with a quick:</p>
+
+<pre><code>chmod +x bin/ok
+</code></pre>
+
+<p>With that code in place, we now have a way to run the examples I have been creating:</p>
+
+<pre><code>$ bin/ok example
+example/basic_test.rb
+  Is true
+  Failed: Is false
+    bin/ok:6:in `&lt;main&gt;'
+    example/basic_test.rb:2:in `&lt;top (required)&gt;'
+    example/basic_test.rb:2:in `&lt;top (required)&gt;'
+  Error: Is error
+    example/basic_test.rb:3:in `block in &lt;top (required)&gt;'
+    example/basic_test.rb:3:in `&lt;top (required)&gt;'
+    bin/ok:6:in `&lt;main&gt;'
+example/compound_test.rb
+  Is compound
+example/setup_test.rb
+  Is using setup
+  Is also using setup
+
+Finished specs in 0.000878s
+6 specs, 1 failure, 1 error
+</code></pre>
+
+<p>Or we could run a specific file:</p>
+
+<pre><code>$ bin/ok example/compound_test.rb
+example/compound_test.rb
+  Is compound
+
+Finished specs in 0.000210s
+1 spec, 0 failures, 0 errors
+</code></pre>
+
+<p>Providing no argument at all defaults it to the <code>test/</code> directory I created in the last article, but that's still empty and not worth showing.</p>
+
+<p>Now this may be hard to believe, but that simple test runner just solved a lot of our problems.  Before, I was relying on some loose code stuck in one file and a clumsy <code>at_exit()</code> hook to control the flow of execution.  But now we have an utterly straightforward place to deal with such things.  We're back in control of this cycle.</p>
+
+<h4>Tying in the Printer</h4>
+
+<p>Remember the code that setup printing from the last article?  It looked like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="vg">$printer</span> <span class="o">=</span> <span class="no">OK</span><span class="o">::</span><span class="no">Printer</span><span class="o">::</span><span class="no">SpecPrinter</span><span class="o">.</span><span class="n">new</span>
+<span class="vg">$printer</span><span class="o">.</span><span class="n">print_running</span>
+<span class="nb">at_exit</span> <span class="p">{</span> <span class="vg">$printer</span><span class="o">.</span><span class="n">print_summary</span> <span class="p">}</span>
+</pre></div>
+
+<p>In addition to the awkward flow control I mentioned before, this needs a global variable and has a hard-coded printer.  Let's clean that whole mess up with one more pass refining the <code>Tester</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">module</span> <span class="nn">Tester</span>
+    <span class="kp">module_function</span>
+
+    <span class="k">def</span> <span class="nf">printer</span><span class="o">=</span><span class="p">(</span><span class="n">type_or_printer</span><span class="p">)</span>
+      <span class="vi">@printer</span> <span class="o">=</span> <span class="k">case</span> <span class="n">type_or_printer</span><span class="o">.</span><span class="n">to_s</span>
+                 <span class="k">when</span> <span class="o">*</span><span class="sx">%w[dot test]</span> <span class="k">then</span> <span class="no">OK</span><span class="o">::</span><span class="no">Printer</span><span class="o">::</span><span class="no">DotPrinter</span><span class="o">.</span><span class="n">new</span>
+                 <span class="k">when</span> <span class="s2">"spec"</span>        <span class="k">then</span> <span class="no">OK</span><span class="o">::</span><span class="no">Printer</span><span class="o">::</span><span class="no">SpecPrinter</span><span class="o">.</span><span class="n">new</span>
+                 <span class="k">else</span>                    <span class="n">type_or_printer</span>
+                 <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">printer</span>
+      <span class="vi">@printer</span> <span class="o">||=</span> <span class="no">ENV</span><span class="o">[</span><span class="s2">"RUBY_OK_PRINTER"</span><span class="o">]</span> <span class="o">=~</span> <span class="sr">/\ASpec\z/i</span> <span class="p">?</span>
+                   <span class="no">OK</span><span class="o">::</span><span class="no">Printer</span><span class="o">::</span><span class="no">SpecPrinter</span><span class="o">.</span><span class="n">new</span>          <span class="p">:</span>
+                   <span class="no">OK</span><span class="o">::</span><span class="no">Printer</span><span class="o">::</span><span class="no">DotPrinter</span><span class="o">.</span><span class="n">new</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">warnings</span><span class="o">=</span><span class="p">(</span><span class="n">boolean</span><span class="p">)</span>
+      <span class="vi">@warnings</span> <span class="o">=</span> <span class="n">boolean</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">warnings</span>
+      <span class="vi">@warnings</span> <span class="o">||=</span> <span class="no">ENV</span><span class="o">[</span><span class="s2">"RUBY_OK_NO_WARNINGS"</span><span class="o">]</span> <span class="p">?</span> <span class="kp">false</span> <span class="p">:</span> <span class="kp">true</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+      <span class="c1"># ... same as before ...</span>
+
+      <span class="n">tests</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+      <span class="k">while</span> <span class="p">(</span><span class="n">path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">shift</span><span class="p">)</span>
+        <span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">directory?</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+          <span class="c1"># ... same as before ...</span>
+        <span class="k">elsif</span> <span class="no">File</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">=~</span> <span class="sr">/\A.+_(spec|test)\.rb\z/</span>
+          <span class="nb">self</span><span class="o">.</span><span class="n">printer</span>  <span class="o">=</span> <span class="ss">:spec</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">defined?</span><span class="p">(</span><span class="vi">@printer</span><span class="p">)</span> <span class="ow">and</span> <span class="vg">$1</span> <span class="o">==</span> <span class="s2">"spec"</span>
+          <span class="n">tests</span>        <span class="o">&lt;&lt;</span> <span class="n">path</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+
+      <span class="no">Object</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="ss">:include</span><span class="p">,</span> <span class="no">OK</span><span class="o">::</span><span class="no">DSL</span><span class="p">)</span> <span class="k">unless</span> <span class="no">Object</span> <span class="o">&lt;</span> <span class="no">OK</span><span class="o">::</span><span class="no">DSL</span>
+      <span class="vg">$VERBOSE</span> <span class="o">=</span> <span class="kp">true</span> <span class="k">if</span> <span class="n">warnings</span>
+      <span class="n">printer</span><span class="o">.</span><span class="n">print_running</span>
+      <span class="n">tests</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="nb">test</span><span class="o">|</span>
+        <span class="nb">load</span> <span class="nb">test</span>
+      <span class="k">end</span>
+      <span class="n">printer</span><span class="o">.</span><span class="n">print_summary</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The <code>printer=()</code> method just gives us a few shortcuts for naming printers.  The Reader defaults the printer as needed and allows that default to be changed by an environment variable.</p>
+
+<p>The <code>warnings=()</code> and <code>warnings()</code> methods produce a similar interface for another setting:  whether or not to run your tests with warnings turned on.  I believe <a href="http://avdi.org/devblog/2011/06/23/how-ruby-helps-you-fix-your-broken-code/">you should</a>.  I realize I could have used <code>attr_reader()</code> here, but I thought the code symmetry came out better with the long hand form of the method.</p>
+
+<p>The changes to <code>test()</code> accomplish several things:</p>
+
+<ul>
+<li>Switch to a spec printer if the test files look like specs</li>
+<li>Prep a test run by installing our DSL (I made that up!)</li>
+<li>Turn on warnings if desired</li>
+<li>Call the <code>Printer</code> hooks at the correct times</li>
+</ul><p>The mention of <code>OK::DSL</code> above was more programming by wishful thinking, so it's time to make those wishes come true.  I added this code in a file called <code>lib/ok/dsl.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">module</span> <span class="nn">DSL</span>
+    <span class="k">def</span> <span class="nf">ok</span><span class="p">(</span><span class="nb">name</span><span class="p">,</span> <span class="o">&amp;</span><span class="nb">test</span><span class="p">)</span>
+      <span class="no">OK</span><span class="o">::</span><span class="no">Tester</span><span class="o">.</span><span class="n">printer</span><span class="o">.</span><span class="n">print_test</span><span class="p">(</span><span class="no">OK</span><span class="o">::</span><span class="no">Test</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">name</span><span class="p">,</span> <span class="nb">test</span><span class="p">))</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>You've seen this method before.  The only change is that it now fetches the <code>Printer</code> from the <code>Tester</code>.</p>
+
+<p>Those changes allow us to remove a lot of junk from the original <code>lib/ok.rb</code>, like the clunky printing code and the global method definition.  It's now just a list of require statements:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">require_relative</span> <span class="s2">"ok/printer"</span>
+<span class="n">require_relative</span> <span class="s2">"ok/printer/dot_printer"</span>
+<span class="n">require_relative</span> <span class="s2">"ok/printer/spec_printer"</span>
+<span class="n">require_relative</span> <span class="s2">"ok/test"</span>
+<span class="n">require_relative</span> <span class="s2">"ok/dsl"</span>
+<span class="n">require_relative</span> <span class="s2">"ok/tester"</span>
+</pre></div>
+
+<p>Notice how the code is cleaning itself as we add this feature?  That's how we know we are on the right track!</p>
+
+<h4>A Trick of Interfacing</h4>
+
+<p>We've really rounded out our test framework.  We have a defined way to run tests, our minimal DSL for writing tests, and multiple printers that can be swapped out.</p>
+
+<p>If you want to change the printer (or the warnings setting), you can set the environment variable <code>RUBY_OK_PRINTER</code> (or <code>RUBY_OK_NO_WARNINGS</code> for the latter).  Of course, we could also modify them programmatically in something like <code>test_helper.rb</code> (or <code>spec_helper.rb</code>) with code like:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">OK</span><span class="o">::</span><span class="no">Tester</span><span class="o">.</span><span class="n">printer</span> <span class="o">=</span> <span class="ss">:spec</span>
+</pre></div>
+
+<p>I'll be honest though, I'm not in love with that.  It takes us out of the pretty DSL.  It's like when they shatter your suspension of disbelief at the movies.  Not cool.</p>
+
+<p>Of course, I don't want to stick a ton of methods on object to handle all of the settings we will someday have.  I love how <code>ok()</code> is all the interface we have needed to write tests and I'm not ready to give that up.</p>
+
+<p>The answer?  Let's teach <code>ok()</code> a new trick:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">module</span> <span class="nn">DSL</span>
+    <span class="k">def</span> <span class="nf">ok</span><span class="p">(</span><span class="nb">name</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">,</span> <span class="o">&amp;</span><span class="nb">test</span><span class="p">)</span>
+      <span class="no">OK</span><span class="o">::</span><span class="no">Tester</span><span class="o">.</span><span class="n">printer</span><span class="o">.</span><span class="n">print_test</span><span class="p">(</span><span class="no">OK</span><span class="o">::</span><span class="no">Test</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">name</span><span class="p">,</span> <span class="nb">test</span><span class="p">))</span> <span class="k">if</span> <span class="nb">name</span>
+      <span class="no">OK</span><span class="o">::</span><span class="no">Tester</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I've changed the code to only create a test if one was given (by name).  It also returns the <code>Tester</code> to the caller, for manipulation.</p>
+
+<p>Beauty is restored.  We can now set a printer with:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">ok</span><span class="o">.</span><span class="n">printer</span> <span class="o">=</span> <span class="ss">:spec</span>
+</pre></div>
+
+<p>I really like the look of that.  It opens the door for any configuration we need going forward, but doesn't really complicate our interface.</p>
+
+<h4>Ready for Some Extras</h4>
+
+<p>My new testing framework has a long way to go if it's going to someday catch the powerful tools that have been around a while, like RSpec.  They have a lot of nice features.  Obviously, I can't build all of those right now, but let's do one as an example.</p>
+
+<p>Everyone love's RSpec's <code>let()</code> feature.  Can we make that happen?  I sat down to code it up and finally ran into the bad idea I've been waiting to share with you.</p>
+
+<p>At first, I thought I could define variables with some code like:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="vi">@test</span><span class="o">.</span><span class="n">binding</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">"</span><span class="si">#{</span><span class="n">var</span><span class="si">}</span><span class="s2"> = ..."</span><span class="p">)</span>
+</pre></div>
+
+<p>That code runs, but those variables don't end up being in scope when the block is finally called.  In the end, I had to resort to a horrific use of <code>method_missing()</code> to fake the variable.</p>
+
+<p>This gets pretty ugly, so I'll show the changes in chunks.  First, I had to give myself a way to add <code>let()</code> definitions, so I added these methods to <code>lib/ok/test.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">class</span> <span class="nc">Test</span>
+    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">let_definitions</span>
+      <span class="vi">@let_definitions</span> <span class="o">||=</span> <span class="no">Hash</span><span class="o">.</span><span class="n">new</span> <span class="p">{</span> <span class="o">|</span><span class="n">paths</span><span class="p">,</span> <span class="n">path</span><span class="o">|</span> <span class="n">paths</span><span class="o">[</span><span class="n">path</span><span class="o">]</span> <span class="o">=</span> <span class="p">{</span> <span class="p">}</span> <span class="p">}</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">let_definition</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">name</span><span class="p">,</span> <span class="n">initializer</span><span class="p">)</span>
+      <span class="n">scope</span> <span class="o">=</span> <span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">=~</span> <span class="sr">/\A(?:spec|test)_helper\.rb\z/</span>
+                <span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+              <span class="k">else</span>
+                <span class="n">path</span>
+              <span class="k">end</span>
+      <span class="n">let_definitions</span><span class="o">[</span><span class="n">scope</span><span class="o">][</span><span class="nb">name</span><span class="o">]</span> <span class="o">=</span> <span class="n">initializer</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I defined <code>let_definitions()</code> as a <code>Hash</code> of <code>initializer</code> blocks stored by the <code>path</code> they affect and the variable <code>name</code>.  Adding definitions just has one twist, I scope anything in the previously mentioned <code>test_helper.rb</code> (or <code>spec_helper.rb</code>) file to the directory that contains it.  This allows you to put definitions in there that affect all test files below that point.</p>
+
+<p>I'll be honest and say that I'm not sure putting <code>let()</code> calls in <code>test_helper.rb</code> (or <code>spec_helper.rb</code>) is even a good idea.  The point was just to show that we should also support the other convention we identified in any way that we can.</p>
+
+<p>Now I needed the other side of the equation, a way to call those definitions as they apply and cache the value for the rest of the test run, so I added these methods as well:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">class</span> <span class="nc">Test</span>
+    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">let_values</span>
+      <span class="vi">@let_values</span> <span class="o">||=</span> <span class="p">{</span> <span class="p">}</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">let_value</span><span class="p">(</span><span class="o">*</span><span class="n">path_and_name</span><span class="p">)</span>
+      <span class="k">return</span> <span class="n">let_values</span><span class="o">[</span><span class="n">path_and_name</span><span class="o">]</span> <span class="k">if</span> <span class="n">let_values</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">path_and_name</span><span class="p">)</span>
+
+      <span class="n">scope</span> <span class="o">=</span> <span class="n">path_and_name</span><span class="o">.</span><span class="n">first</span>
+      <span class="kp">loop</span> <span class="k">do</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">initializer</span> <span class="o">=</span> <span class="no">OK</span><span class="o">::</span><span class="no">Test</span><span class="o">.</span><span class="n">let_definitions</span><span class="o">[</span><span class="n">scope</span><span class="o">][</span><span class="n">path_and_name</span><span class="o">.</span><span class="n">last</span><span class="o">]</span><span class="p">)</span>
+          <span class="n">let_values</span><span class="o">[</span><span class="n">path_and_name</span><span class="o">]</span> <span class="o">=</span> <span class="n">initializer</span><span class="o">.</span><span class="n">call</span>
+          <span class="k">return</span> <span class="n">let_values</span><span class="o">[</span><span class="n">path_and_name</span><span class="o">]</span>
+        <span class="k">end</span>
+        <span class="k">break</span> <span class="k">if</span> <span class="sx">%w[. /]</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">scope</span><span class="p">)</span>
+        <span class="n">scope</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">scope</span><span class="p">)</span><span class="o">.</span><span class="n">first</span>
+      <span class="k">end</span>
+
+      <span class="k">yield</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Again, <code>let_values()</code> are hashed by their path and name.  If a value is already set, I just reuse it.  Otherwise, I need to see if there is an <code>initializer</code> that can build it.  I search for those up the path.  Believe it or not, that allows for nested contexts.  Directories higher up can setup all that follows beneath them.</p>
+
+<p>The final <code>yield</code> allows calling code to decide how to handle the error case where no <code>initializer</code> could be found.  This is another great strategy I learned from <a href="http://exceptionalruby.com/">Exceptional Ruby</a>.</p>
+
+<p>I also had to rework the actual execution of tests, so I could clear any cached values before each test is run.  Here's the code for that:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">class</span> <span class="nc">Test</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="nb">name</span><span class="p">,</span> <span class="nb">test</span><span class="p">)</span>
+      <span class="vi">@name</span>   <span class="o">=</span> <span class="nb">name</span>
+      <span class="vi">@test</span>   <span class="o">=</span> <span class="nb">test</span>
+      <span class="vi">@result</span> <span class="o">=</span> <span class="n">run_test</span>
+    <span class="k">end</span>
+
+    <span class="kp">private</span>
+
+    <span class="k">def</span> <span class="nf">run_test</span>
+      <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">let_values</span><span class="o">.</span><span class="n">clear</span>
+      <span class="o">!!</span><span class="vi">@test</span><span class="o">.</span><span class="n">call</span>
+    <span class="k">rescue</span> <span class="no">Exception</span> <span class="o">=&gt;</span> <span class="n">error</span>
+      <span class="n">error</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The only new element here, is the added call to <code>clear()</code>.  I just pushed the code down into a method the keep it focused on one job in each place:  initialization and running tests.</p>
+
+<p>With <code>Test</code> supporting the feature, it's easy to add an interface for setting the values.  I added this method to <code>lib/ok/tester.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">module</span> <span class="nn">Tester</span>
+    <span class="kp">module_function</span>
+
+    <span class="k">def</span> <span class="nf">let</span><span class="p">(</span><span class="nb">name</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">initializer</span><span class="p">)</span>
+      <span class="no">OK</span><span class="o">::</span><span class="no">Test</span><span class="o">.</span><span class="n">let_definition</span><span class="p">(</span><span class="nb">caller</span><span class="o">.</span><span class="n">first</span><span class="o">[</span><span class="sr">/\A[^:]+/</span><span class="o">]</span><span class="p">,</span> <span class="nb">name</span><span class="p">,</span> <span class="n">initializer</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This wrapper just hands off to the code we already wrote.  It exists to keep our <code>ok()</code> interface being the one place to set things.</p>
+
+<p>I also tweaked the test runner to load <code>test_helper.rb</code> (or <code>spec_helper.rb</code>) files.  This will look like a lot of code, but you've seen most of it before.  I just restructured it a bit:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">module</span> <span class="nn">Tester</span>
+    <span class="kp">module_function</span>
+
+    <span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+      <span class="c1"># ... same as before ...</span>
+
+      <span class="no">Object</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="ss">:include</span><span class="p">,</span> <span class="no">OK</span><span class="o">::</span><span class="no">DSL</span><span class="p">)</span> <span class="k">unless</span> <span class="no">Object</span> <span class="o">&lt;</span> <span class="no">OK</span><span class="o">::</span><span class="no">DSL</span>
+      <span class="vg">$VERBOSE</span> <span class="o">=</span> <span class="kp">true</span> <span class="k">if</span> <span class="n">warnings</span>
+
+      <span class="n">tests</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+      <span class="k">while</span> <span class="p">(</span><span class="n">path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">shift</span><span class="p">)</span>
+        <span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">directory?</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+          <span class="n">new_paths</span> <span class="o">=</span> <span class="no">Dir</span><span class="o">.</span><span class="n">entries</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                         <span class="o">.</span><span class="n">reject</span>  <span class="p">{</span> <span class="o">|</span><span class="n">entry</span><span class="o">|</span> <span class="n">entry</span> <span class="o">=~</span> <span class="sr">/\A\./</span>               <span class="p">}</span>
+                         <span class="o">.</span><span class="n">map</span>     <span class="p">{</span> <span class="o">|</span><span class="n">entry</span><span class="o">|</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span>        <span class="p">}</span>
+                         <span class="o">.</span><span class="n">sort_by</span> <span class="p">{</span> <span class="o">|</span><span class="n">child</span><span class="o">|</span> <span class="o">[</span> <span class="no">File</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="s2">".rb"</span><span class="p">),</span>
+                                              <span class="no">File</span><span class="o">.</span><span class="n">file?</span><span class="p">(</span><span class="n">child</span><span class="p">)</span> <span class="p">?</span> <span class="mi">0</span> <span class="p">:</span> <span class="mi">1</span> <span class="o">]</span> <span class="p">}</span>
+          <span class="n">paths</span><span class="o">.</span><span class="n">unshift</span><span class="p">(</span><span class="o">*</span><span class="n">new_paths</span><span class="p">)</span>
+        <span class="k">elsif</span> <span class="no">File</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">=~</span> <span class="sr">/\A.+_(spec|test)\.rb\z/</span>
+          <span class="c1"># ... same as before ...</span>
+          <span class="n">directory</span>     <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+          <span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">helper</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s2">"spec_helper.rb"</span><span class="p">))</span> <span class="o">||</span>
+             <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">helper</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s2">"test_helper.rb"</span><span class="p">))</span>
+            <span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="n">helper</span><span class="p">)</span>
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+
+      <span class="c1"># ... same as before ...</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Here are the changes:</p>
+
+<ul>
+<li>The DSL loading and warning setting code isn't new, it just moved up so it would be loaded before any helper code</li>
+<li>Directory entries are sorted to best load nested contexts</li>
+<li>When a test file is found, we look for a matching helper file to <code>require</code> (remember that <code>require</code> only loads a file once)</li>
+</ul><p>Now for the major sin required to support this feature.  I added this evil code to <code>lib/ok/dsl.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">module</span> <span class="nn">DSL</span>
+    <span class="k">def</span> <span class="nf">method_missing</span><span class="p">(</span><span class="nb">method</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+      <span class="k">super</span> <span class="k">if</span> <span class="nb">method</span> <span class="o">==</span> <span class="ss">:to_path</span>  <span class="c1"># GROSS!!!</span>
+      <span class="no">OK</span><span class="o">::</span><span class="no">Test</span><span class="o">.</span><span class="n">let_value</span><span class="p">(</span><span class="nb">caller</span><span class="o">.</span><span class="n">first</span><span class="o">[</span><span class="sr">/\A[^:]+/</span><span class="o">]</span><span class="p">,</span> <span class="nb">method</span><span class="p">)</span> <span class="p">{</span> <span class="k">super</span> <span class="p">}</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This method pulls the variables from the values <code>Hash</code> as needed, but it has two significant flaws:</p>
+
+<ul>
+<li>As part of our DSL, this gets mixed into <code>Object</code> and affects all code!</li>
+<li>I had to add a <code>:to_path</code> guard because my <code>Hash</code> lookup triggers it!</li>
+</ul><p>Yuck and double yuck.  This is just not safe.  Eventually, this hack is going to break some code.  Heck, I had to work hard not to break Ruby itself!  I was blowing the stack before I figured out the <code>:to_path</code> trick.</p>
+
+<p>To test my work, I created an <code>example/let_test.rb</code> and stuck this in it:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">ok</span><span class="o">.</span><span class="n">let</span><span class="p">(</span><span class="ss">:forty_two</span><span class="p">)</span> <span class="p">{</span> <span class="mi">42</span> <span class="p">}</span>
+
+<span class="n">ok</span><span class="p">(</span><span class="s2">"Is using let()"</span><span class="p">)</span> <span class="p">{</span> <span class="n">forty_two</span> <span class="o">==</span> <span class="mi">42</span> <span class="p">}</span>
+</pre></div>
+
+<p>All of that was for this:  initialize a value and use it latter.  That's nice, but we did the same thing with a local variable earlier.</p>
+
+<p>That works as you would expect, but I hope I've shown that it just wasn't a good idea.  The code was fighting me at every step of the implementation.  You have to learn to listen to that.  It was telling me, "Don't do this."  If this had been a real project, it would be time for a <code>git reset --hard</code>.  Then you take a step back and rethink what happened.</p>
+
+<h4>What Did <strong>I</strong> Learn?</h4>
+
+<p>The point of this whole exercise was to learn something.  I did.  A lot actually.  I learned:</p>
+
+<ul>
+<li>It wasn't tough at all to improve assertion syntax, in my opinion</li>
+<li>It was also easy to come up with a reasonable test running framework</li>
+<li>That <code>let()</code> didn't work well with the system I built</li>
+<li>That <code>let()</code> failed because it needs one of those contexts I ripped out</li>
+<li>This idea was too long and complex to make a good article (Sorry about that!)</li>
+</ul><p>There may be ways to get that missing context back and make supporting <code>let()</code> easier.  For example, <code>load()</code> can wrap the loaded code in an anonymous module.  I could then patch that module with methods as needed and avoid the painful <code>method_missing()</code> hack.</p>
+
+<p>Interestingly, <code>before(:each)</code> is similar, but much easier to support even if we don't use anonymous modules.  You can use similar code to the <code>let()</code> definition code, skip the value stuff, and execute them with an easy loop.  No hacks are required.</p>
+
+<p>Maybe this just means that <code>let()</code> doesn't fit here.  Honestly, I'm not totally convinced that it is needed.  We may be able to use local variables in the file, if the value doesn't change.  Even changing values are pretty easy to handle with a small method.</p>
+
+<p>I'll need to play with this code for a while to finish learning all that it has to teach me about interfaces.</p>
+
+<h4>Broken Rules</h4>
+
+<p>In this <em>Breaking All of the Rules</em> miniseries of articles I've been pretty critical of a lot of the rules we live by in software.  I did that because of what the exercise can teach us.  I don't really want us to live in a world without rules.</p>
+
+<p>The key is to keep thinking critically.  Get in the habit of asking yourself why a rule exists and if it applies to you in the current situation.  There's no way raised awareness won't make you a stronger programmer.  I promise.</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/rubies-in-the-rough/dreamy-testing-part-1">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      &nbsp;
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/dreamy-testing-part-2">
+  In: <a href="/rubies-in-the-rough">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Test-Driven%20Development">Test-Driven Development</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/dreamy-testing-part-2#comments">0 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (0)</span></h5>
+
+    <ol>
+      
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/rubies-in-the-rough/dreamy-testing-part-2/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="X2uVmkvc0jO/AHbV7WIq6iYPK3BkvnMzFc0xftmwly4=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdreamy-testing-part-2" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Frubies-in-the-rough%2Fdreamy-testing-part-2" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

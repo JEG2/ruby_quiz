@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="The Ruby programming blog of James Edward Gray II (JEG2).  Any content of interest to Rubyists specifically, or developers in general, is fair game.">
+    <meta name="keywords"    content="Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1>Gray Soft</h1>
+            <span>The Ruby programming blog of James Edward Gray II (JEG2).</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+            <ul class="blog-list">
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>5</h4>
+    <span>
+      NOV<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/the-kcode-variable-and-jcode-library/"><h3 class="blog-title">The $KCODE Variable and jcode Library</h3></a>
+          <p>All of the Ruby files I create start with the same <a href="http://en.wikipedia.org/wiki/Shebang_(Unix)">Shebang line</a>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+</pre></div>
+
+<p>It's not really needed for every file since it generally only matters if the file is executed.  However, I tend to go ahead and add it to all Ruby files I build for several reasons:</p>
+
+<ul>
+<li>You never know when a file may be executed (<code>if __FILE__ == $PROGRAM_NAME; end</code> sections are often added to libraries, for example) </li>
+<li>It makes it obvious the file is Ruby code</li>
+<li>It shows the rules this code expects <code>-w</code> and <code>-KU</code>
+</li>
+</ul><p>The rules I mention here, specified by command-line switches, are the main point of interest.  <code>-w</code> turns on Ruby's warnings which are very handy.  I recommend doing that whenever you can.  But that doesn't have anything to do with character encodings.  <code>-KU</code> does.</p>
+
+<p><code>-KU</code> sets a magic Ruby variable:  <code>$-K</code> or <code>$KCODE</code>.  You can do the same in your code if you aren't in a position to control the command-line arguments:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="vg">$KCODE</span> <span class="o">=</span> <span class="s2">"U"</span>
+</pre></div>
+
+<p>You probably recognize the <code>U</code> as a name for Ruby 1.8's UTF-8 encoding, from my earlier <a href="/character-encodings/bytes-and-characters-in-ruby-18/">list of encodings</a>.  It can also be set to <code>N</code> (the default), <code>E</code>, or <code>S</code>.  Modern versions of Rails do set <code>$KCODE = "U"</code> for you.</p><p><a href="/character-encodings/the-kcode-variable-and-jcode-library/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/the-kcode-variable-and-jcode-library">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/the-kcode-variable-and-jcode-library#comments">8 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>30</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/bytes-and-characters-in-ruby-18/"><h3 class="blog-title">Bytes and Characters in Ruby 1.8</h3></a>
+          <p>Gregory Brown said, in a training session at the Lone Star Rubyconf, "Ruby 1.8 works in bytes.  Ruby 1.9 works in characters."  The truth of Ruby 1.9 is maybe a little more complicated and we will discuss all of that eventually, but Greg is dead right about Ruby 1.8.</p>
+
+<p>In Ruby 1.8, a <code>String</code> is always just a collection of bytes.</p>
+
+<p>The important question is, how does that one golden rule relate to all that we've learned about character encodings?  Essentially, it puts all the responsibility on you as the developer.  Ruby 1.8 leaves it to you to determine what to do with those bytes and it doesn't provide a lot of encoding savvy help.  That's why knowing at least the basics of encodings is so important when working with Ruby 1.8.</p>
+
+<p>There are plusses and minuses to every system and this one is no exception.  On the side of plusses, Ruby 1.8 can pretty much support any encoding you can imagine.  After all, a character encoding is just some bytes that somehow map to a set of characters and all Ruby 1.8 <code>String</code>s are just some bytes.  If you say a <code>String</code> holds Latin-1 data and treat it as such, that's fine by Ruby.</p><p><a href="/character-encodings/bytes-and-characters-in-ruby-18/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/bytes-and-characters-in-ruby-18">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/bytes-and-characters-in-ruby-18#comments">11 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/general-encoding-strategies/"><h3 class="blog-title">General Encoding Strategies</h3></a>
+          <p>Before we get into specifics, let's try to distill a few best practices for working with encodings.  I'm sure you can tell that there's a lot that needs to be considered with encodings, so let's try to focus in on a few key points that will help us the most.</p>
+
+<h4>Use UTF-8 Everywhere You Can</h4>
+
+<p>We know UTF-8 isn't perfect, but it's pretty darn close to perfect.  There is no other single encoding you could pick that has the potential to satisfy such a wide audience.  It's our best bet.  For these reasons, <a href="ftp://ftp.isi.edu/in-notes/rfc2277.txt">UTF-8 is quickly becoming the preferred encoding for the Web, email, and more</a>.</p>
+
+<p>If you have a say over what encoding or encodings your software will accept, support, and deliver, choose UTF-8 whenever you can.  This is absolutely the best default.</p>
+
+<h4>Get in the Habit of Documenting Your Encodings</h4>
+
+<p>We learned that you must know a data's encoding to properly work with it.  While there are tools to help you guess an encoding, you really want to try and avoid being in this position.  Part of how to make that happen is to be a good citizen and make sure you are documenting your encodings at every step.</p><p><a href="/character-encodings/general-encoding-strategies/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/general-encoding-strategies">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/general-encoding-strategies#comments">4 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>16</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/the-unicode-character-set-and-encodings/"><h3 class="blog-title">The Unicode Character Set and Encodings</h3></a>
+          <p>Since the rise of the various character encodings, there has been a quest to find the one perfect encoding we could all use.  It's hard to get everyone to agree about whether or not this has truly been accomplished, but most of us agree that <a href="http://unicode.org/">Unicode</a> is as close as it gets.</p>
+
+<p>The goal of Unicode was literally to provide a character set that includes all characters in use today.  That's letters and numbers for all languages, all the images needed by pictographic languages, and all symbols.  As you can imagine that's quite a challenging task, but they've done very well.  Take a moment to <a href="http://www.unicode.org/charts/">browse all the characters in the current Unicode specification</a> to see for yourself.  The Unicode Consortium often reminds us that they still have room for more characters as well, so we will be all set when we start meeting alien races.</p>
+
+<p>Now in order to really understand what Unicode is, I need to clear up a point I've played pretty loose with so far:  a character set and a character encoding aren't necessarily the same thing.  Unicode is one character set, and has multiple character encodings.  Allow me to explain.</p><p><a href="/character-encodings/the-unicode-character-set-and-encodings/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/the-unicode-character-set-and-encodings">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/the-unicode-character-set-and-encodings#comments">8 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>15</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/what-is-a-character-encoding/"><h3 class="blog-title">What is a Character Encoding?</h3></a>
+          <p>The first step to understanding character encodings is that we're going to need to talk a little about how computers store character data.  I know we would love to believe that when we push the <code>a</code> key on our keyboard, the computer records a little <code>a</code> symbol somewhere, but that's just fantasy.</p>
+
+<p>I imagine most of us know that deep in the heart of computers pretty much everything is eventually in terms of ones and zeros.  That means that an <code>a</code> has to be stored as some number.  In fact, it is.  We can see what number using Ruby 1.8:</p>
+
+<pre><code>$ ruby -ve 'p ?a'
+ruby 1.8.6 (2008-08-11 patchlevel 287) [i686-darwin9.4.0]
+97
+</code></pre>
+
+<p>The unusual <code>?a</code> syntax gives us a specific character, instead of a full <code>String</code>.  In Ruby 1.8 it does that by returning the code of that encoded character.  You can also get this by indexing one character out of a <code>String</code>:</p>
+
+<pre><code>$ ruby -ve 'p "a"[0]'
+ruby 1.8.6 (2008-08-11 patchlevel 287) [i686-darwin9.4.0]
+97
+</code></pre>
+
+<p>These <code>String</code> behaviors were deemed confusing by the Ruby core team and have been changed in Ruby 1.9.  They now return one character <code>String</code>s.  If you want to see the character codes in Ruby 1.9 you can use <code>getbyte()</code>:</p><p><a href="/character-encodings/what-is-a-character-encoding/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/what-is-a-character-encoding">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/what-is-a-character-encoding#comments">3 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>14</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/understanding-m17n-multilingualization/"><h3 class="blog-title">Understanding M17n (Multilingualization)</h3></a>
+          <p>Big changes are coming to Ruby in version 1.9 with regard to character encodings.  Ruby is going from a language with some of the weakest character encoding support to arguably some of the best support out there for working with different encodings.  We're all grown up now.</p>
+
+<p>The downside is that the new code comes with a good size learning curve.  I would know because I recently battled through figuring it out so I could add support to the standard CSV library for nearly all of the encodings.  It was a battle too.  It's brave new territory and there's not a lot of help out there yet for understanding Ruby's new features.</p>
+
+<p>I'm hoping to change that.</p>
+
+<p>This posting will be the start of a new series of blog articles designed to explain the character encoding support in Ruby 1.9.  I'm going to assume you know absolutely nothing about character encodings though and begin by explaining in detail what they are and why we have them.</p>
+
+<p>After that, we're going to examine the character encoding support in Ruby 1.8.  There's a lot less support there to examine, but it's not well understood and I'm hoping that seeing it in detail will help with understanding how and why Ruby 1.9 is changing.</p><p><a href="/character-encodings/understanding-m17n-multilingualization/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/understanding-m17n-multilingualization">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/understanding-m17n-multilingualization#comments">16 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>13</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/the-standard-library/the-secret-shell-helper/"><h3 class="blog-title">The Secret Shell Helper</h3></a>
+          <p>Someone pops onto the Ruby Talk mailing list fairly regularly asking how to break up content like:</p>
+
+<pre><code>one "two" "a longer three"
+</code></pre>
+
+<p>They expect to end with a three element <code>Array</code>, where the third item will contain spaces.  They generally expect the quotes will have been removed as well.</p>
+
+<p>If your needs are very, very simple you may be able to handle this with a regular expression:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">data</span> <span class="o">=</span> <span class="s1">'one "two" "a longer three"'</span>
+<span class="nb">p</span> <span class="n">data</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/"([^"]*)"|(\S+)/</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="o">.</span><span class="n">compact</span>
+<span class="c1"># &gt;&gt; ["one", "two", "a longer three"]</span>
+</pre></div>
+
+<p>That just searches for either a set of quotes with some non-quote characters between them or a run of non-whitespace characters.  Those are the two possibilities for the fields.  Note that the two separate capture here mean <code>scan()</code> will returns contents in the form:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">[[</span><span class="kp">nil</span><span class="p">,</span> <span class="s2">"one"</span><span class="o">]</span><span class="p">,</span> <span class="o">[</span><span class="s2">"two"</span><span class="p">,</span> <span class="kp">nil</span><span class="o">]</span><span class="p">,</span> <span class="o">[</span><span class="s2">"a longer three"</span><span class="p">,</span> <span class="kp">nil</span><span class="o">]]</span>
+</pre></div>
+
+<p>That's why I added a <code>flatten()</code> and <code>compact()</code> to get down to the actual matches.</p>
+
+<p>The regular expression approach can get pretty complex though if any kind of escaping for quotes is involved.  When that happens, you may need to step up to a parser.</p><p><a href="/the-standard-library/the-secret-shell-helper/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="the-standard-library/the-secret-shell-helper">
+  In: <a href="/the-standard-library/">The Standard Library</a>
+  <span>|</span>
+  Tags: <a href="/tags/FasterCSV/">FasterCSV</a>, <a href="/tags/Hidden%20Features/">Hidden Features</a> &amp; <a href="/tags/Unix%20Shells/">Unix Shells</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-standard-library/the-secret-shell-helper#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>10</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/ruby-voodoo/all-about-struct/"><h3 class="blog-title">All About Struct</h3></a>
+          <p>I build small little data classes all the time and there's a reason for that:  Ruby makes it trivial to do so.  That's a big win because we all know that what is a trivial data class today will be tomorrow's super object, right?  If I start out using a simple <code>Array</code> or <code>Hash</code>, I'll probably end up redoing most of the logic at both ends eventually.  Or I can start with the trivial class and grow it naturally.</p>
+
+<p>The key to all this though is that I don't write those classes myself!  That's what Ruby is for.  More specifically, you need to learn to love <code>Struct</code>.  Allow me to show you what I mean.</p>
+
+<p>Imagine I need a basic class to represent a <code>Contact</code>.  Ruby gives us so many shortcuts that the class could be very small even without <code>Struct</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Contact</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">email</span><span class="p">)</span>
+    <span class="vi">@first</span> <span class="o">=</span> <span class="n">first</span>
+    <span class="vi">@last</span>  <span class="o">=</span> <span class="n">last</span>
+    <span class="vi">@email</span> <span class="o">=</span> <span class="n">email</span>
+  <span class="k">end</span>
+
+  <span class="kp">attr_accessor</span> <span class="ss">:first</span><span class="p">,</span> <span class="ss">:last</span><span class="p">,</span> <span class="ss">:email</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>You could shorten that up more with some multiple assignment if you like, but that's the basics.  Now using <code>Struct</code> is even easier:</p><p><a href="/ruby-voodoo/all-about-struct/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="ruby-voodoo/all-about-struct">
+  In: <a href="/ruby-voodoo/">Ruby Voodoo</a>
+  <span>|</span>
+  Tags: <a href="/tags/Data%20Objects/">Data Objects</a> &amp; <a href="/tags/Hidden%20Features/">Hidden Features</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-voodoo/all-about-struct#comments">8 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>9</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/ruby-voodoo/dual-interface-modules/"><h3 class="blog-title">Dual Interface Modules</h3></a>
+          <p>I'm guessing we've all seen Ruby's <code>Math</code> <code>Module</code>.  I'm sure you know that you can call methods in it as "module (or class) methods:"</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">Math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>  <span class="c1"># =&gt; 2.0</span>
+</pre></div>
+
+<p>That's just one way to use the <code>Math</code> <code>Module</code> though.  Another is to treat it as a mixin and call the same methods as instance methods:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">MyMathyThing</span>
+  <span class="kp">extend</span> <span class="no">Math</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">my_sqrt</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">sqrt</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="no">MyMathyThing</span><span class="o">.</span><span class="n">my_sqrt</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>  <span class="c1"># =&gt; 2.0</span>
+</pre></div>
+
+<p>Ruby ships with a few <code>Module</code>s that work like this, including the mighty <code>Kernel</code>.</p>
+
+<p>How is this dual interface accomplished?  With the seldom seen <code>module_function()</code> method.  You use this much like you would <code>private()</code>, to affect all following method definitions:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Greeter</span>
+  <span class="kp">module_function</span>
+
+  <span class="k">def</span> <span class="nf">hello</span>
+    <span class="s2">"Hello!"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">module</span> <span class="nn">MyGreeter</span>
+  <span class="kp">extend</span> <span class="no">Greeter</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">my_hello</span>
+    <span class="n">hello</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="no">Greeter</span><span class="o">.</span><span class="n">hello</span>       <span class="c1"># =&gt; "Hello!"</span>
+<span class="no">MyGreeter</span><span class="o">.</span><span class="n">my_hello</span>  <span class="c1"># =&gt; "Hello!"</span>
+</pre></div>
+
+<p>As you can see, it magically gives us the dual interface for the methods beneath it.  You can also affect specific methods by name, just as you could with <code>private()</code>.  This is equivalent to my definition above:</p><p><a href="/ruby-voodoo/dual-interface-modules/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="ruby-voodoo/dual-interface-modules">
+  In: <a href="/ruby-voodoo/">Ruby Voodoo</a>
+  <span>|</span>
+  Tags: <a href="/tags/APIs/">APIs</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-voodoo/dual-interface-modules#comments">2 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>8</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/ruby-voodoo/readable-booleans/"><h3 class="blog-title">Readable Booleans</h3></a>
+          <p>There's a great little trick you can do to improve the readability of your code.  A common problem is dealing with methods that have a boolean flag arguments.  Here's an example I ran into just today in a Rails application:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">rating_stars</span><span class="p">(</span><span class="o">.</span><span class="n">.</span><span class="o">.</span><span class="n">,</span> <span class="n">clickable</span> <span class="o">=</span> <span class="kp">false</span><span class="p">)</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The problem with this is that you typically see calls like this scattered around the application:</p>
+
+<div class="highlight highlight-erb"><pre><span class="cp">&lt;%=</span> <span class="n">rating_stars</span><span class="p">(</span><span class="o">.</span><span class="n">.</span><span class="o">.</span><span class="n">,</span> <span class="kp">true</span><span class="p">)</span> <span class="cp">%&gt;</span><span class="x"></span>
+</pre></div>
+
+<p>Would you know what <code>true</code> did there if I hadn't shown you the name of the variable first?  I didn't.  I had to go hunting for that method definition.</p>
+
+<p>Ironically the opposite problem, a magical dangling <code>false</code>, is much more rare in my experience.  That's typically the default for these kind of arguments and it just makes more sense and reads better to leave it out.</p>
+
+<p>Anyway, the point is that we can typically improve the ease of understanding the common case.  Remember that in Ruby <code>false</code> and <code>nil</code> are false while everything else is true.  That means that truth is very loosely defined and we can pass a lot of things for our boolean flag value.  For example, after looking up the method and understanding what was needed, I chose to call it like this:</p><p><a href="/ruby-voodoo/readable-booleans/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="ruby-voodoo/readable-booleans">
+  In: <a href="/ruby-voodoo/">Ruby Voodoo</a>
+  <span>|</span>
+  Tags: <a href="/tags/APIs/">APIs</a> &amp; <a href="/tags/Style/">Style</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-voodoo/readable-booleans#comments">2 Comments</a>
+</div>
+
+      </li>
+</ul>
+
+<div class="pagination text-center"><ul><li class="previous_page"><a class="previous_page" rel="prev" href="/p7/">&#8592; Previous</a></li> <li><a rel="start" href="/">1</a></li> <li><a href="/p2/">2</a></li> <li><a href="/p3/">3</a></li> <li><a href="/p4/">4</a></li> <li><a href="/p5/">5</a></li> <li><a href="/p6/">6</a></li> <li><a rel="prev" href="/p7/">7</a></li> <li class="active"><a class="active">8</a></li> <li><a rel="next" href="/p9/">9</a></li> <li><a href="/p10/">10</a></li> <li><a href="/p11/">11</a></li> <li><a href="/p12/">12</a></li> <li><a href="/p13/">13</a></li> <li><a href="/p14/">14</a></li> <li class="next"><a class="next" rel="next" href="/p9/">Next &#8594;</a></li></ul></div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

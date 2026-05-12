@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Higher-Order Ruby / Recursion and Callbacks</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This article is the beginning of a new series where I will share some of the great ideas from the Higher-Order Perl book by Mark Jason Dominus.  Of course, I&#39;ll examine these concepts in Ruby.  This first article takes a look at recursive methods and Ruby blocks as a callback functions.">
+    <meta name="keywords"    content="Perl, Functional Programming, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/higher-order-ruby/recursion-and-callbacks/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings">Character Encodings</a></li>
+          <li><a href="/early-steps">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library">The Standard Library</a></li>
+          <li><a href="/throwing-darts">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/higher-order-ruby">Higher-Order Ruby</a></h1>
+            <span>A Rubyification of the Perl book about functional programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>17</h4>
+    <span>
+      JAN<br>
+      2006
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Recursion and Callbacks</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/higher-order-ruby/dispatch-tables">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p>I'm currently reading through <a href="http://hop.perl.plover.com/">Higher-Order Perl</a>, by Mark Jason Dominus.  (Yes, I read books about things other than Ruby.)</p>
+
+<p>So far, I'm enjoying the title quite a bit.  It certainly has me thinking and the Perl in it is very clean and easy to understand.  That helps me translate the concepts to my language of interest.</p>
+
+<p>I'll post some of my Ruby translations of the books example code here as I go along.  Others familiar with the book might enjoy looking over them.  Be warned, my comments might not make much sense to those who haven't read the book.</p>
+
+<h4>Recursion</h4>
+
+<p>The book starts with some very simple recursion examples trivially translated.  Here's one for manually translating <code>Integer</code>s to binary <code>String</code>s (a long way to say <code>str.to_i.to_s(2)</code> in Ruby):</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/local/bin/ruby -w</span>
+
+<span class="k">def</span> <span class="nf">binary</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">number</span><span class="o">.</span><span class="n">to_s</span> <span class="k">if</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">].</span><span class="n">include?</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+
+  <span class="n">k</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">number</span><span class="o">.</span><span class="n">divmod</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+  <span class="n">binary</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">to_s</span>
+<span class="k">end</span>
+
+<span class="k">unless</span> <span class="o">!</span><span class="no">ARGV</span><span class="o">.</span><span class="n">empty?</span> <span class="o">&amp;&amp;</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">all?</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="n">n</span> <span class="o">=~</span> <span class="sr">/\A\d+\Z/</span> <span class="p">}</span>
+  <span class="nb">abort</span> <span class="s2">"Usage:  </span><span class="si">#{</span><span class="no">File</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="vg">$PROGRAM_NAME</span><span class="p">)</span><span class="si">}</span><span class="s2"> DECIMAL_NUMBERS"</span>
+<span class="k">end</span>
+
+<span class="nb">puts</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">num</span><span class="o">|</span> <span class="n">binary</span><span class="p">(</span><span class="n">num</span><span class="o">.</span><span class="n">to_i</span><span class="p">)</span> <span class="p">}</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span>
+</pre></div>
+
+<p>Here's another for calculating factorials:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/local/bin/ruby -w</span>
+
+<span class="k">def</span> <span class="nf">factorial</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+  <span class="k">return</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">number</span> <span class="o">==</span> <span class="mi">0</span>
+
+  <span class="n">factorial</span><span class="p">(</span><span class="n">number</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">number</span>
+<span class="k">end</span>
+
+<span class="k">unless</span> <span class="o">!</span><span class="no">ARGV</span><span class="o">.</span><span class="n">empty?</span> <span class="o">&amp;&amp;</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">all?</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="n">n</span> <span class="o">=~</span> <span class="sr">/\A\d+\Z/</span> <span class="p">}</span>
+  <span class="nb">abort</span> <span class="s2">"Usage:  </span><span class="si">#{</span><span class="no">File</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="vg">$PROGRAM_NAME</span><span class="p">)</span><span class="si">}</span><span class="s2"> DECIMAL_NUMBERS"</span>
+<span class="k">end</span>
+
+<span class="nb">puts</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">num</span><span class="o">|</span> <span class="n">factorial</span><span class="p">(</span><span class="n">num</span><span class="o">.</span><span class="n">to_i</span><span class="p">)</span> <span class="p">}</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span>
+</pre></div>
+
+<p>MJD does talk about how recursion can always be unrolled into an iterative solution.  That leads to what is probably a more natural Ruby solution for examples like these.  Here's how I would probably code <code>factorial()</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">factorial</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+  <span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.number</span><span class="p">)</span><span class="o">.</span><span class="n">inject</span> <span class="p">{</span> <span class="o">|</span><span class="n">prod</span><span class="p">,</span> <span class="n">n</span><span class="o">|</span> <span class="n">prod</span> <span class="o">*</span> <span class="n">n</span> <span class="p">}</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Of course, that's just not what this chapter is about.</p>
+
+<h4>Callbacks</h4>
+
+<p>This section starts off by showing just how cool Ruby's blocks can be:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/local/bin/ruby -w</span>
+
+<span class="k">def</span> <span class="nf">hanoi</span><span class="p">(</span><span class="n">disk</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">finish</span><span class="p">,</span> <span class="n">extra</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">mover</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">disk</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="n">mover</span><span class="o">[</span><span class="n">disk</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">finish</span><span class="o">]</span>
+  <span class="k">else</span>
+    <span class="n">hanoi</span><span class="p">(</span><span class="n">disk</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">extra</span><span class="p">,</span> <span class="n">finish</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">mover</span><span class="p">)</span>
+    <span class="n">mover</span><span class="o">[</span><span class="n">disk</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">finish</span><span class="o">]</span>
+    <span class="n">hanoi</span><span class="p">(</span><span class="n">disk</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">extra</span><span class="p">,</span> <span class="n">finish</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">mover</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">disks</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">empty?</span> <span class="p">?</span> <span class="mi">64</span> <span class="p">:</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">to_i</span>
+
+<span class="n">positions</span> <span class="o">=</span> <span class="o">[</span><span class="kp">nil</span><span class="o">]</span> <span class="o">+</span> <span class="o">[</span><span class="s2">"A"</span><span class="o">]</span> <span class="o">*</span> <span class="n">disks</span>
+<span class="n">hanoi</span><span class="p">(</span><span class="n">disks</span><span class="p">,</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"C"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">disk</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">finish</span><span class="o">|</span>
+  <span class="k">if</span> <span class="n">disk</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="o">||</span> <span class="n">disk</span> <span class="o">&gt;</span> <span class="n">positions</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">raise</span> <span class="s2">"Bad disk number:  </span><span class="si">#{</span><span class="n">disk</span><span class="si">}</span><span class="s2">.  Disks should be between 1 and </span><span class="si">#{</span><span class="n">disks</span><span class="si">}</span><span class="s2">."</span>
+  <span class="k">end</span>
+
+  <span class="k">unless</span> <span class="n">positions</span><span class="o">[</span><span class="n">disk</span><span class="o">]</span> <span class="o">==</span> <span class="n">start</span>
+    <span class="k">raise</span> <span class="s2">"Tried to move #</span><span class="si">#{</span><span class="n">disk</span><span class="si">}</span><span class="s2"> from </span><span class="si">#{</span><span class="n">start</span><span class="si">}</span><span class="s2">, "</span> <span class="o">+</span>
+          <span class="s2">"but it is on peg </span><span class="si">#{</span><span class="n">positions</span><span class="o">[</span><span class="n">disk</span><span class="o">]</span><span class="si">}</span><span class="s2">."</span>
+  <span class="k">end</span>
+
+  <span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="o">.</span><span class="n">disk</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">smaller_disk</span><span class="o">|</span>
+    <span class="k">if</span> <span class="n">positions</span><span class="o">[</span><span class="n">smaller_disk</span><span class="o">]</span> <span class="o">==</span> <span class="n">start</span>
+      <span class="k">raise</span> <span class="s2">"Cannot move </span><span class="si">#{</span><span class="n">disk</span><span class="si">}</span><span class="s2"> from </span><span class="si">#{</span><span class="n">start</span><span class="si">}</span><span class="s2">, "</span> <span class="o">+</span>
+            <span class="s2">"because </span><span class="si">#{</span><span class="n">smaller_disk</span><span class="si">}</span><span class="s2"> is on top of it."</span>
+    <span class="k">elsif</span> <span class="n">positions</span><span class="o">[</span><span class="n">smaller_disk</span><span class="o">]</span> <span class="o">==</span> <span class="n">finish</span>
+      <span class="k">raise</span> <span class="s2">"Cannot move </span><span class="si">#{</span><span class="n">disk</span><span class="si">}</span><span class="s2"> to </span><span class="si">#{</span><span class="n">finish</span><span class="si">}</span><span class="s2">, "</span> <span class="o">+</span>
+            <span class="s2">"because </span><span class="si">#{</span><span class="n">smaller_disk</span><span class="si">}</span><span class="s2"> is already there."</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="nb">puts</span> <span class="s2">"Move #</span><span class="si">#{</span><span class="n">disk</span><span class="si">}</span><span class="s2"> from </span><span class="si">#{</span><span class="n">start</span><span class="si">}</span><span class="s2"> to </span><span class="si">#{</span><span class="n">finish</span><span class="si">}</span><span class="s2">."</span>
+  <span class="n">positions</span><span class="o">[</span><span class="n">disk</span><span class="o">]</span> <span class="o">=</span> <span class="n">finish</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Interestingly though, MJD quickly gets into passing around multiple anonymous functions, and Ruby has to do that just like Perl:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/local/bin/ruby -w</span>
+
+<span class="k">def</span> <span class="nf">dir_walk</span><span class="p">(</span><span class="n">top</span><span class="p">,</span> <span class="n">file_proc</span><span class="p">,</span> <span class="n">dir_proc</span><span class="p">)</span>
+  <span class="n">total</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">top</span><span class="p">)</span>
+
+  <span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">directory?</span><span class="p">(</span><span class="n">top</span><span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span>
+    <span class="no">Dir</span><span class="o">.</span><span class="n">foreach</span><span class="p">(</span><span class="n">top</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">file_name</span><span class="o">|</span>
+      <span class="k">next</span> <span class="k">if</span> <span class="sx">%w{. ..}</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+      <span class="n">results</span> <span class="o">+=</span> <span class="n">dir_walk</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">top</span><span class="p">,</span> <span class="n">file_name</span><span class="p">),</span> <span class="n">file_proc</span><span class="p">,</span> <span class="n">dir_proc</span><span class="p">)</span>
+    <span class="k">end</span>
+    <span class="n">dir_proc</span><span class="o">.</span><span class="n">nil?</span> <span class="p">?</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span> <span class="p">:</span> <span class="n">dir_proc</span><span class="o">[</span><span class="n">top</span><span class="p">,</span> <span class="n">results</span><span class="o">]</span>
+  <span class="k">else</span>
+    <span class="n">file_proc</span><span class="o">.</span><span class="n">nil?</span> <span class="p">?</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span> <span class="p">:</span> <span class="n">file_proc</span><span class="o">[</span><span class="n">top</span><span class="o">]</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">if</span> <span class="bp">__FILE__</span> <span class="o">==</span> <span class="vg">$0</span>
+  <span class="nb">require</span> <span class="s2">"pp"</span>
+
+  <span class="k">unless</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">first</span>
+    <span class="nb">abort</span> <span class="s2">"Usage:  </span><span class="si">#{</span><span class="no">File</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="vg">$PROGRAM_NAME</span><span class="p">)</span><span class="si">}</span><span class="s2"> FILE_OR_DIRECTORY"</span>
+  <span class="k">end</span>
+
+  <span class="n">file</span> <span class="o">=</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span>        <span class="o">[</span><span class="no">File</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="no">File</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">]</span> <span class="p">}</span>
+  <span class="n">dir</span>  <span class="o">=</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">d</span><span class="p">,</span> <span class="n">files</span><span class="o">|</span> <span class="o">[</span><span class="no">File</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="no">Hash</span><span class="o">[*</span><span class="n">files</span><span class="o">]]</span> <span class="p">}</span>
+
+  <span class="n">pp</span> <span class="n">dir_walk</span><span class="p">(</span><span class="no">ARGV</span><span class="o">.</span><span class="n">first</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">dir</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The above makes me want for a multi-block syntax.</p>
+
+<p>It's probably worth noting here that the above is basically an attempt at direct translation.  I am aware of the standard <code>Find</code> library and I do think we should be using that, for this kind of traversal.</p>
+
+<h4>Variable Scope</h4>
+
+<p>Twice in this chapter, MJD has to pause the discussion to school the reader on the dangers of using improperly scoped variables, which can easily wreck recursion.  What I found interesting in reading these was that coding the correct Perl was always adding a step, but it Ruby you have to add a step to get it wrong.  What Rubyists naturally want to type turns out to be the correct thing to do, at least in these cases.  I think this is a good sign that Ruby got variable scope right.</p>
+
+<h4>Functional vs. OO Programming</h4>
+
+<p>We always talk about how Ruby is very Object Oriented, but after reading this side discussion about the two approaches, I wonder how true that really is.  The way MJD described OO, is certainly not how a lot of idiomatic Ruby comes out.  And I found myself seeing a few of the described Functional Programming elements in my favorite language.  Perhaps Ruby is a hybrid Functional OO Programming Language?  Food for thought…</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/higher-order-ruby/dispatch-tables">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="higher-order-ruby/recursion-and-callbacks">
+  In: <a href="/higher-order-ruby">Higher-Order Ruby</a>
+  <span>|</span>
+  Tags: <a href="/tags/Functional%20Programming">Functional Programming</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/higher-order-ruby/recursion-and-callbacks#comments">17 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (17)</span></h5>
+
+    <ol>
+        <li id="comment_3">
+    <div class="avatar"><img alt="Jim Weirich" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="3">
+      <span class="c_name"><a href="http://onestepback.org">Jim Weirich</a></span>
+      <span class="c_date">January 24th, 2006</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_3">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><blockquote>
+<p>The way MJD described OO, is certainly not how a lot of idiomatic Ruby comes out.</p>
+</blockquote>
+
+<p>Could you elaborate on this?  Sounds interesting.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="3" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_3" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_4">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="4">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">January 25th, 2006</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_4">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>MJD is mainly discussing how callbacks can make code so much more powerful.  I'm paraphrasing here, but first he describes the functional style of handling callbacks which basically comes out to:  Have your workhorse routine accept functions as arguments and call them as needed.  Then he describes how you do the same thing in Object Oriented languages (paraphrasing again):  Build a class where the main work method calls virtual methods so user code can subclass and provide the missing methods.</p>
+
+<p>While you certainly can write Ruby code this way, I sure don't see much of it.  I think we tend to hang this kind of functionality on Ruby's blocks, which is a lot closer to passing a function argument I would say.  Even when we do have people subclass and provide methods, there is often some magic involved (like how <code>Test::Unit</code> spots all methods beginning with <code>test_</code>).</p>
+
+<p>It just strikes me that we use objects pretty differently from typical Object Oriented languages.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="4" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_4" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_15">
+    <div class="avatar"><img alt="Danno" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="15">
+      <span class="c_name">Danno</span>
+      <span class="c_date">February 13th, 2006</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_15">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Any language with first class functions can be used as a functional programming language.</p>
+
+<p>Any language that meets the above condition and also satisfies the condition that every expression returns a value <em>is</em> a functional programming language.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="15" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_15" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_20">
+    <div class="avatar"><img alt="lee" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="20">
+      <span class="c_name"><a href="http://poetaexmachina.net">lee</a></span>
+      <span class="c_date">March 21st, 2006</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_20">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I've found <code>Symbol#to_proc</code> (newly in Rails) quite convenient.  I made my own:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Symbol</span>
+  <span class="k">def</span> <span class="nf">to_proc</span> <span class="o">*</span><span class="n">args</span>
+    <span class="nb">lambda</span> <span class="p">{</span><span class="o">|*</span><span class="n">a</span><span class="o">|</span>
+      <span class="n">a</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">send</span> <span class="nb">self</span><span class="p">,</span> <span class="o">*</span><span class="p">(</span><span class="n">args</span><span class="o">+</span><span class="n">a</span><span class="o">[</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="o">-</span><span class="mi">1</span><span class="o">]</span><span class="p">)</span>
+    <span class="p">}</span>
+  <span class="k">end</span>
+  <span class="k">alias</span> <span class="o">[]</span> <span class="n">to_proc</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>so factorial is <code>(1..n).inject(&amp;:*)</code>, and report rewriting is as simple as <code>File.read('report').map(&amp;:gsub[/java/i,'C#'])</code></p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="20" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_20" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_34">
+    <div class="avatar"><img alt="giles bowkett" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="34">
+      <span class="c_name"><a href="http://gilesgoatboy.org">giles bowkett</a></span>
+      <span class="c_date">April 21st, 2006</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_34">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I'm new to Ruby but I've very much gotten the impression that Ruby is, as you say, a hybrid functional/OO language. It's part of the reason I'm interested in it in the first place. (Rails is the other big reason.)</p>
+
+<p>One of the things about Ruby which first caught my attention was a Lisper blog saying "Ruby is an acceptable Lisp," which was basically the Lisp community's equivalent of a compliment, and as I understand it the design was inspired partly by Lisp, as well as by Perl, Python, and Smalltalk. In fact if I recall correctly Matz wrote a popular package in emacs Lisp before he wrote Ruby. (I think it was an e-mail client.)</p>
+
+<p>Python is obsessively OO, obviously Smalltalk invented OO, and Perl can be very Lispy at times. So you've got a strong OO heritage and a strong functional heritage. As I said, I'm new to Ruby, but it really does appear that some hybrid elements are definitely in there.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="34" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_34" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_68">
+    <div class="avatar"><img alt="Jason Watkins" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="68">
+      <span class="c_name"><a href="http://blog.jasonwatkins.net">Jason Watkins</a></span>
+      <span class="c_date">September 7th, 2006</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_68">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Simula predates Smalltalk. Smalltalk added a lot of innovation, but it's not fair to say it invented OO.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="68" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_68" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_74">
+    <div class="avatar"><img alt="Rick DeNatale" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="74">
+      <span class="c_name">Rick DeNatale</span>
+      <span class="c_date">October 16th, 2006</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_74">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>It's a popular mis-conception that Smalltalk took OO from Simula.  Alan Kay cites Simula as one of his influences on the early design of Smalltalk, but it was the original Simula (now known as Simula I), and not Simula-67 which adapted Tony Hoare's record class idea, but wasn't itself object-oriented.</p>
+
+<p>Kay defined the term object-oriented as a computation model based on objects responding to messages.  Classes were introduced several iterations into the evolution of Smalltalk, and as a way to share behavior, rather than a way to compose abstract data types.</p>
+
+<p>Peter Wegner did a diservice when he took it upon himself to re-define object-oriented as "objects+classes+inheritance" thereby stealing Kay's term and giving it to the Abstract Data Type/Strong Typing clan. </p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="74" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_74" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_92">
+    <div class="avatar"><img alt="Jason Watkins" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="92">
+      <span class="c_name"><a href="http://blog.jasonwatkins.net">Jason Watkins</a></span>
+      <span class="c_date">January 2nd, 2007</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_92">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Rick: interesting comment. It doesn't match the other references I've seen, which state that the first implementation of Smalltalk was done in a couple days in 71, as an attempt at duplicating Simula message passing in a one page implementation.</p>
+
+<p>As I recall even the early version of Simula had message passing between coroutines which strongly resembles a concurrent OO language.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="92" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_92" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_40">
+    <div class="avatar"><img alt="Shanti Braford" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="40">
+      <span class="c_name"><a href="http://sproutit.com/bigact">Shanti Braford</a></span>
+      <span class="c_date">April 28th, 2006</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_40">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>James - we've written a portion of Ruby code that works this way in Mailroom.  (<a href="http://sproutit.com/">SproutIt.com</a>'s first app)</p>
+
+<p>We have a series of backend events, i.e.<br><code>RetrainJunkBackendEvent</code><br><code>ProcessMailBackendEvent</code></p>
+
+<p>They are all subclasses of a <code>BackendEvent</code> method, which defines a base <code>run</code> method.</p>
+
+<p>Each subclass defines its own <code>run</code> method.</p>
+
+<p>The <code>BackendEvent</code>s get serialized and de-marshalled at their intended server.  (each has a context, defining which server it should get run on)</p>
+
+<p>But.. this is all old hat to you =)</p>
+
+<p>Ruby is pretty powerful stuff, eh!</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="40" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_40" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_63">
+    <div class="avatar"><img alt="Paul" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="63">
+      <span class="c_name">Paul</span>
+      <span class="c_date">August 16th, 2006</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_63">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>The idea of passsing blocks as arguments in an OO context isn't new. Smalltalk is OO (obviously) and passes blocks too. This is what makes the Smalltalk collection classes so neat.</p>
+
+<p>Ruby has picked up on this idea aswell.</p>
+
+<p>Back to functional versus OO. I'm not sure if the original OO researchers at Xerox-Parc saw subclassing as the best/only way to get varied behaviour in an OO program. IMO we have just started to think of OO in this limited way because most of us have come to OO through C++ (which doesn't have blocks). Message sends with blocks is as OO in my view as any other type of message send.</p>
+
+<p>BTW. isn't it the lack of side effects and the fact that you can deduce the correctness of a function as a result the key difference between functional and imperative programming?</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="63" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_63" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_64">
+    <div class="avatar"><img alt="Paul." height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="64">
+      <span class="c_name">Paul.</span>
+      <span class="c_date">August 17th, 2006</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_64">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>BTW. In my haste to add my 2 cents, I forgot to say what agreat series of articles these are. I'm sorely tempted to go out and by the book and learn Perl just to follow along.</p>
+
+<p>Great Stuff!</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="64" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_64" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+  <li id="comment_93">
+    <div class="avatar"><img alt="HellFeuer" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="93">
+      <span class="c_name">HellFeuer</span>
+      <span class="c_date">February 15th, 2007</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_93">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Paul is right about side effects. The lack of side effects is essential in a "true" functional programming language. Functional languages like SML have imperative features, but these are always considered to be "not functional" (dysfunctional??) and their usage is generally discouraged.</p>
+
+<p>The fact that you can deduce the correctness is a <em>consequence</em> of the functional paradigm, and not a requirement.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="93" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_93" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_72">
+    <div class="avatar"><img alt="Morton Goldberg" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="72">
+      <span class="c_name">Morton Goldberg</span>
+      <span class="c_date">October 9th, 2006</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_72">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><blockquote>
+<p>MJD does talk about how recursion can always be unrolled into an iterative solution.</p>
+</blockquote>
+
+<p>Well, he shouldn't. Because it's not true. For example, there is no iterative version of the following.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">ack</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+   <span class="k">return</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="mi">0</span>
+   <span class="k">return</span> <span class="n">ack</span><span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">m</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span>
+   <span class="k">return</span> <span class="n">ack</span><span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ack</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="k">if</span> <span class="n">m</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span>
+   <span class="nb">fail</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>It may look innocuous, but this is an extemely nasty function.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="72" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_72" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_73">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="73">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">October 10th, 2006</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_73">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Morton, I mean this in the nicest possible way, but you're dead wrong.  ;)</p>
+
+<p>Recursion is just using the call stack to manage your parameters.  You can always hand-roll your own call stack.  Here's the iterative rewrite of your Ackermann function:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">ack_iter</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+  <span class="n">call_stack</span> <span class="o">=</span> <span class="o">[[</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="o">]]</span>
+
+  <span class="kp">loop</span> <span class="k">do</span>
+    <span class="n">current</span> <span class="o">=</span> <span class="n">call_stack</span><span class="o">.</span><span class="n">pop</span>
+
+    <span class="k">if</span> <span class="n">current</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">zero?</span>
+      <span class="n">result</span> <span class="o">=</span> <span class="n">current</span><span class="o">.</span><span class="n">last</span> <span class="o">+</span> <span class="mi">1</span>
+      <span class="k">if</span> <span class="o">!</span><span class="n">call_stack</span><span class="o">.</span><span class="n">empty?</span> <span class="o">&amp;&amp;</span> <span class="n">call_stack</span><span class="o">[-</span><span class="mi">1</span><span class="o">][-</span><span class="mi">1</span><span class="o">]</span> <span class="o">==</span> <span class="s2">"X"</span>
+        <span class="n">call_stack</span><span class="o">[-</span><span class="mi">1</span><span class="o">][-</span><span class="mi">1</span><span class="o">]</span> <span class="o">=</span> <span class="n">result</span>
+      <span class="k">else</span>
+        <span class="k">return</span> <span class="n">result</span>
+      <span class="k">end</span>
+    <span class="k">elsif</span> <span class="n">current</span><span class="o">.</span><span class="n">first</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">current</span><span class="o">.</span><span class="n">last</span><span class="o">.</span><span class="n">zero?</span>
+      <span class="n">call_stack</span> <span class="o">&lt;&lt;</span> <span class="o">[</span><span class="n">current</span><span class="o">.</span><span class="n">first</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span>
+    <span class="k">elsif</span> <span class="n">current</span><span class="o">.</span><span class="n">all?</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">}</span>
+      <span class="n">call_stack</span> <span class="o">&lt;&lt;</span> <span class="o">[</span><span class="n">current</span><span class="o">.</span><span class="n">first</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"X"</span><span class="o">]</span> <span class="o">&lt;&lt;</span>
+                    <span class="o">[</span><span class="n">current</span><span class="o">.</span><span class="n">first</span><span class="p">,</span> <span class="n">current</span><span class="o">.</span><span class="n">last</span> <span class="o">-</span> <span class="mi">1</span><span class="o">]</span>
+    <span class="k">else</span>
+      <span class="nb">fail</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I won't pretend that's pretty, but it's certainly doable.  It's also faster and less likely to overrun the call stack in Ruby.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="73" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_73" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_279">
+    <div class="avatar"><img alt="Fredrik W" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="279">
+      <span class="c_name">Fredrik W</span>
+      <span class="c_date">April 28th, 2009</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_279">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Actually, your implementation of factorial:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">factorial</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+  <span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.number</span><span class="p">)</span><span class="o">.</span><span class="n">inject</span> <span class="p">{</span> <span class="o">|</span><span class="n">prod</span><span class="p">,</span> <span class="n">n</span><span class="o">|</span> <span class="n">prod</span> <span class="o">*</span> <span class="n">n</span> <span class="p">}</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>is recursive and not iterative. At least inject/reduce/fold is recursive in all functional programming languages – I'm not sure if Ruby's C-implementation is recursive, but it should probably be regarded as such.</p>
+
+<p><a href="http://en.wikipedia.org/wiki/Fold_(higher-order_function)">http://en.wikipedia.org/wiki/Fold_(higher-order_function)</a></p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="279" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_279" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+        <li id="comment_280">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="280">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">April 28th, 2009</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_280">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>It's iterative:</p>
+
+<pre><code>$ cat fac.rb 
+def factorial(number)
+  (1..number).inject { |prod, n| prod * n }
+end
+
+def factorial_recursive(number, n = 1)
+  n &gt;= number ? number : n * factorial_recursive(number, n + 1)
+end
+
+p factorial(2_000) &amp;&amp; true
+factorial_recursive(2_000)
+$ ruby fac.rb 
+true
+fac.rb:6:in `factorial_recursive': stack level too deep (SystemStackError)
+    from fac.rb:6:in `factorial_recursive'
+    from fac.rb:10
+</code></pre></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="280" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_280" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_491">
+    <div class="avatar"><img alt="Anton Ivanov" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="491">
+      <span class="c_name"><a href="https://github.com/antivanov">Anton Ivanov</a></span>
+      <span class="c_date">October 20th, 2012</span>
+      <span class="c_reply"><a href="#">Reply</a></span>
+      <span class="c_link"><a class="link_to_comment" href="/higher-order-ruby/recursion-and-callbacks#comment_491">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thank you for this excellent series of articles. In order to better understand the examples and also compare Ruby with JavaScript I ported many of the examples to JavaScript here <a href="https://github.com/antivanov/Higher-Order-JavaScript">https://github.com/antivanov/Higher-Order-JavaScript</a></p>
+
+<p>It turns out that JavaScript is also a pretty powerful and flexible language, although often Ruby provides more syntactic sugar and for more concise code. However, I was surprised that there were a few cases when the JavaScript code is actually shorter simpler: memoization and currying. This is mainly because JavaScript has only functions and no classes and modules.</p></div>
+    <ol>
+      <li class="reply-form">
+        <h5>Reply (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+        <div class="comment_form_holder">
+          <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" value="491" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_491" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+        </div>
+      </li>
+      
+    </ol>
+  </li>
+
+    </ol>
+
+    <div id="comment-form-wrapper">
+      <h5>Leave a Comment (using <a href="https://help.github.com/articles/github-flavored-markdown" target="_blank">GitHub Flavored Markdown</a>)</h5>
+
+      <div class="comment_form_holder">
+        <form accept-charset="UTF-8" action="/higher-order-ruby/recursion-and-callbacks/comments/preview" class="commentform" id="new_comment" method="post"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="WaV2xlmlVTRdbNNx+pNN87q+C80kYogcwIMbycMXnww=" /></div>
+  <p>Comments on this blog are moderated.  Spam is removed, formatting is fixed, and there's a zero tolerance policy on intolerance.</p>
+
+  <input id="comment_in_reply_to_id" name="comment[in_reply_to_id]" type="hidden" />
+
+<div class="comment_login">
+  <span class="login_message">Or login with:</span>
+  <a class="login_link" data-method="post" href="/login/github?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="GitHub" height="60" src="/assets/auth_providers/github-f83357bf73b38a3d891f2f1c33fcd202.png" width="60" /></a>
+  <a class="login_link" data-method="post" href="/login/twitter?return_to=http%3A%2F%2Fgraysoftinc.com%2Fhigher-order-ruby%2Frecursion-and-callbacks" rel="nofollow"><img alt="Twitter" height="60" src="/assets/auth_providers/twitter-765e787c98e2eb1ec166edf506ed8887.png" width="60" /></a>
+</div>
+<label class="no_account_field" for="comment_author">Name <span class="req">*</span></label><input class="no_account_field" id="comment_author" name="comment[author]" type="text" />
+<label class="no_account_field" for="comment_authors_email">Email</label><input class="no_account_field" id="comment_authors_email" name="comment[authors_email]" type="text" />
+<label class="no_account_field" for="comment_authors_url">URL</label><input class="no_account_field" id="comment_authors_url" name="comment[authors_url]" type="text" />
+<label for="comment_body">Comment <span class="req">*</span></label><textarea id="comment_content_" name="comment[body]" rows="10">
+</textarea>
+
+
+  <input class="btn btn-large" name="commit" type="submit" value="Preview" />
+  <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>
+      </div>
+    </div>
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            <div class="widget widget_search">
+              <h4 class="title">Search</h4>
+              <form accept-charset="UTF-8" action="http://graysoftinc.com/search" method="get"><div style="display:none"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+                <input id="query" name="query" type="text" />
+                <input class="btn" name="commit" type="submit" value="Search" />
+                <img alt="Ajax loader" class="loading" src="/assets/ajax-loader-83711cbc28431d1540a3a390edf246d5.gif" />
+</form>              <ul>
+                
+              </ul>
+            </div>
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations">Alternative Implementations</a></li>
+<li><a href="/tags/APIs">APIs</a></li>
+<li><a href="/tags/AWS">AWS</a></li>
+<li><a href="/tags/Blogging">Blogging</a></li>
+<li><a href="/tags/Bugs">Bugs</a></li>
+<li><a href="/tags/Code%20Reading">Code Reading</a></li>
+<li><a href="/tags/Community">Community</a></li>
+<li><a href="/tags/Concurrency">Concurrency</a></li>
+<li><a href="/tags/Configuration">Configuration</a></li>
+<li><a href="/tags/Curses">Curses</a></li>
+<li><a href="/tags/Dart">Dart</a></li>
+<li><a href="/tags/Databases">Databases</a></li>
+<li><a href="/tags/Data%20Objects">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime">Date/Time</a></li>
+<li><a href="/tags/Documentation">Documentation</a></li>
+<li><a href="/tags/DSLs">DSLs</a></li>
+<li><a href="/tags/Editors">Editors</a></li>
+<li><a href="/tags/Erlang">Erlang</a></li>
+<li><a href="/tags/Error%20Handling">Error Handling</a></li>
+<li><a href="/tags/Experimentation">Experimentation</a></li>
+<li><a href="/tags/FasterCSV">FasterCSV</a></li>
+<li><a href="/tags/Feeds">Feeds</a></li>
+<li><a href="/tags/For%20Fun">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development">Game Development</a></li>
+<li><a href="/tags/Git">Git</a></li>
+<li><a href="/tags/Heredocs">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features">Hidden Features</a></li>
+<li><a href="/tags/Iterators">Iterators</a></li>
+<li><a href="/tags/Java">Java</a></li>
+<li><a href="/tags/Leap%20Year">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins">Mix-ins</a></li>
+<li><a href="/tags/Monitoring">Monitoring</a></li>
+<li><a href="/tags/Multilingualization">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source">Open Source</a></li>
+<li><a href="/tags/Parsing">Parsing</a></li>
+<li><a href="/tags/Patterns">Patterns</a></li>
+<li><a href="/tags/Performance">Performance</a></li>
+<li><a href="/tags/Presentations">Presentations</a></li>
+<li><a href="/tags/Process">Process</a></li>
+<li><a href="/tags/Redis">Redis</a></li>
+<li><a href="/tags/Refactoring">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression">Regular Expression</a></li>
+<li><a href="/tags/Rust">Rust</a></li>
+<li><a href="/tags/Scripting">Scripting</a></li>
+<li><a href="/tags/Spam">Spam</a></li>
+<li><a href="/tags/Style">Style</a></li>
+<li><a href="/tags/Syntax">Syntax</a></li>
+<li><a href="/tags/System%20Administration">System Administration</a></li>
+<li><a href="/tags/Teaching">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control">Version Control</a></li>
+<li><a href="/tags/Web%20Services">Web Services</a></li>
+<li><a href="/tags/XMPP">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>
