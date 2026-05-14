@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Terminal Tricks / Basic Curses</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="A reworking of all my terminal tricks examples to use the curses library.">
+    <meta name="keywords"    content="Curses, Terminal I/O, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/terminal-tricks/basic-curses/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/terminal-tricks">Terminal Tricks</a></h1>
+            <span>A deep dive into the ways we can get fancy output out of our terminals.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>28</h4>
+    <span>
+      FEB<br>
+      2015
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Basic Curses</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/terminal-tricks/random-access-terminal/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/terminal-tricks/curses-windows-pads-and-panels/">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p>In <a href="http://graysoftinc.com/terminal-tricks/random-access-terminal">my last article</a>, I showed off some of the various magic commands a Unix terminal recognizes and how you can use those commands to move the cursor around, change the colors of your output, and read input in a character by character fashion.  It's not very common to manipulate things manually as I did in those examples.  There are libraries that wrap these mechanisms and add abstractions of their own.  Using one of them can be easier and less error prone.</p>
+
+<p>Probably the most famous of these higher abstraction libraries is <code>curses</code>.  However, your version won't be called that.  <code>curses</code> was the original library for System V UNIX.  These days you are far more likely to have <code>ncurses</code> which a replacement library that emulates the original.  The truth is, you probably don't have exactly that library either.  Instead, you may have <code>ncursesw</code>, which is the same library with <em>wide character</em> (read:  non-ASCII) support.  Also, <code>curses</code> is often discussed with several add on libraries:  <code>panel</code>, <code>menu</code>, and <code>form</code>.  Documentation often covers these separate units together.</p>
+
+<p>Speaking of documentation, coverage of using <code>curses</code> in Ruby is pretty non-existent.  That's the main reason I'm writing these articles.  Most of the Ruby wrappers are almost direct copies of the C APIs, so you can mostly use that documentation with minor changes.  (I'm aware of at least <a href="https://github.com/grosser/dispel">one higher level wrapper</a>, but the documentation story isn't much better there.)  My three best sources for learning <code>curses</code> have been <a href="http://tldp.org/HOWTO/NCURSES-Programming-HOWTO/">this very thorough <em>How To</em></a> from The Linux Documentation Project, <a href="http://invisible-island.net/ncurses/man/ncurses.3x.html">the <code>man</code> pages</a>, and <a href="https://github.com/seanohalpin/ffi-ncurses/tree/master/examples">the <code>examples</code> directory in the <code>ffi-ncurses</code> gem</a>.  Hopefully I can save you the trouble of reading all of that with these articles.</p>
+
+<p>The previously mentioned <a href="https://rubygems.org/gems/ffi-ncurses"><code>ffi-ncurses</code> gem</a> is one of your choices for wrappers in Ruby.  It's the library I'll be covering, because:</p>
+
+<ul>
+<li>It worked for me without additional installs on Mac OS X (Yosemite)</li>
+<li>It does some reasonable setup for you to make using Unicode characters pretty painless</li>
+<li>It supports JRuby</li>
+</ul><p>According to <a href="https://www.ruby-toolbox.com/">The Ruby Toolbox</a>, <a href="https://rubygems.org/gems/ncursesw">the more popular library is <code>ncursesw</code></a>.  It doesn't quite meet the advantages I listed above, but it does wrap <code>menu</code> and <code>form</code> (which <code>ffi-ncurses</code> does not).</p>
+
+<p>Again though, both of these libraries a very nearly direct copies of the C API, so using either is pretty similar.</p>
+
+<p>Enough background.  Let's play with some <code>curses</code> code.  I'll redo the examples from my last article below, using <code>ffi-ncurses</code> and point out the differences as we go.  It may be handy to have those <a href="http://graysoftinc.com/terminal-tricks/random-access-terminal">previous examples</a> open at the same time so you can compare the two versions as you read this.</p>
+
+<h4>Output</h4>
+
+<p>Last time, my first example was how to move the cursor around relative to it's current position.  I don't think this kind of treatment is as common when using <code>curses</code> for reasons I'll get into in a bit, but it can still be done.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>  <span class="c1"># gem install ffi-ncurses</span>
+
+<span class="k">begin</span>
+  <span class="c1"># setup</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>  <span class="c1"># start curses</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">cbreak</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">noecho</span>
+
+  <span class="c1"># write some content</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="s2">"onez</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="s2">"twos</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="s2">"threes</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>  <span class="c1"># pause waiting on a keypress</span>
+
+  <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getyx</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>         <span class="c1"># find the cursor</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wmove</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">3</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># make a relative move</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="s2">"s"</span><span class="p">)</span>         <span class="c1"># fix the content</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wmove</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>          <span class="c1"># go back to where we were</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>             <span class="c1"># update what the user is seeing</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>  <span class="c1"># pause waiting on a keypress</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>  <span class="c1"># end curses</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>OK, so the first major difference you notice is that it's a lot more code and it's not too pretty.  We're straight up using a C API here, so it's not going to be very Rubyish.  I'll try to fix that in a later article, but I wanted to cover how this stuff works first.  Also, I could have done an <code>include FFI::NCurses</code> and dropped a ton of references to the module here.  I didn't do that for two reasons:</p>
+
+<ul>
+<li>So you could easily see what's part of the module's API</li>
+<li>Doing so would dump a <strong>ton</strong> of methods into Ruby's top-level scope, which is probably not a great practice</li>
+</ul><p>Another difference between the code in my last article and what you see above is the need to initialize <code>curses</code> and shut it down when we're done.  You will pretty much always see this <code>begin … ensure … end</code> pattern with calls to <code>initscr()</code> and <code>endwin()</code> when working with <code>curses</code> in Ruby.</p>
+
+<p>Ignore the calls to <code>cbreak()</code> and <code>noecho()</code> for now.  I'll discuss those below.</p>
+
+<p>Finally, the first chunk of <code>waddstr()</code> calls should start to look something like the example we're rewriting.  <code>waddstr()</code> is one of about a gazillion ways that you can write to the screen using <code>curses</code>.  It writes a <code>String</code>.  I recommend pretty much always using this method for several reasons:</p>
+
+<ul>
+<li>It's easy to understand</li>
+<li>It will do the right thing if your <code>String</code> includes Unicode characters</li>
+<li>It allow you to ignore quite a bit of the <code>curses</code> API</li>
+</ul><p>This last point is a pretty big deal.  <code>curses</code> is a massive collection of  functions.  A great many of them provide alternate ways to do similar things.  Variety is nice, but Ruby already gives you so many useful tools.  For example, there's a <code>printf()</code>-like variation of the <code>String</code> writing function I showed you.  You don't need that.  Use <a href="http://ruby-doc.org/core-2.2.0/String.html#method-i-25"><code>String#%</code> in Ruby</a> and hand the result to <code>waddstr()</code>.  It's true that some of the <code>curses</code> functions I'm skipping probably perform a tiny bit better due to skipping some steps, but on a modern computer you are unlikely to need more drawing speed even with a full screen terminal.  Instead, I recommend getting a handle on the API basics and adding the other stuff only when you find yourself with a genuine need.</p>
+
+<p>At the end of the output, notice that I needed a call to <code>wrefresh()</code>.  In <code>curses</code> adding content is a separate operation from drawing that content to the screen.  We have to explicitly tell a <em>window</em> when to redraw itself, which is what <code>wrefresh()</code> does.</p>
+
+<p>I haven't talked about what a <code>curses</code> window is yet and, to be honest, I'm going to save most of that for a future article.  But here's all you need to know for now:</p>
+
+<ul>
+<li>The <code>w</code> prefix on most of these functions stands for <em>window</em> and it means they expect a window as their first argument</li>
+<li>A window is a place where you can draw output to the screen in <code>curses</code> code</li>
+<li>When <code>curses</code> starts up, it creates a default window, that is the full size of the terminal, called <code>stdscr</code> (for <em>standard screen</em> I assume)</li>
+<li>
+<code>initscr()</code> returns <code>stdscr</code>
+</li>
+<li>
+<code>curses</code> has a duplicate API without the <code>w</code> prefixes that mostly just assumes you want to work with <code>stdscr</code> (<code>addstr()</code>, <code>refresh()</code>, etc.)</li>
+<li>You can't do everything with that less verbose API, so I'm voting you ignore it for now</li>
+</ul><p>To sum up:  <code>curses</code> will give you the <code>stdscr</code> window.  Just pass that everywhere you need a window reference until you're ready to start making windows of your own.</p>
+
+<p>OK, another change in this example is that I added two pauses using <code>getch()</code>.  This just waits for you to push a key and it's the reason that I set the <code>cbreak()</code> and <code>noecho()</code> modes early on.  (More on modes below.)  It's worth noting that I had to do this.  <code>curses</code> usually clears the screen as you enter and exit <code>curses</code> mode so, without the pauses, you wouldn't have seen any output.</p>
+
+<p>We're finally ready to discuss the meat of this example, the moving and changing code.  To refresh your memory, here are the lines I'm talking about:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+  <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getyx</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>         <span class="c1"># find the cursor</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wmove</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">3</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># make a relative move</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="s2">"s"</span><span class="p">)</span>         <span class="c1"># fix the content</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wmove</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>          <span class="c1"># go back to where we were</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>             <span class="c1"># update what the user is seeing</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p><code>getyx()</code> is the reason I had to use the window referencing functions in this example.  Though it doesn't have a <code>w</code> prefix, it does require a window to find the cursor in.  It's also one of the few places the <code>ffi-ncurses</code> deviates from the C API, switching to Ruby's multiple-assignment friendly return of an <code>Array</code> of two <code>Integer</code>s instead of forcing you to pass two pointer arguments.</p>
+
+<p>It's worth noting that <code>*yx()</code> functions in the <code>curses</code> API are always in that order, Y then X.  This can trip you up if your accustom to X then Y ordering.</p>
+
+<p>The rest of this code should be pretty easy to grok as it just moves around using the known cursor coordinates.  This is very similar to the original example, except that we didn't need to find the cursor last time.</p>
+
+<p>I know that was a slog because I had to cover through so many <code>curses</code>-isms, but that should allow us to coast through these next few examples now that we have the basics.  Here's the similar example from last time using absolute movement:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>
+
+<span class="k">begin</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">cbreak</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">noecho</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="s2">"onez</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="s2">"twos</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="s2">"threes</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>
+
+  <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getyx</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>          <span class="c1"># save cursor position</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">mvwaddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">"s"</span><span class="p">)</span>  <span class="c1"># a combined move and add</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wmove</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>           <span class="c1"># restore the cursor position</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>              <span class="c1"># update what the user sees</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Only the commented lines differ in this example and they correspond pretty closely to the matching example from the previous article.  There's really just one surprise here.  Remember when I said that terminals index rows and columns starting at <code>1</code>?  Well <code>curses</code> switches back to the more common <code>0</code> for maximum confusion.  That's why <code>1;4</code> has become <code>0, 3</code> in this version.</p>
+
+<p>I do believe this is a more common usage pattern with <code>curses</code> code.  The reason is that we know the screen has been cleared and we know that we're drawing into some window at a known location.  With those givens, absolute coordinates make a lot of sense.</p>
+
+<p>The colors example has more changes:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>
+
+<span class="k">def</span> <span class="nf">color_pairs</span>
+  <span class="vi">@color_pairs</span> <span class="o">||=</span> <span class="p">{</span> <span class="p">}</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">color_pair</span><span class="p">(</span><span class="n">foreground</span><span class="p">,</span> <span class="n">background</span><span class="p">)</span>
+  <span class="n">foreground</span> <span class="o">=</span> <span class="n">foreground</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sr">/\Abright_/</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">to_sym</span>
+  <span class="n">color</span>      <span class="o">=</span> <span class="o">[</span><span class="n">foreground</span><span class="p">,</span> <span class="n">background</span><span class="o">]</span>
+
+  <span class="c1"># add the color pair if this is the first time we've seen it</span>
+  <span class="k">unless</span> <span class="n">color_pairs</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">color</span><span class="p">)</span>
+    <span class="n">foreground_color</span>   <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">Color</span><span class="o">.</span><span class="n">const_get</span><span class="p">(</span><span class="n">foreground</span><span class="o">.</span><span class="n">upcase</span><span class="p">)</span>
+    <span class="n">background_color</span>   <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">Color</span><span class="o">.</span><span class="n">const_get</span><span class="p">(</span><span class="n">background</span><span class="o">.</span><span class="n">upcase</span><span class="p">)</span>
+    <span class="n">number</span>             <span class="o">=</span> <span class="n">color_pairs</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">color_pairs</span><span class="o">[</span><span class="n">color</span><span class="o">]</span> <span class="o">=</span> <span class="n">number</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">init_pair</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">foreground_color</span><span class="p">,</span> <span class="n">background_color</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="c1"># lookup the color pair</span>
+  <span class="n">color_pairs</span><span class="o">[</span><span class="n">color</span><span class="o">]</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">color</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="n">foreground</span><span class="p">,</span> <span class="n">background</span><span class="p">)</span>
+  <span class="n">weight</span> <span class="o">=</span> <span class="n">foreground</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">start_with?</span><span class="p">(</span><span class="s2">"bright"</span><span class="p">)</span> <span class="p">?</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">A_BOLD</span>
+                                                 <span class="p">:</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">A_NORMAL</span>
+  <span class="n">pair</span>   <span class="o">=</span> <span class="n">color_pair</span><span class="p">(</span><span class="n">foreground</span><span class="p">,</span> <span class="n">background</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wattr_set</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">pair</span><span class="p">,</span> <span class="kp">nil</span><span class="p">)</span>  <span class="c1"># change colors</span>
+  <span class="k">yield</span>
+<span class="k">ensure</span>
+  <span class="c1"># change back to default colors</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wattr_set</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">A_NORMAL</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kp">nil</span><span class="p">)</span>
+<span class="k">end</span>
+
+<span class="k">begin</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">cbreak</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">noecho</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">start_color</span>                    <span class="c1"># turn colors on</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">assume_default_colors</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># make color pair 0 the defaults</span>
+
+  <span class="o">[</span> <span class="o">[</span><span class="s2">"C"</span><span class="p">,</span> <span class="ss">:red</span><span class="o">]</span><span class="p">,</span>
+    <span class="o">[</span><span class="s2">"O"</span><span class="p">,</span> <span class="ss">:bright_red</span><span class="o">]</span><span class="p">,</span>
+    <span class="o">[</span><span class="s2">"L"</span><span class="p">,</span> <span class="ss">:bright_yellow</span><span class="o">]</span><span class="p">,</span>
+    <span class="o">[</span><span class="s2">"O"</span><span class="p">,</span> <span class="ss">:bright_green</span><span class="o">]</span><span class="p">,</span>
+    <span class="o">[</span><span class="s2">"R"</span><span class="p">,</span> <span class="ss">:bright_blue</span><span class="o">]</span><span class="p">,</span>
+    <span class="o">[</span><span class="s2">"S"</span><span class="p">,</span> <span class="ss">:blue</span><span class="o">]</span><span class="p">,</span>
+    <span class="o">[</span><span class="s2">"!"</span><span class="p">,</span> <span class="ss">:bright_magenta</span><span class="o">]</span> <span class="o">].</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">char</span><span class="p">,</span> <span class="n">color</span><span class="o">|</span>
+    <span class="n">color</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="ss">:white</span><span class="p">)</span> <span class="k">do</span>
+      <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="n">char</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>When you want to use colors in <code>curses</code> you need to set them up.  First, that means that you should call <code>start_color()</code> as part of your initialization sequence.  I would also recommend calling <code>FFI::NCurses.assume_default_colors(-1, -1)</code>.  Let me explain why I say that.</p>
+
+<p>To use colors in <code>curses</code>, you create <em>color pairs</em>:  numbered groupings of foreground and background colors.  Pair <code>0</code> already exists.  It's set to black on black, I believe.  Not so helpful.  (The documentation says you can't change it though I'm pretty sure I've been allowed to do so in the past.)  Anyway, if you call <code>FFI::NCurses.assume_default_colors(-1, -1)</code>, it switches pair <code>0</code> to being whatever the default foreground and background are for the terminal.  That's a much more useful default, if you ask me.</p>
+
+<p>Now that you know about color pairs, you can probably puzzle out my <code>color_pair()</code> method.  It just pulls color pair numbers out of the <code>color_pairs()</code> <code>Hash</code>.  If it's the first time a pair has been seen, it inserts it into the <code>Hash</code> in the next numbered slot before reading it back.  It does this by looking up some predefined constants in <code>FFI::NCurses::Color</code> for named terminal colors.</p>
+
+<p><code>color()</code> works similar to how it did in the example from my last article:  switch colors, write some content (by invoking the block in this case), and then switch back (using that useful pair <code>0</code> default that we setup earlier).  Note that <em>bright</em> colors are handled here by setting the <code>FFI::NCurses::A_BOLD</code> attribute with the color pair.</p>
+
+<p>The rest of the code is much like it was before.</p>
+
+<p>The <em>Status Line Trick</em> from the previous article no longer applies when we've gone all in on loading <code>curses</code>.  However, I did have a tiny example last time that showed how to get the screen size when I introduced <code>io/console</code> in the <em>Input</em> section.  For completeness, here's the similar code for <code>curses</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>
+
+<span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">,</span> <span class="kp">nil</span>
+<span class="k">begin</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>
+  <span class="n">rows</span>   <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getmaxy</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+  <span class="n">cols</span>   <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getmaxx</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>
+<span class="k">end</span>
+<span class="nb">puts</span> <span class="s2">"Columns:  </span><span class="si">#{</span><span class="n">cols</span><span class="si">}</span><span class="s2">, Rows:  </span><span class="si">#{</span><span class="n">rows</span><span class="si">}</span><span class="s2">"</span>
+</pre></div>
+
+<p>I prefer to do it in two steps like this because you don't have to worry about pointers.  <code>getmaxy()</code> and <code>getmaxx()</code> are a set of functions classified as a <em>legacy</em> interface, but they've been available forever and I don't think there's any danger of them being removed.</p>
+
+<p>If you prefer though, you can do it in one step by passing <code>Array</code>s as the pointers to be filled in:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>
+
+<span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span><span class="p">,</span> <span class="o">[</span> <span class="o">]</span>
+<span class="k">begin</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getmaxyx</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">)</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>
+<span class="k">end</span>
+<span class="nb">puts</span> <span class="s2">"Columns:  </span><span class="si">#{</span><span class="n">cols</span><span class="o">.</span><span class="n">first</span><span class="si">}</span><span class="s2">, Rows:  </span><span class="si">#{</span><span class="n">rows</span><span class="o">.</span><span class="n">first</span><span class="si">}</span><span class="s2">"</span>
+</pre></div>
+
+<p>Note the added calls to <code>first()</code> in the last line to get the <code>Integer</code>s back out of the <code>Array</code>s.</p>
+
+<h4>Input</h4>
+
+<p>If you'll recall, the trick of getting terminal input right is all about using the right modes.  Well, you just got to the good stuff!  <code>curses</code> has a rich set of modes that you can mix and match to suite exactly your current needs.  In my opinion, this is one of the biggest reasons to use <code>curses</code>.</p>
+
+<p>Here's the simplest way to read individual characters as they are typed using <code>curses</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>
+
+<span class="k">begin</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">cbreak</span>  <span class="c1"># like raw, but don't eat things like control-c</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">noecho</span>  <span class="c1"># don't echo what the user types</span>
+
+  <span class="kp">loop</span> <span class="k">do</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span><span class="o">.</span><span class="n">chr</span>  <span class="c1"># read and convert to a String</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="s2">"You typed:  </span><span class="si">#{</span><span class="n">key</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+    <span class="k">break</span> <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="sc">?q</span>
+  <span class="k">end</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Most of the work here is handled by two of the most boring lines.  The call to <code>cbreak()</code> puts us in a raw-like mode where we can read single keystrokes as they are made, but where we can still interrupt the program (with control-C) or suspend it (with control-Z).</p>
+
+<p><code>noecho()</code> turns off the automatic copying of what's typed to the screen.  Notice how this is a separate concern from <code>cbreak()</code> mode in <code>curses</code> and I get to handle them independently.</p>
+
+<p>Once your modes are set, getting input is as simple as calling <code>getch()</code>.  Remember that it will return <code>Integer</code>s though, so you'll usually want a call to <code>chr()</code> to get the <code>String</code> for what was typed.</p>
+
+<p>The next example we looked at last time was how to read keys only if they are available.  Again, <code>curses</code> modes to the rescue:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>
+
+<span class="k">begin</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">halfdelay</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># set a read delay of one tenth of a second</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">noecho</span>
+
+  <span class="n">last_read</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+  <span class="n">prompted</span>  <span class="o">=</span> <span class="kp">false</span>
+  <span class="kp">loop</span> <span class="k">do</span>
+    <span class="n">char</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>     <span class="c1"># this will wait for the read delay</span>
+    <span class="k">if</span> <span class="n">char</span> <span class="o">!=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">ERR</span>  <span class="c1"># ERR is returned when we hit the delay</span>
+      <span class="n">last_read</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+      <span class="n">key</span>       <span class="o">=</span> <span class="n">char</span><span class="o">.</span><span class="n">chr</span>
+      <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="s2">"You typed:  </span><span class="si">#{</span><span class="n">key</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+      <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+      <span class="k">break</span> <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="sc">?q</span>
+    <span class="k">elsif</span> <span class="o">!</span><span class="n">prompted</span> <span class="o">&amp;&amp;</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="n">last_read</span> <span class="o">&gt;</span> <span class="mi">3</span>
+      <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="s2">"Please type a character.</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+      <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+      <span class="n">prompted</span> <span class="o">=</span> <span class="kp">true</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This new <code>halfdelay()</code> mode is like <code>cbreak()</code>, but with an added delay that you specify in tenths of a second.  In this mode, calls to <code>getch()</code> will wait for input until the delay is exhausted, then return <code>FFI::NCurses::ERR</code>.  This solves exactly the problem we had last time, doesn't require the use of additional libraries or cryptic low-level methods, and it even allows us to drop the call to <code>sleep()</code>.  You just have to check to see if you got <code>FFI::NCurses::ERR</code> instead of an actual key press.</p>
+
+<p>If you ever need a full non-breaking, zero wait read with <code>curses</code> you can have that too.  <a href="http://invisible-island.net/ncurses/man/curs_inopts.3x.html">The <code>timeout()</code>/<code>wtimeout()</code> functions</a> are there when you need them.</p>
+
+<p>It's also worth pointing out that we never ran into the newline translation problem with the <code>curses</code>.  That's yet another mode.  I never turned it off and we never has a problem.</p>
+
+<p>Which brings us to the final example.  Last time we noted that our code didn't properly handle special keys, like the arrow keys.  Both examples above have the same issue.  This probably won't surprise you by now, but <code>curses</code> has a mode for that too:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"ffi-ncurses"</span>
+
+<span class="k">begin</span>
+  <span class="n">stdscr</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">initscr</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">halfdelay</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">noecho</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">keypad</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="kp">true</span><span class="p">)</span>  <span class="c1"># handle special keys</span>
+
+  <span class="n">last_read</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+  <span class="n">prompted</span>  <span class="o">=</span> <span class="kp">false</span>
+  <span class="kp">loop</span> <span class="k">do</span>
+    <span class="n">char</span> <span class="o">=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">getch</span>
+    <span class="k">if</span> <span class="n">char</span> <span class="o">!=</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">ERR</span>
+      <span class="n">last_read</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+      <span class="n">key</span>       <span class="o">=</span> <span class="kp">nil</span>
+      <span class="c1"># find key in special constants</span>
+      <span class="k">if</span> <span class="p">(</span><span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">KEY_CODE_YES</span><span class="o">.</span><span class="n">.</span><span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">KEY_MAX</span><span class="p">)</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>
+        <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">KeyDefs</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">key_name</span><span class="o">|</span>
+          <span class="k">if</span> <span class="n">key_name</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">start_with?</span><span class="p">(</span><span class="s2">"KEY_"</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+             <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">KeyDefs</span><span class="o">.</span><span class="n">const_get</span><span class="p">(</span><span class="n">key_name</span><span class="p">)</span> <span class="o">==</span> <span class="n">char</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">key_name</span>
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">else</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">char</span><span class="o">.</span><span class="n">chr</span>
+      <span class="k">end</span>
+      <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="s2">"You typed:  </span><span class="si">#{</span><span class="n">key</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+      <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+      <span class="k">break</span> <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="sc">?q</span>
+    <span class="k">elsif</span> <span class="o">!</span><span class="n">prompted</span> <span class="o">&amp;&amp;</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="n">last_read</span> <span class="o">&gt;</span> <span class="mi">3</span>
+      <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="s2">"Please type a character.</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+      <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">wrefresh</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+      <span class="n">prompted</span> <span class="o">=</span> <span class="kp">true</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">ensure</span>
+  <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">.</span><span class="n">endwin</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The new call here is <code>FFI::NCurses.keypad(stdscr, true)</code> which turns on the handling of special characters.  I can't think of very many cases where that isn't desirable, so I always turn it on.</p>
+
+<p>I used a fancy scan of constants in the <code>if</code> statement to show the name of the pressed key in the output of this program, but the typical usage is much simpler.  You often write code like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">case</span> <span class="n">char</span>
+<span class="k">when</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">KeyDefs</span><span class="o">::</span><span class="no">KEY_UP</span>
+  <span class="c1"># ...</span>
+<span class="k">when</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">KeyDefs</span><span class="o">::</span><span class="no">KEY_RIGHT</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Anyway, when I run the code above and push some arrow keys, I see output like:</p>
+
+<pre><code>You typed:  :KEY_UP
+You typed:  :KEY_RIGHT
+</code></pre>
+
+<p>I still have trouble with some keystrokes not being detected (like control-alt-o) and other being swallowed by my terminal for other purposes (some function keys).  I believe some of this could be solved by tweaking my terminal settings, but I'm generally only ever after the arrow keys anyway and they work fine.</p>
+
+<p>That concludes our adaptation of basic terminal manipulation code to similar operations using <code>curses</code>.  This shows you some basics, but there's more to <code>curses</code> than what I've covered here.  Next time I'll look at some of the abstractions <code>curses</code> adds beyond these basic tools.</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/terminal-tricks/random-access-terminal/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/terminal-tricks/curses-windows-pads-and-panels/">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="terminal-tricks/basic-curses">
+  In: <a href="/terminal-tricks/">Terminal Tricks</a>
+  <span>|</span>
+  Tags: <a href="/tags/Curses/">Curses</a> &amp; <a href="/tags/Terminal%20I%2FO/">Terminal I/O</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/terminal-tricks/basic-curses#comments">0 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (0)</span></h5>
+
+    <ol>
+      
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

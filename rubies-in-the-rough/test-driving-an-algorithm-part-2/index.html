@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / Test Driving an Algorithm (Part 2)</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="In this article I tackle the same puzzle as last time, but with a full-on TDD approach to show what kind of difference that makes in the result.">
+    <meta name="keywords"    content="thinking about code, software design, Iterators, Test-Driven Development, Syntax, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/test-driving-an-algorithm-part-2/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>11</h4>
+    <span>
+      FEB<br>
+      2012
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Test Driving an Algorithm (Part 2)</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/rubies-in-the-rough/test-driving-an-algorithm-part-1/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      &nbsp;
+  </div>
+</div>
+
+        <p>In the last article, I built a quick and dirty solution to PuzzleNode's <a href="http://puzzlenode.com/puzzles/11-hitting-rock-bottom">Hitting Rock Bottom</a> puzzle.  I didn't use specs, objects, or even multiple files.  In this article, I'll repeat the exercise but using all of those elements.  Let's see how that affects the results.</p>
+
+<h4>The Disciplined Approach</h4>
+
+<p>This time, I'll reign in my desire to push forward and solve the problem more carefully, without having to build a fully formed algorithm all at once.</p>
+
+<p>I still think the input is the right place to start.  I need to read in the units.  Let's add a spec for that in <code>spec/parser_spec.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"minitest/autorun"</span>
+<span class="nb">require</span> <span class="s2">"stringio"</span>
+
+<span class="nb">require</span> <span class="s2">"hitting_rock_bottom/parser"</span>
+
+<span class="n">describe</span> <span class="no">HittingRockBottom</span><span class="o">::</span><span class="no">Parser</span> <span class="k">do</span>
+  <span class="n">let</span><span class="p">(</span><span class="ss">:units</span><span class="p">)</span>  <span class="p">{</span> <span class="mi">42</span> <span class="p">}</span>
+  <span class="n">let</span><span class="p">(</span><span class="ss">:io</span><span class="p">)</span>     <span class="p">{</span> <span class="no">StringIO</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">to_s</span><span class="p">)</span> <span class="p">}</span>
+  <span class="n">let</span><span class="p">(</span><span class="ss">:parser</span><span class="p">)</span> <span class="p">{</span> <span class="no">HittingRockBottom</span><span class="o">::</span><span class="no">Parser</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">io</span><span class="p">)</span> <span class="p">}</span>
+
+  <span class="n">it</span> <span class="s2">"reads the units number from the beginning of the stream"</span> <span class="k">do</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">units</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="n">units</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>If you haven't seen the standard <code>stringio</code> library before, it simply wraps a <code>String</code> with an <code>IO</code> interface.  That's will allow me to call <code>gets()</code> and other <code>IO</code> methods on it in my implementation.  It's perfect for tests like this.</p>
+
+<p>Here's the <code>lib/hitting_rock_bottom/parser.rb</code> code that gets that spec passing:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">HittingRockBottom</span>
+  <span class="k">class</span> <span class="nc">Parser</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">io</span><span class="p">)</span>
+      <span class="vi">@units</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">gets</span><span class="o">.</span><span class="n">to_i</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:units</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Now we need to read in the cave.  My first thought was to use similar tactics to what I did before, but then I'll need to verify that it's right.  I don't want to do that with a <code>must_equal()</code> on some big <code>Array</code>.  I want to be able to ask questions about individual cells.  That made it sound like I needed a <code>Cell</code> object, so I created a <code>spec/cell_spec.rb</code> file and added this code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"minitest/autorun"</span>
+
+<span class="nb">require</span> <span class="s2">"hitting_rock_bottom/cell"</span>
+
+<span class="n">describe</span> <span class="no">HittingRockBottom</span><span class="o">::</span><span class="no">Cell</span> <span class="k">do</span>
+  <span class="no">MAPPING</span> <span class="o">=</span> <span class="p">{</span><span class="ss">rock</span><span class="p">:</span> <span class="s2">"#"</span><span class="p">,</span> <span class="nb">open</span><span class="p">:</span> <span class="s2">" "</span><span class="p">,</span> <span class="ss">water</span><span class="p">:</span> <span class="s2">"~"</span><span class="p">}</span>
+
+  <span class="k">def</span> <span class="nf">cell</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="no">HittingRockBottom</span><span class="o">::</span><span class="no">Cell</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="n">it</span> <span class="s2">"knows its type by symbol"</span> <span class="k">do</span>
+    <span class="no">MAPPING</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="nb">name</span><span class="p">,</span> <span class="n">symbol</span><span class="o">|</span>
+      <span class="n">cell</span> <span class="o">=</span> <span class="n">cell</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span>
+      <span class="n">cell</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">"</span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">?"</span><span class="p">)</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+      <span class="no">MAPPING</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">other_name</span><span class="p">,</span> <span class="n">other_symbol</span><span class="o">|</span>
+        <span class="k">next</span> <span class="k">if</span> <span class="n">symbol</span> <span class="o">==</span> <span class="n">other_symbol</span>
+        <span class="n">cell</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">"</span><span class="si">#{</span><span class="n">other_name</span><span class="si">}</span><span class="s2">?"</span><span class="p">)</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="kp">false</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>You can see from this that I don't always follow the "one expectation per spec" guideline.  I'm more of a "whatever I need to get the spec to make sense" guy.  I know a lot of people who would break the above into three or even six different specs, but that seems to be more tedious than value adding for a case this simple.  I think it's OK to be more pragmatic than that.</p>
+
+<p>I also used <code>def</code> here, which you don't see a lot of with specs in the wild.  I favor <code>def</code> over <code>let()</code> when I would like to pass some arguments.  Just remember that it's not memoized for that spec's run, like <code>let()</code> is.</p>
+
+<p><strong>Tip 1:  you can always fallback to plain Ruby constructs, like methods, even if you are writing specs, Rails code, or whatever.</strong></p>
+
+<p>Here's the code for <code>lib/hitting_rock_bottom/cell.rb</code> that gets the spec passing:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">HittingRockBottom</span>
+  <span class="k">class</span> <span class="nc">Cell</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span>
+      <span class="vi">@symbol</span> <span class="o">=</span> <span class="n">symbol</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">rock?</span>
+      <span class="vi">@symbol</span> <span class="o">==</span> <span class="s2">"#"</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">open?</span>
+      <span class="vi">@symbol</span> <span class="o">==</span> <span class="s2">" "</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">water?</span>
+      <span class="vi">@symbol</span> <span class="o">==</span> <span class="s2">"~"</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I'm sure that's super straight forward.</p>
+
+<p>While we're handling this <code>Cell</code> object, we already know that it will need one more thing.  Let's provide a way to fill it with water.  First, I added these two specs to <code>spec/cell_spec.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">it</span> <span class="s2">"allows the filling of open cells"</span> <span class="k">do</span>
+  <span class="n">cell</span> <span class="o">=</span> <span class="n">cell</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span>
+  <span class="n">cell</span><span class="o">.</span><span class="n">fill</span>
+  <span class="n">cell</span><span class="o">.</span><span class="n">water?</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+  <span class="n">cell</span><span class="o">.</span><span class="n">open?</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="kp">false</span><span class="p">)</span>
+<span class="k">end</span>
+
+<span class="n">it</span> <span class="s2">"fails with an error if you try to fill a non-open cell"</span> <span class="k">do</span>
+  <span class="p">(</span><span class="no">MAPPING</span><span class="o">.</span><span class="n">values</span> <span class="o">-</span> <span class="o">[</span><span class="s2">" "</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">symbol</span><span class="o">|</span>
+    <span class="nb">lambda</span> <span class="p">{</span> <span class="n">cell</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span><span class="o">.</span><span class="n">fill</span> <span class="p">}</span><span class="o">.</span><span class="n">must_raise</span><span class="p">(</span><span class="no">RuntimeError</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Yes, I really did write both of those before I added the <code>fill()</code> method.  Again, it's fine to be pragmatic.</p>
+
+<p><strong>Tip 2:  nobody is keeping score for how much you make yourself suffer while writing specs/tests.</strong></p>
+
+<p>Then I added the method that would get them passing to <code>lib/hitting_rock_bottom/cell.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">fill</span>
+  <span class="nb">fail</span> <span class="s2">"Only open cells can be filled with water"</span> <span class="k">unless</span> <span class="nb">open</span><span class="p">?</span>
+  <span class="vi">@symbol</span> <span class="o">=</span> <span class="s2">"~"</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Jim Weirich has a great rule for when to use <code>fail()</code> and when to use <code>raise()</code> that I like to follow.  If you are reraising an <code>Exception</code> from a <code>rescue</code> clause, go with <code>raise()</code>.  Otherwise, use <code>fail()</code> because it more clearly states what is happening in the code.</p>
+
+<p>Our <code>Cell</code> it ready to go, but we're going to need a container for them.  It's time to start a <code>spec/cave_spec.rb</code>.  I don't want to address the entire <code>Cave</code> object at this time.  I just need something that can hold <code>Cell</code> objects and allow me to access them by coordinates.  Here's what I have in mind:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"minitest/autorun"</span>
+
+<span class="nb">require</span> <span class="s2">"hitting_rock_bottom/cave"</span>
+
+<span class="n">describe</span> <span class="no">HittingRockBottom</span><span class="o">::</span><span class="no">Cave</span> <span class="k">do</span>
+  <span class="k">def</span> <span class="nf">cave</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="no">HittingRockBottom</span><span class="o">::</span><span class="no">Cave</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="n">it</span> <span class="s2">"allows access to contents by coordinates"</span> <span class="k">do</span>
+    <span class="n">cave</span> <span class="o">=</span> <span class="n">cave</span><span class="p">(</span> <span class="o">[</span> <span class="o">[</span><span class="s2">"#"</span><span class="p">,</span> <span class="s2">"#"</span><span class="p">,</span> <span class="s2">"#"</span><span class="o">]</span><span class="p">,</span>
+                   <span class="o">[</span><span class="s2">"~"</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span> <span class="s2">"#"</span><span class="o">]</span><span class="p">,</span>
+                   <span class="o">[</span><span class="s2">"#"</span><span class="p">,</span> <span class="s2">"#"</span><span class="p">,</span> <span class="s2">"#"</span><span class="o">]</span> <span class="o">]</span> <span class="p">)</span>
+    <span class="n">cave</span><span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">].</span><span class="n">must_equal</span><span class="p">(</span><span class="s2">"#"</span><span class="p">)</span>
+    <span class="n">cave</span><span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">].</span><span class="n">must_equal</span><span class="p">(</span><span class="s2">"~"</span><span class="p">)</span>
+    <span class="n">cave</span><span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="o">].</span><span class="n">must_equal</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Notice that I haven't even bothered with bringing <code>Cell</code> objects into this.  They aren't the point, so it's just a distraction.</p>
+
+<p>It's also worth noting that I switched to an X, Y coordinate format.  That's easier on my brain than the row major ordering I was using in the previous solution.</p>
+
+<p>Here's the initial code for <code>lib/hitting_rock_bottom/cave.rb</code> that get's these specs passing:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">HittingRockBottom</span>
+  <span class="k">class</span> <span class="nc">Cave</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span>
+      <span class="vi">@cells</span> <span class="o">=</span> <span class="n">cells</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">[]</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+      <span class="vi">@cells</span><span class="o">[</span><span class="n">y</span><span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="vi">@cells</span><span class="o">[</span><span class="n">y</span><span class="o">][</span><span class="n">x</span><span class="o">]</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I am now ready to return to <code>spec/parser_spec.rb</code> and prove that it can read in a proper <code>Cave</code> with <code>Cell</code> contents.  First, I updated the <code>let(:io)</code> call to include a small cave:</p>
+
+<div class="highlight highlight-ruby"><pre>  <span class="n">let</span><span class="p">(</span><span class="ss">:io</span><span class="p">)</span>     <span class="p">{</span> <span class="no">StringIO</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="o">&lt;&lt;-</span><span class="no">END_INPUT</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="sr">/^[ \t]+/</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span> <span class="p">}</span>
+<span class="sh">  #{units}</span>
+
+<span class="sh">  ######</span>
+<span class="sh">  ~    #</span>
+<span class="sh">  # ## #</span>
+<span class="sh">  ######</span>
+<span class="no">  END_INPUT</span>
+</pre></div>
+
+<p>The "heredoc" allows me to layout the cave as it would be in the file while the call to <code>gsub()</code> strips off the indentation.  I'm trying to keep the code reading nicely.</p>
+
+<p>Here are the expectations for the cave:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">it</span> <span class="s2">"reads the cave with cell contents"</span> <span class="k">do</span>
+  <span class="n">parser</span><span class="o">.</span><span class="n">cave</span><span class="o">.</span><span class="n">must_be_instance_of</span><span class="p">(</span><span class="no">HittingRockBottom</span><span class="o">::</span><span class="no">Cave</span><span class="p">)</span>
+  <span class="n">parser</span><span class="o">.</span><span class="n">cave</span><span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">].</span><span class="n">must_be_instance_of</span><span class="p">(</span><span class="no">HittingRockBottom</span><span class="o">::</span><span class="no">Cell</span><span class="p">)</span>
+<span class="k">end</span>
+
+<span class="n">it</span> <span class="s2">"arranges the cells to match the coordinates from the stream"</span> <span class="k">do</span>
+  <span class="n">parser</span><span class="o">.</span><span class="n">cave</span><span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">].</span><span class="n">water?</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+  <span class="n">parser</span><span class="o">.</span><span class="n">cave</span><span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">].</span><span class="n">open?</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+  <span class="n">parser</span><span class="o">.</span><span class="n">cave</span><span class="o">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="o">].</span><span class="n">rock?</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This is how I updated the <code>Parser</code> to get them passing:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"hitting_rock_bottom/cell"</span>
+<span class="nb">require</span> <span class="s2">"hitting_rock_bottom/cave"</span>
+
+<span class="k">module</span> <span class="nn">HittingRockBottom</span>
+  <span class="k">class</span> <span class="nc">Parser</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">io</span><span class="p">)</span>
+      <span class="vi">@units</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">gets</span><span class="o">.</span><span class="n">to_i</span>
+      <span class="n">cave</span>   <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+      <span class="n">io</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">line</span><span class="o">|</span>
+        <span class="k">next</span> <span class="k">unless</span> <span class="n">line</span> <span class="o">=~</span> <span class="sr">/\S/</span>  <span class="c1"># skip blank lines</span>
+        <span class="n">cave</span> <span class="o">&lt;&lt;</span> <span class="o">[</span> <span class="o">]</span>
+        <span class="n">line</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/./</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">cell</span><span class="o">|</span> <span class="n">cave</span><span class="o">.</span><span class="n">last</span> <span class="o">&lt;&lt;</span> <span class="no">Cell</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span> <span class="p">}</span>
+      <span class="k">end</span>
+      <span class="vi">@cave</span>  <span class="o">=</span> <span class="no">Cave</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">cave</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:units</span><span class="p">,</span> <span class="ss">:cave</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Note that I added the proper <code>require</code> statements, since <code>Parser</code> now depends on other objects.  The rest of the changes are mainly just adding some parsing code similar to what we used before.</p>
+
+<p>I think parsing is now covered.  I want to prove that the specs all run together though, so I added a <code>spec/all.rb</code> file, with these contents:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"cell_spec"</span>
+<span class="nb">require</span> <span class="s2">"cave_spec"</span>
+<span class="nb">require</span> <span class="s2">"parser_spec"</span>
+</pre></div>
+
+<p>Then I run all of the specs together:</p>
+
+<pre><code>$ ruby -I lib:spec spec/all.rb
+Run options: --seed 50650
+
+# Running tests:
+
+.......
+
+Finished tests in 0.002287s, 3060.7783 tests/s, 9619.5890 assertions/s.
+
+7 tests, 22 assertions, 0 failures, 0 errors, 0 skips
+</code></pre>
+
+<h5>An Algorithm, Piece by Piece</h5>
+
+<p>Now we get see if I can really build the algorithm in sections this way.</p>
+
+<p>First, we need to know where the water starts.  It looks like it's always at 0, 1 in the examples given, but I see no reason to assume that.  Let's add a <code>spec/stream_spec.rb</code> file and start defining the rules:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"minitest/autorun"</span>
+<span class="nb">require</span> <span class="s2">"stringio"</span>
+
+<span class="nb">require</span> <span class="s2">"hitting_rock_bottom/parser"</span>
+<span class="nb">require</span> <span class="s2">"hitting_rock_bottom/stream"</span>
+
+<span class="n">describe</span> <span class="no">HittingRockBottom</span><span class="o">::</span><span class="no">Stream</span> <span class="k">do</span>
+  <span class="k">def</span> <span class="nf">stream</span><span class="p">(</span><span class="n">cave</span><span class="p">,</span> <span class="n">units</span> <span class="o">=</span> <span class="mi">42</span><span class="p">)</span>
+    <span class="n">io</span>     <span class="o">=</span> <span class="no">StringIO</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"</span><span class="si">#{</span><span class="n">units</span><span class="si">}</span><span class="se">\n\n</span><span class="si">#{</span><span class="n">cave</span><span class="si">}</span><span class="s2">"</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="sr">/^[ \t]+/</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="no">HittingRockBottom</span><span class="o">::</span><span class="no">Parser</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">io</span><span class="p">)</span>
+    <span class="no">HittingRockBottom</span><span class="o">::</span><span class="no">Stream</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">cave</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="n">it</span> <span class="s2">"knows where the head of the stream is"</span> <span class="k">do</span>
+    <span class="n">stream</span><span class="p">(</span><span class="o">&lt;&lt;-</span><span class="no">END_CAVE</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span><span class="p">)</span>
+<span class="sh">    ###</span>
+<span class="sh">    ~ #</span>
+<span class="sh">    ###</span>
+<span class="no">    END_CAVE</span>
+
+    <span class="n">stream</span><span class="p">(</span><span class="o">&lt;&lt;-</span><span class="no">END_CAVE</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span><span class="p">)</span>
+<span class="sh">    ###</span>
+<span class="sh">    ~~#</span>
+<span class="sh">    ###</span>
+<span class="no">    END_CAVE</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I reused the <code>Parser</code> here to make it easy to define <code>Cave</code> objects.  This is a dependency of this spec file, not the <code>Stream</code> itself, so the <code>require</code> belongs here.</p>
+
+<p>Here's the <code>lib/hitting_rock_bottom/stream.rb</code> code that lead me to:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">HittingRockBottom</span>
+  <span class="k">class</span> <span class="nc">Stream</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">cave</span><span class="p">)</span>
+      <span class="vi">@cave</span> <span class="o">=</span> <span class="n">cave</span>
+      <span class="vi">@head</span> <span class="o">=</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
+      <span class="n">find_head</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:head</span>
+
+    <span class="kp">private</span>
+
+    <span class="k">def</span> <span class="nf">find_head</span>
+      <span class="n">find_tail</span>
+      <span class="n">follow_water</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">find_tail</span>
+      <span class="k">until</span> <span class="vi">@cave</span><span class="o">[*</span><span class="vi">@head</span><span class="o">].</span><span class="n">water?</span>
+        <span class="vi">@head</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">follow_water</span>
+      <span class="kp">loop</span> <span class="k">do</span>
+        <span class="k">if</span> <span class="vi">@cave</span><span class="o">[</span><span class="vi">@head</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span><span class="p">,</span> <span class="vi">@head</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">+</span> <span class="mi">1</span><span class="o">].</span><span class="n">water?</span>
+          <span class="vi">@head</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">elsif</span> <span class="vi">@cave</span><span class="o">[</span><span class="vi">@head</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="vi">@head</span><span class="o">[</span><span class="mi">1</span><span class="o">]].</span><span class="n">water?</span>
+          <span class="vi">@head</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span>
+          <span class="k">break</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The code expects a <code>Cave</code> object with <code>Cell</code> contents, but I don't view that as a dependency in the dynamic world of Ruby.  It may be some other object with the same API.  After all, that's the point of using objects.  Whatever they are, they are constructed before we ever get here and just handed to us, so the <code>require</code> isn't needed here.</p>
+
+<p><strong>Tip 3:  a <code>require</code> is needed if you call a class (or module) method on some constant in the file.</strong></p>
+
+<p>The code itself isn't too complex.  It walks down the left edge to find the start of the water.  Then it moves down and over until it reaches the end.</p>
+
+<p>I verified that the specs are green at this point and I'm ready for a refactoring step.  The thing that bugs me about the code above is all of the direct access to the <code>@head</code> indices keeps it from reading well.  Let's fix that:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">HittingRockBottom</span>
+  <span class="k">class</span> <span class="nc">Stream</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">cave</span><span class="p">)</span>
+      <span class="vi">@cave</span> <span class="o">=</span> <span class="n">cave</span>
+      <span class="vi">@head</span> <span class="o">=</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
+      <span class="n">find_head</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:head</span>
+
+    <span class="kp">private</span>
+
+    <span class="k">def</span> <span class="nf">find_head</span>
+      <span class="n">find_tail</span>
+      <span class="n">follow_water</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">find_tail</span>
+      <span class="k">until</span> <span class="n">current</span><span class="o">.</span><span class="n">water?</span>
+        <span class="n">flow_down</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">follow_water</span>
+      <span class="kp">loop</span> <span class="k">do</span>
+        <span class="k">if</span> <span class="n">down</span><span class="o">.</span><span class="n">water?</span>
+          <span class="n">flow_down</span>
+        <span class="k">elsif</span> <span class="n">right</span><span class="o">.</span><span class="n">water?</span>
+          <span class="n">flow_right</span>
+        <span class="k">else</span>
+          <span class="k">break</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">current</span>
+      <span class="vi">@cave</span><span class="o">[*</span><span class="vi">@head</span><span class="o">]</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">down</span>
+      <span class="vi">@cave</span><span class="o">[</span><span class="vi">@head</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span><span class="p">,</span> <span class="vi">@head</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">+</span> <span class="mi">1</span><span class="o">]</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">right</span>
+      <span class="vi">@cave</span><span class="o">[</span><span class="vi">@head</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="vi">@head</span><span class="o">[</span><span class="mi">1</span><span class="o">]]</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">flow_down</span>
+      <span class="vi">@head</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">flow_right</span>
+      <span class="vi">@head</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>It looks like I added a lot of code there, but really I just gave some names to common actions.  I like how simple this makes the methods and how much better this reads.</p>
+
+<p>Another reason I wanted to start by walking the water is that the water already in the starting input file is counted against the units the algorithm is expected to add.  Given that, we need to count water as we move over it.  Let's add a spec for that:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">it</span> <span class="s2">"counts units as it moves over water"</span> <span class="k">do</span>
+  <span class="n">stream</span><span class="p">(</span><span class="o">&lt;&lt;-</span><span class="no">END_CAVE</span><span class="p">)</span><span class="o">.</span><span class="n">units</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="sh">  ###</span>
+<span class="sh">  ~ #</span>
+<span class="sh">  ###</span>
+<span class="no">  END_CAVE</span>
+
+  <span class="n">stream</span><span class="p">(</span><span class="o">&lt;&lt;-</span><span class="no">END_CAVE</span><span class="p">)</span><span class="o">.</span><span class="n">units</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="sh">  ###</span>
+<span class="sh">  ~~#</span>
+<span class="sh">  ###</span>
+<span class="no">  END_CAVE</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This just requires a few small changes:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">HittingRockBottom</span>
+  <span class="k">class</span> <span class="nc">Stream</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">cave</span><span class="p">)</span>
+      <span class="vi">@cave</span>  <span class="o">=</span> <span class="n">cave</span>
+      <span class="vi">@head</span>  <span class="o">=</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
+      <span class="vi">@units</span> <span class="o">=</span> <span class="mi">0</span>
+      <span class="n">find_head</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:head</span><span class="p">,</span> <span class="ss">:units</span>
+
+    <span class="kp">private</span>
+
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">flow_down</span>
+      <span class="vi">@head</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span>
+      <span class="n">count_units</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">flow_right</span>
+      <span class="vi">@head</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span>
+      <span class="n">count_units</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">count_units</span>
+      <span class="vi">@units</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">current</span><span class="o">.</span><span class="n">water?</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>In summary that is:</p>
+
+<ul>
+<li>Track the units in a variable</li>
+<li>Provide access to it</li>
+<li>Count units after each move</li>
+</ul><p>It's time to add some water.  I want to code the cases right out of the problem description as much as possible.  So I start here:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">it</span> <span class="s2">"fills in water going down when possible"</span> <span class="k">do</span>
+  <span class="n">stream</span><span class="p">(</span><span class="o">&lt;&lt;-</span><span class="no">END_CAVE</span><span class="p">)</span><span class="o">.</span><span class="n">tap</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:fill</span><span class="p">)</span><span class="o">.</span><span class="n">cave</span><span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">].</span><span class="n">water?</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+<span class="sh">  ###</span>
+<span class="sh">  ~~#</span>
+<span class="sh">  # #</span>
+<span class="sh">  ###</span>
+<span class="no">  END_CAVE</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Again, the changes are small:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">HittingRockBottom</span>
+  <span class="k">class</span> <span class="nc">Stream</span>
+    <span class="c1"># ...</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:cave</span><span class="p">,</span> <span class="ss">:head</span><span class="p">,</span> <span class="ss">:units</span>
+
+    <span class="k">def</span> <span class="nf">fill</span>
+      <span class="k">if</span> <span class="n">down</span><span class="o">.</span><span class="n">open?</span>
+        <span class="n">down</span><span class="o">.</span><span class="n">fill</span>
+        <span class="n">flow_down</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That's very similar to the earlier water movement, so I doubt it needs much explanation.  Just remember that the inner <code>fill()</code> call is the method we added to <code>Cell</code> a while back.</p>
+
+<p>The spec for moving right is almost the same:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">it</span> <span class="s2">"fills in water going right when it must"</span> <span class="k">do</span>
+  <span class="n">stream</span><span class="p">(</span><span class="o">&lt;&lt;-</span><span class="no">END_CAVE</span><span class="p">)</span><span class="o">.</span><span class="n">tap</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:fill</span><span class="p">)</span><span class="o">.</span><span class="n">cave</span><span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="o">].</span><span class="n">water?</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+<span class="sh">  ###</span>
+<span class="sh">  ~ #</span>
+<span class="sh">  # #</span>
+<span class="sh">  ###</span>
+<span class="no">  END_CAVE</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Here's the corresponding update to <code>fill()</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">fill</span>
+  <span class="k">if</span> <span class="n">down</span><span class="o">.</span><span class="n">open?</span>
+    <span class="n">down</span><span class="o">.</span><span class="n">fill</span>
+    <span class="n">flow_down</span>
+  <span class="k">elsif</span> <span class="n">right</span><span class="o">.</span><span class="n">open?</span>
+    <span class="n">right</span><span class="o">.</span><span class="n">fill</span>
+    <span class="n">flow_right</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Now for the tricky part.  We need to handle the backtracking case.  The spec is pretty easy to write:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">it</span> <span class="s2">"backtracks when filling as needed"</span> <span class="k">do</span>
+  <span class="n">stream</span><span class="p">(</span><span class="o">&lt;&lt;-</span><span class="no">END_CAVE</span><span class="p">)</span><span class="o">.</span><span class="n">tap</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:fill</span><span class="p">)</span><span class="o">.</span><span class="n">cave</span><span class="o">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="o">].</span><span class="n">water?</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+<span class="sh">  ####</span>
+<span class="sh">  ~~ #</span>
+<span class="sh">  #~~#</span>
+<span class="sh">  ####</span>
+<span class="no">  END_CAVE</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The real trick is how do we support that?</p>
+
+<p>Whenever we are flowing down, we may be leaving behind a place that we could have gone right.  We need to remember those.  Then, if we run out of options, we can just resort to one of those options.  At that point, we will want the last option we passed, so it's sounding like a stack to me.</p>
+
+<p>This required several changes:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">HittingRockBottom</span>
+  <span class="k">class</span> <span class="nc">Stream</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">cave</span><span class="p">)</span>
+      <span class="vi">@cave</span>         <span class="o">=</span> <span class="n">cave</span>
+      <span class="vi">@head</span>         <span class="o">=</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
+      <span class="vi">@units</span>        <span class="o">=</span> <span class="mi">0</span>
+      <span class="vi">@backtracking</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+      <span class="n">find_head</span>
+    <span class="k">end</span>
+
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">fill</span>
+      <span class="k">if</span> <span class="n">down</span><span class="o">.</span><span class="n">open?</span>
+        <span class="n">down</span><span class="o">.</span><span class="n">fill</span>
+        <span class="n">flow_down</span>
+      <span class="k">elsif</span> <span class="n">right</span><span class="o">.</span><span class="n">open?</span>
+        <span class="n">right</span><span class="o">.</span><span class="n">fill</span>
+        <span class="n">flow_right</span>
+      <span class="k">elsif</span> <span class="n">can_backtrack?</span><span class="p">(</span><span class="ss">:open</span><span class="p">)</span>
+        <span class="n">backtrack</span>
+        <span class="n">fill</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="kp">private</span>
+
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">follow_water</span>
+      <span class="kp">loop</span> <span class="k">do</span>
+        <span class="k">if</span> <span class="n">down</span><span class="o">.</span><span class="n">water?</span>
+          <span class="n">flow_down</span>
+        <span class="k">elsif</span> <span class="n">right</span><span class="o">.</span><span class="n">water?</span>
+          <span class="n">flow_right</span>
+        <span class="k">elsif</span> <span class="n">can_backtrack?</span><span class="p">(</span><span class="ss">:water</span><span class="p">)</span>
+          <span class="n">backtrack</span>
+        <span class="k">else</span>
+          <span class="k">break</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">flow_down</span>
+      <span class="k">if</span> <span class="n">current</span><span class="o">.</span><span class="n">water?</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">right</span><span class="o">.</span><span class="n">rock?</span>
+        <span class="vi">@backtracking</span> <span class="o">&lt;&lt;</span> <span class="vi">@head</span><span class="o">.</span><span class="n">dup</span>
+      <span class="k">end</span>
+      <span class="vi">@head</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span>
+      <span class="n">count_units</span>
+    <span class="k">end</span>
+
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">can_backtrack?</span><span class="p">(</span><span class="n">to</span><span class="p">)</span>
+      <span class="o">!</span><span class="vi">@backtracking</span><span class="o">.</span><span class="n">empty?</span> <span class="o">&amp;&amp;</span>
+      <span class="vi">@cave</span><span class="o">[</span><span class="vi">@backtracking</span><span class="o">.</span><span class="n">last</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="vi">@backtracking</span><span class="o">.</span><span class="n">last</span><span class="o">[</span><span class="mi">1</span><span class="o">]].</span><span class="n">send</span><span class="p">(</span><span class="s2">"</span><span class="si">#{</span><span class="n">to</span><span class="si">}</span><span class="s2">?"</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">backtrack</span>
+      <span class="vi">@head</span> <span class="o">=</span> <span class="vi">@backtracking</span><span class="o">.</span><span class="n">pop</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Start in <code>initialize()</code>.  The change here was just the variable to hold the stack.  Then move to <code>flown_down()</code> where I added code to push the stack as needed.  I am pushing both air and water backtracking onto the stack, since the code does both.  Water backtracking will always happen first, so it won't interfere with the normal backtracking process.</p>
+
+<p>I could probably simplify this code a bit by ditching the water backtracking, which doesn't really seem to be needed by the problem.  However, this is allowing me to write much nicer specs, since I can jump into the process at any point.  I like that benefit, which is why I've kept it.</p>
+
+<p><strong>Tip 4:  favor code that makes testing easier.</strong></p>
+
+<p>The next two methods to look at are <code>follow_water()</code> and <code>fill()</code>.  They make use of the backtracking system via two helper methods.  Glancing at those helpers, <code>can_backtrack?()</code> and <code>backtrack()</code>, should complete the picture.</p>
+
+<p>This step probably felt a little like the big algorithm jump I made in the first solution to you readers, but it did not feel that way to me.  Despite the large clipping of code above (so I can show you full methods) I only added 16 lines in this step.  Most of them were quite simple.  I did make two minor mistakes along the way that led to failing specs, but they were easy enough to resolve.</p>
+
+<p>I also want to stress that I'm keeping a lot less of the problem in my mind at once this time.  Even if this was a challenging step, it's just about the backtracking.  That's a small subset of the challenge.</p>
+
+<p>Finally, my algorithm is stronger this time.  It always knows directly where to go next, without rescanning huge chunks of the cave like I did in the original version.  This approach is more natural when I take the problem in pieces and it's leading me to a better design.</p>
+
+<p>OK, we've nailed filling the cave cell by cell, but the problem wants us to fill a set number of units.  Let's add a spec for that:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">it</span> <span class="s2">"fill can repeat for a number of units"</span> <span class="k">do</span>
+  <span class="n">stream</span> <span class="o">=</span> <span class="n">stream</span><span class="p">(</span><span class="o">&lt;&lt;-</span><span class="no">END_CAVE</span><span class="p">)</span>
+<span class="sh">  ####</span>
+<span class="sh">  ~  #</span>
+<span class="sh">  #  #</span>
+<span class="sh">  #  #</span>
+<span class="sh">  ####</span>
+<span class="no">  END_CAVE</span>
+  <span class="n">stream</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+  <span class="mi">1</span><span class="o">.</span><span class="n">upto</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">x</span><span class="o">|</span>
+    <span class="mi">1</span><span class="o">.</span><span class="n">upto</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">y</span><span class="o">|</span>
+      <span class="n">stream</span><span class="o">.</span><span class="n">cave</span><span class="o">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">].</span><span class="n">water?</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>It's pretty easy to adapt the fill method to support this argument:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">fill</span><span class="p">(</span><span class="n">goal_units</span> <span class="o">=</span> <span class="vi">@units</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="k">while</span> <span class="n">units</span> <span class="o">&lt;</span> <span class="n">goal_units</span>
+    <span class="k">if</span> <span class="n">down</span><span class="o">.</span><span class="n">open?</span>
+      <span class="n">down</span><span class="o">.</span><span class="n">fill</span>
+      <span class="n">flow_down</span>
+    <span class="k">elsif</span> <span class="n">right</span><span class="o">.</span><span class="n">open?</span>
+      <span class="n">right</span><span class="o">.</span><span class="n">fill</span>
+      <span class="n">flow_right</span>
+    <span class="k">elsif</span> <span class="n">can_backtrack?</span><span class="p">(</span><span class="ss">:open</span><span class="p">)</span>
+      <span class="n">backtrack</span>
+      <span class="n">fill</span>
+    <span class="k">else</span>
+      <span class="k">break</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The only clever part here is that I default the argument to one more than the current <code>@units</code>.  This means that we keep the old behavior of advancing one cell when no argument is given.  I'm so glad Ruby supports me using an instance variable and some calculations in a default like this.</p>
+
+<p>With this code in place, all we are missing is output.</p>
+
+<h5>Less Output</h5>
+
+<p>Because I'm using specs now, I already have my tight feedback loop.  This means that I don't really miss being able to see the maps.  That's why I didn't handle output before I did the algorithm.</p>
+
+<p>Now's the time though.  I need to get the depths working.  That seems like something that belongs in <code>Cave</code>, so I switch back to those specs.  First, I'm going to give myself a simple way to stub out cells, so I don't need to actually depend on them for these tests:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">stub</span><span class="p">(</span><span class="n">type</span><span class="p">)</span>
+  <span class="no">Object</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">tap</span> <span class="k">do</span> <span class="o">|</span><span class="n">object</span><span class="o">|</span>
+    <span class="n">object</span><span class="o">.</span><span class="n">singleton_class</span><span class="o">.</span><span class="n">instance_eval</span> <span class="k">do</span>
+      <span class="sx">%w[water rock open]</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">query</span><span class="o">|</span>
+        <span class="n">define_method</span><span class="p">(</span><span class="s2">"</span><span class="si">#{</span><span class="n">query</span><span class="si">}</span><span class="s2">?"</span><span class="p">)</span> <span class="k">do</span>
+          <span class="n">query</span> <span class="o">==</span> <span class="n">type</span><span class="o">.</span><span class="n">to_s</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That just creates a stand-in object for a <code>Cell</code>.  It implements the three type query methods, but will only return <code>true</code> for the passed <code>type</code>.</p>
+
+<p>Using stubs, the spec for depths is pretty simple:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">it</span> <span class="s2">"can calculate the water depth of each column"</span> <span class="k">do</span>
+  <span class="n">water</span> <span class="o">=</span> <span class="n">stub</span><span class="p">(</span><span class="ss">:water</span><span class="p">)</span>
+  <span class="n">rock</span>  <span class="o">=</span> <span class="n">stub</span><span class="p">(</span><span class="ss">:rock</span><span class="p">)</span>
+  <span class="n">cave</span><span class="p">(</span> <span class="o">[</span> <span class="o">[</span><span class="n">rock</span><span class="p">,</span>  <span class="n">rock</span><span class="p">,</span>  <span class="n">rock</span><span class="p">,</span>  <span class="n">rock</span><span class="o">]</span><span class="p">,</span>
+          <span class="o">[</span><span class="n">water</span><span class="p">,</span> <span class="n">water</span><span class="p">,</span> <span class="n">rock</span><span class="p">,</span>  <span class="n">rock</span><span class="o">]</span><span class="p">,</span>
+          <span class="o">[</span><span class="n">rock</span><span class="p">,</span>  <span class="n">water</span><span class="p">,</span> <span class="n">water</span><span class="p">,</span> <span class="n">rock</span><span class="o">]</span><span class="p">,</span>
+          <span class="o">[</span><span class="n">rock</span><span class="p">,</span>  <span class="n">water</span><span class="p">,</span> <span class="n">water</span><span class="p">,</span> <span class="n">rock</span><span class="o">]</span><span class="p">,</span>
+          <span class="o">[</span><span class="n">rock</span><span class="p">,</span>  <span class="n">rock</span><span class="p">,</span>  <span class="n">rock</span><span class="p">,</span>  <span class="n">rock</span><span class="o">]</span> <span class="o">]</span> <span class="p">)</span><span class="o">.</span><span class="n">depths</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="s2">"1 3 2 0"</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The code to make that pass is similar to what we had before:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">depths</span>
+  <span class="vi">@cells</span><span class="o">.</span><span class="n">transpose</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">column</span><span class="o">|</span>
+    <span class="n">column</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:water?</span><span class="p">)</span>
+  <span class="p">}</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The <code>count()</code> iterator allows us to count only the blocks that pass the block's condition.  In this case, we just want a <code>true</code> result from <code>water?()</code>.</p>
+
+<p>We also need to handle the falling water edge case.  Here's the spec for that:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">it</span> <span class="s2">"shows falling water depths as a tilde"</span> <span class="k">do</span>
+  <span class="n">water</span> <span class="o">=</span> <span class="n">stub</span><span class="p">(</span><span class="ss">:water</span><span class="p">)</span>
+  <span class="n">rock</span>  <span class="o">=</span> <span class="n">stub</span><span class="p">(</span><span class="ss">:rock</span><span class="p">)</span>
+  <span class="nb">open</span>  <span class="o">=</span> <span class="n">stub</span><span class="p">(</span><span class="ss">:open</span><span class="p">)</span>
+  <span class="n">cave</span><span class="p">(</span> <span class="o">[</span> <span class="o">[</span><span class="n">rock</span><span class="p">,</span>  <span class="n">rock</span><span class="p">,</span>  <span class="n">rock</span><span class="p">,</span>  <span class="n">rock</span><span class="o">]</span><span class="p">,</span>
+          <span class="o">[</span><span class="n">water</span><span class="p">,</span> <span class="n">water</span><span class="p">,</span> <span class="nb">open</span><span class="p">,</span>  <span class="n">rock</span><span class="o">]</span><span class="p">,</span>
+          <span class="o">[</span><span class="n">rock</span><span class="p">,</span>  <span class="n">water</span><span class="p">,</span> <span class="nb">open</span><span class="p">,</span>  <span class="n">rock</span><span class="o">]</span><span class="p">,</span>
+          <span class="o">[</span><span class="n">rock</span><span class="p">,</span>  <span class="nb">open</span><span class="p">,</span>  <span class="nb">open</span><span class="p">,</span>  <span class="n">rock</span><span class="o">]</span><span class="p">,</span>
+          <span class="o">[</span><span class="n">rock</span><span class="p">,</span>  <span class="n">rock</span><span class="p">,</span>  <span class="n">rock</span><span class="p">,</span>  <span class="n">rock</span><span class="o">]</span> <span class="o">]</span> <span class="p">)</span><span class="o">.</span><span class="n">depths</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="s2">"1 ~ 0 0"</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This requires adding some conditional logic to <code>depths()</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">depths</span>
+  <span class="vi">@cells</span><span class="o">.</span><span class="n">transpose</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">column</span><span class="o">|</span>
+    <span class="k">if</span> <span class="n">column</span><span class="o">.</span><span class="n">each_cons</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">any?</span> <span class="p">{</span> <span class="o">|</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="o">|</span> <span class="n">l</span><span class="o">.</span><span class="n">water?</span> <span class="o">&amp;&amp;</span> <span class="n">r</span><span class="o">.</span><span class="n">open?</span> <span class="p">}</span>
+      <span class="s2">"~"</span>
+    <span class="k">else</span>
+      <span class="n">column</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:water?</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="p">}</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I used this <code>Enumerator</code> trick in the last article, but didn't discuss it there.  Most iterators in Ruby now return an <code>Enumerator</code> when called without a block.  You can think of that object as an iterator frozen in time.  You can either advance it forward manually as needed or chain other iterators onto it for compound effects.</p>
+
+<p>In the example above, the call to <code>each_cons(2)</code> prepares an iteration which will give me two consecutive cells at a time.  It doesn't happen with that call though.  Instead, I chain a call to the <code>any?()</code> iterator onto it, allowing me to ask a question about those two consecutive cells as they flow through the iteration.</p>
+
+<p>We have all the pieces we need now.  Let's wrap this up with some end to end specs and an executable.</p>
+
+<h5>The Interface</h5>
+
+<p>Before I add an executable for this new solution, I want to get it down to a simple method call.  I don't want any logic in the executable itself, so having this primary method to hand off to makes that possible.  This also makes it easy to test the whole system in action.</p>
+
+<p>This time I'm going to write the code before I think about the specs.  I add a new file in <code>lib/hitting_rock_bottom.rb</code> and place this code inside:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"hitting_rock_bottom/parser"</span>
+<span class="nb">require</span> <span class="s2">"hitting_rock_bottom/stream"</span>
+
+<span class="k">module</span> <span class="nn">HittingRockBottom</span>
+  <span class="kp">module_function</span>
+
+  <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="n">input</span><span class="p">,</span> <span class="n">output</span> <span class="o">=</span> <span class="vg">$stdout</span><span class="p">)</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="no">Parser</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">input</span><span class="p">)</span>
+    <span class="no">Stream</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">cave</span><span class="p">)</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">puts</span> <span class="n">parser</span><span class="o">.</span><span class="n">cave</span><span class="o">.</span><span class="n">depths</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This is the same input/output model as before, but note that I'm passing the stream in with a sensible default.  It's great to use the standard streams, as I said in the last article, but always leave yourself a way to change your mind programatically.</p>
+
+<p>At this point I wrote a couple of specs to make sure I had it.  I used the simple cave example that I already had in a file, and the edge case modification given in the problem description:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"minitest/autorun"</span>
+<span class="nb">require</span> <span class="s2">"stringio"</span>
+
+<span class="nb">require</span> <span class="s2">"hitting_rock_bottom"</span>
+
+<span class="n">describe</span> <span class="no">HittingRockBottom</span> <span class="k">do</span>
+  <span class="n">let</span><span class="p">(</span><span class="ss">:data_dir</span><span class="p">)</span> <span class="p">{</span>
+    <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">),</span> <span class="o">*</span><span class="sx">%w[.. data]</span><span class="p">)</span>
+  <span class="p">}</span>
+  <span class="n">let</span><span class="p">(</span><span class="ss">:cave_path</span><span class="p">)</span>     <span class="p">{</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">"simple_cave.txt"</span><span class="p">)</span> <span class="p">}</span>
+  <span class="n">let</span><span class="p">(</span><span class="ss">:solution_path</span><span class="p">)</span> <span class="p">{</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">"simple_out.txt"</span><span class="p">)</span>  <span class="p">}</span>
+
+  <span class="n">it</span> <span class="s2">"solves the simple cave example"</span> <span class="k">do</span>
+    <span class="n">stdout</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">capture_io</span> <span class="k">do</span>
+      <span class="nb">open</span><span class="p">(</span><span class="n">cave_path</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">simple_cave</span><span class="o">|</span>
+        <span class="no">HittingRockBottom</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">simple_cave</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+    <span class="n">stdout</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">solution_path</span><span class="p">))</span>
+  <span class="k">end</span>
+
+  <span class="n">it</span> <span class="s2">"solves the simple cave edge case from the problem description"</span> <span class="k">do</span>
+    <span class="n">stdout</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">capture_io</span> <span class="k">do</span>
+      <span class="n">simple_cave</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">cave_path</span><span class="p">)</span>
+      <span class="n">simple_cave</span><span class="o">.</span><span class="n">sub!</span><span class="p">(</span><span class="sr">/\A100/</span><span class="p">,</span> <span class="s2">"45"</span><span class="p">)</span>
+      <span class="no">HittingRockBottom</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="no">StringIO</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">simple_cave</span><span class="p">))</span>
+    <span class="k">end</span>
+    <span class="n">stdout</span><span class="o">.</span><span class="n">must_equal</span><span class="p">(</span> <span class="s2">"1 2 2 4 4 4 4 6 6 6 1 1 1 1 ~ "</span> <span class="o">+</span>
+                       <span class="s2">"0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0</span><span class="se">\n</span><span class="s2">"</span> <span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I could have passed a <code>StringIO</code> object for the output, but it turns out that <code>minitest</code> can already capture <code>$stdout</code> and <code>$stderr</code> (not used here) for you.  Any guesses for what it uses to do that?  <a href="https://github.com/seattlerb/minitest/blob/57b06f734f2a38be27286f2aed68d26ade59c4d3/lib/minitest/unit.rb#L438">See for yourself</a>.</p>
+
+<p>Just to make sure everything is still green, I updated <code>spec/all.rb</code> with the new spec files:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"cell_spec"</span>
+<span class="nb">require</span> <span class="s2">"cave_spec"</span>
+<span class="nb">require</span> <span class="s2">"parser_spec"</span>
+<span class="nb">require</span> <span class="s2">"stream_spec"</span>
+<span class="nb">require</span> <span class="s2">"hitting_rock_bottom_spec"</span>
+</pre></div>
+
+<p>Then I ran the whole suite:</p>
+
+<pre><code>$ r -I lib:spec spec/all.rb 
+Run options: --seed 2482
+
+# Running tests:
+
+.................
+
+Finished tests in 0.004388s, 3874.2024 tests/s, 8887.8760 assertions/s.
+
+17 tests, 39 assertions, 0 failures, 0 errors, 0 skips
+</code></pre>
+
+<p>Perfect.</p>
+
+<p>Let's wrap this solution in an executable.  I added <code>bin/test_driven</code> with this code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+
+<span class="k">begin</span>
+  <span class="nb">require</span> <span class="s2">"hitting_rock_bottom"</span>
+<span class="k">rescue</span> <span class="no">LoadError</span>
+  <span class="vg">$LOAD_PATH</span> <span class="o">&lt;&lt;</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">),</span> <span class="o">*</span><span class="sx">%w[.. lib]</span><span class="p">)</span>
+  <span class="k">retry</span>
+<span class="k">end</span>
+
+<span class="no">HittingRockBottom</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="no">ARGF</span><span class="p">)</span>
+</pre></div>
+
+<p>Are you confused by my tricky <code>require</code> above?  I have a reason for it.  If you turn your code into a RubyGem, it won't need to fiddle with the path.  The gem makes sure your library code is in the path, so a normal <code>require</code> will work just fine.  That's a little annoying while I'm developing though, since I would always need to run the code like this:</p>
+
+<pre><code>$ ruby -I lib bin/test_driven data/complex_cave.txt 
+</code></pre>
+
+<p>I would rather just make the file executable and run it directly:</p>
+
+<pre><code>$ chmod +x bin/test_driven
+$ bin/test_driven data/complex_cave.txt
+</code></pre>
+
+<p>I handle that with the special code above.  First, I try the require.  It will work if this code is loaded by RubyGems.  We're not dealing with a gem in this case though, so a <code>rescue</code> the <code>LoadError</code> that signifies the failed load, add my <code>lib</code> directory to the path manually, and <code>retry</code> the <code>require</code>.  This covers my development usage.</p>
+
+<p>We can now compare the new code with the old to see that the algorithm we just built returns the same results and is quite a bit faster:</p>
+
+<pre><code>$ diff &lt;(bin/cowboy data/complex_cave.txt) \
+&gt;      &lt;(bin/test_driven data/complex_cave.txt)
+$ time bin/cowboy data/complex_cave.txt &gt; /dev/null
+
+real    0m3.725s
+user    0m3.711s
+sys 0m0.008s
+$ time bin/test_driven data/complex_cave.txt &gt; /dev/null
+
+real    0m0.147s
+user    0m0.133s
+sys 0m0.012s
+</code></pre>
+
+<p>That's a job well done, if you ask me.</p>
+
+<h4>Further Reading</h4>
+
+<p>I'm done with this exercise now, but here are some links you might want to follow up with:</p>
+
+<ul>
+<li>You can read more about <a href="/ruby-voodoo/working-with-multiline-strings/">heredocs</a> or the <a href="http://rubyquicktips.com/post/4438542511/heredoc-and-indent">indention trick I used</a>.  Be sure to read down to the comments of that second link, so you can see how ActiveSupport modifies this idiom.</li>
+<li>
+<a href="http://weblog.rubyonrails.org/2009/9/1/gem-packaging-best-practices">This post</a> goes into quite a bit more detail about how RubyGems manages the <code>$LOAD_PATH</code>.  It also covers some other best practices for packaging gems.</li>
+<li>You can browse <a href="https://github.com/JEG2/hitting_rock_bottom">the code</a> developed in this article and the last on GitHub.</li>
+</ul>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/rubies-in-the-rough/test-driving-an-algorithm-part-1/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      &nbsp;
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/test-driving-an-algorithm-part-2">
+  In: <a href="/rubies-in-the-rough/">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Iterators/">Iterators</a>, <a href="/tags/Test-Driven%20Development/">Test-Driven Development</a> &amp; <a href="/tags/Syntax/">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/test-driving-an-algorithm-part-2#comments">0 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (0)</span></h5>
+
+    <ol>
+      
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

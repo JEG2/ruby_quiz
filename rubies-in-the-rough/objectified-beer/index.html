@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / Objectified Beer</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Taking a few different approaches to a programming exercise to see what ideas I can squeeze out of it.">
+    <meta name="keywords"    content="thinking about code, software design, Object Orientation, Test-Driven Development, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/objectified-beer/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>30</h4>
+    <span>
+      MAY<br>
+      2014
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Objectified Beer</h3>
+        
+        <p>I got another thing out of my recent conversation with Katrina Owen:  a will-not-let-go itch to try a programming exercise that she mentioned.  I'm such a sucker for a challenge.</p>
+
+<p>Katrina spoke of an assignment that her and Sandi Metz have used in their object orientation trainings.  She said that they build an OO implementation of the <em>99 Bottles of Beer</em> song, "mainly removing <code>if</code>s and such."  There may be more to the actual task than this, but I ran with that brief explanation.</p>
+
+<p>As I often say, you'll probably learn more by trying the exercise for yourself before you read through my thoughts about it.  Give it a go if you can spare the time.</p>
+
+<h4>Diff Driven Development</h4>
+
+<p>I decided to throw some scaffolding into <a href="https://github.com/JEG2/bottles_of_beer_song">the master branch</a> of a Git repository.  I figured I could then branch off of that with each idea, to keep trying things out.</p>
+
+<p>I started by constructing a trivial framework for running and verifying the song.  That consisted of an executable:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+
+<span class="n">require_relative</span> <span class="s2">"../lib/bottles_of_beer"</span>
+
+<span class="n">verses</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">first</span> <span class="o">=~</span> <span class="sr">/\A\d+\z/</span> <span class="p">?</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">shift</span><span class="o">.</span><span class="n">to_i</span> <span class="p">:</span> <span class="mi">99</span>
+<span class="no">BottlesOfBeer</span><span class="o">::</span><span class="no">Song</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">verses</span><span class="p">)</span><span class="o">.</span><span class="n">sing</span><span class="p">(</span><span class="vg">$stdout</span><span class="p">)</span>
+</pre></div>
+
+<p>a copy and paste implementation:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="k">module</span> <span class="nn">BottlesOfBeer</span>
+  <span class="k">class</span> <span class="nc">Song</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">verses</span> <span class="o">=</span> <span class="mi">99</span><span class="p">)</span>
+      <span class="vi">@verses</span> <span class="o">=</span> <span class="n">verses</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:verses</span>
+    <span class="kp">private</span>     <span class="ss">:verses</span>
+
+    <span class="k">def</span> <span class="nf">sing</span><span class="p">(</span><span class="n">target</span> <span class="o">=</span> <span class="vg">$stdout</span><span class="p">)</span>
+      <span class="n">target</span> <span class="o">&lt;&lt;</span> <span class="o">&lt;&lt;</span><span class="no">END_SONG</span>
+<span class="sh">99 bottles of beer on the wall, 99 bottles of beer.</span>
+<span class="sh">Take one down and pass it around, 98 bottles of beer on the wall…</span>
+
+<span class="sh">…</span>
+<span class="no">END_SONG</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>and a <code>Rake</code> task to check the output against <a href="http://www.99-bottles-of-beer.net/lyrics.html">a static file</a> I copied from the Web as my definitive source of the lyrics:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">desc</span> <span class="s2">"Verifies the song output."</span>
+<span class="n">task</span> <span class="ss">:spec</span> <span class="k">do</span>
+  <span class="nb">print</span> <span class="s2">"</span><span class="se">\e</span><span class="s2">[31m"</span>
+  <span class="nb">system</span> <span class="s2">"bash -c 'diff -u &lt;(bin/bottles_of_beer) spec/full_song.txt'"</span>
+  <span class="nb">print</span> <span class="s2">"</span><span class="se">\e</span><span class="s2">[0m"</span>
+  <span class="k">if</span> <span class="vg">$?</span><span class="o">.</span><span class="n">success?</span>
+    <span class="nb">puts</span> <span class="s2">"</span><span class="se">\e</span><span class="s2">[32mPerfect match.</span><span class="se">\e</span><span class="s2">[0m"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">task</span> <span class="ss">default</span><span class="p">:</span> <span class="ss">:spec</span>
+</pre></div>
+
+<p>This system of validation was very important to me.  I wanted it to be easy to see how close to correct I was and a <code>diff</code> sums that up beautifully.  However, I did not want to test drive my playing around.  That would add overhead to my experimentation that I just don't need for a problem that I can keep in my head like this.</p>
+
+<h4>A Swing and a Miss</h4>
+
+<p>With the setup done, I was ready to try <a href="https://github.com/JEG2/bottles_of_beer_song/tree/first_attempt">a solution</a>.</p>
+
+<p>My first idea was pretty straightforward.  Build up the needed verses and then write them out:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">require_relative</span> <span class="s2">"verse"</span>
+<span class="n">require_relative</span> <span class="s2">"penultimate_verse"</span>
+<span class="n">require_relative</span> <span class="s2">"ultimate_verse"</span>
+
+<span class="k">module</span> <span class="nn">BottlesOfBeer</span>
+  <span class="k">class</span> <span class="nc">Song</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">verses</span> <span class="o">=</span> <span class="mi">99</span><span class="p">)</span>
+      <span class="vi">@verses</span>  <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">verses</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span> <span class="no">Verse</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">verses</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span> <span class="p">}</span>
+      <span class="vi">@verses</span> <span class="o">&lt;&lt;</span> <span class="no">PenultimateVerse</span><span class="o">.</span><span class="n">new</span>
+      <span class="vi">@verses</span> <span class="o">&lt;&lt;</span> <span class="no">UltimateVerse</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">verses</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:verses</span>
+    <span class="kp">private</span>     <span class="ss">:verses</span>
+
+    <span class="k">def</span> <span class="nf">sing</span><span class="p">(</span><span class="n">target</span> <span class="o">=</span> <span class="vg">$stdout</span><span class="p">)</span>
+      <span class="n">verses</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">verse</span><span class="o">|</span>
+        <span class="n">target</span> <span class="o">&lt;&lt;</span> <span class="n">verse</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Most verses are represented by a fairly predicable object:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="k">module</span> <span class="nn">BottlesOfBeer</span>
+  <span class="k">class</span> <span class="nc">Verse</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">bottles</span><span class="p">)</span>
+      <span class="vi">@bottles</span> <span class="o">=</span> <span class="n">bottles</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:bottles</span>
+    <span class="kp">private</span>     <span class="ss">:bottles</span>
+
+    <span class="k">def</span> <span class="nf">to_s</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">bottles</span><span class="si">}</span><span class="s2"> bottles of beer on the wall, "</span> <span class="o">+</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">bottles</span><span class="si">}</span><span class="s2"> bottles of beer.</span><span class="se">\n</span><span class="s2">"</span>            <span class="o">+</span>
+      <span class="s2">"Take one down and pass it around, "</span>       <span class="o">+</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">bottles</span> <span class="o">-</span> <span class="mi">1</span><span class="si">}</span><span class="s2"> bottles of beer on the wall…</span><span class="se">\n\n</span><span class="s2">"</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>However, the <em>one bottle</em> verse is an edge case:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">require_relative</span> <span class="s2">"verse"</span>
+
+<span class="k">module</span> <span class="nn">BottlesOfBeer</span>
+  <span class="k">class</span> <span class="nc">PenultimateVerse</span> <span class="o">&lt;</span> <span class="no">Verse</span>
+    <span class="k">def</span> <span class="nf">initialize</span>
+      <span class="k">super</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">to_s</span>
+      <span class="k">super</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="s2">"1 bottles"</span><span class="p">,</span> <span class="s2">"1 bottle"</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The last verse is also special:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="n">require_relative</span> <span class="s2">"verse"</span>
+
+<span class="k">module</span> <span class="nn">BottlesOfBeer</span>
+  <span class="k">class</span> <span class="nc">UltimateVerse</span> <span class="o">&lt;</span> <span class="no">Verse</span>
+    <span class="k">def</span> <span class="nf">to_s</span>
+      <span class="s2">"No more bottles of beer on the wall, "</span> <span class="o">+</span>
+      <span class="s2">"no more bottles of beer.</span><span class="se">\n</span><span class="s2">"</span>            <span class="o">+</span>
+      <span class="s2">"Go to the store and buy some more, "</span>   <span class="o">+</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">bottles</span><span class="si">}</span><span class="s2"> bottles of beer on the wall…</span><span class="se">\n</span><span class="s2">"</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This solution gets close, but it doesn't quite work:</p>
+
+<div class="highlight highlight-diff"><pre><span class="gd">--- /dev/fd/63  2014-05-30 13:21:03.000000000 -0500</span>
+<span class="gi">+++ spec/full_song.txt  2014-05-30 09:34:28.000000000 -0500</span>
+<span class="gu">@@ -290,10 +290,10 @@</span>
+ Take one down and pass it around, 2 bottles of beer on the wall…
+
+ 2 bottles of beer on the wall, 2 bottles of beer.
+<span class="gd">-Take one down and pass it around, 1 bottles of beer on the wall…</span>
+<span class="gi">+Take one down and pass it around, 1 bottle of beer on the wall…</span>
+
+ 1 bottle of beer on the wall, 1 bottle of beer.
+<span class="gd">-Take one down and pass it around, 0 bottles of beer on the wall…</span>
+<span class="gi">+Take one down and pass it around, no more bottles of beer on the wall…</span>
+
+ No more bottles of beer on the wall, no more bottles of beer.
+ Go to the store and buy some more, 99 bottles of beer on the wall…
+</pre></div>
+
+<p>This was an interesting decision point for me in the exercise.  Obviously, I'm not green.  Eventually, I need to get there.  But I'm really close.  Only two lines are wrong and I can see what the problem is.  Mainly, when I transition to new verses, I don't pick up on the edge cases.  I was starting to have ideas about how I might address this issue, but I wasn't too happy with the rest of the code yet anyway.  I decided to attempt to improve what I had built a little first, before I tackled the obvious bug.  I feel like my <code>diff</code>-based validation gave me the confidence that I could do this, since I would notice by the line count alone if I was drifting further off track.</p>
+
+<h4>Can I get a side of objects with that?</h4>
+
+<p>OK, my first major complaint was that I didn't land on a very OO solution.  Since that's the point of the exercise, I wanted to address it.  More specifically I think overriding a method to call <code>gsub()</code> on its output largely misses to point of sharing an implementation, as objects do.  Similarly, my <code>UltimateVerse</code> pretty much ignores everything from its superclass.  I minted <a href="https://github.com/JEG2/bottles_of_beer_song/tree/more_objectified">a new branch</a> and broke out the polish.</p>
+
+<p>I began by extracting a few methods in <code>Verse</code> so I could override them in subclasses:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="k">module</span> <span class="nn">BottlesOfBeer</span>
+  <span class="k">class</span> <span class="nc">Verse</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">bottles</span><span class="p">)</span>
+      <span class="vi">@bottles</span> <span class="o">=</span> <span class="n">bottles</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:bottles</span>
+    <span class="kp">private</span>     <span class="ss">:bottles</span>
+
+    <span class="k">def</span> <span class="nf">to_s</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">count_with_units</span><span class="si">}</span><span class="s2"> of beer on the wall, "</span> <span class="o">+</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">count_with_units</span><span class="o">.</span><span class="n">downcase</span><span class="si">}</span><span class="s2"> of beer.</span><span class="se">\n</span><span class="s2">"</span>   <span class="o">+</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">action</span><span class="si">}</span><span class="s2">, "</span>                               <span class="o">+</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">bottles</span> <span class="o">-</span> <span class="mi">1</span><span class="si">}</span><span class="s2"> bottles of beer on the wall…</span><span class="se">\n\n</span><span class="s2">"</span>
+    <span class="k">end</span>
+
+    <span class="kp">private</span>
+
+    <span class="k">def</span> <span class="nf">count_with_units</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">bottles</span><span class="si">}</span><span class="s2"> bottles"</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">action</span>
+      <span class="s2">"Take one down and pass it around"</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That allowed me to clean up the content editing in the <em>one bottle</em> verse:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">require_relative</span> <span class="s2">"verse"</span>
+
+<span class="k">module</span> <span class="nn">BottlesOfBeer</span>
+  <span class="k">class</span> <span class="nc">PenultimateVerse</span> <span class="o">&lt;</span> <span class="no">Verse</span>
+    <span class="k">def</span> <span class="nf">initialize</span>
+      <span class="k">super</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">count_with_units</span>
+      <span class="s2">"1 bottle"</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>It also allowed me to turn the <em>no more bottles</em> verse into a more proper subclass that doesn't just override the work of the superclass:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">require_relative</span> <span class="s2">"verse"</span>
+
+<span class="k">module</span> <span class="nn">BottlesOfBeer</span>
+  <span class="k">class</span> <span class="nc">UltimateVerse</span> <span class="o">&lt;</span> <span class="no">Verse</span>
+    <span class="k">def</span> <span class="nf">to_s</span>
+      <span class="k">super</span><span class="o">.</span><span class="n">strip</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>
+    <span class="k">end</span>
+
+    <span class="kp">private</span>
+
+    <span class="k">def</span> <span class="nf">count_with_units</span>
+      <span class="s2">"No more bottles"</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">action</span>
+      <span class="s2">"Go to the store and buy some more"</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>While things are definitely more object oriented in this version, I've actually worsened the results by one more failing line:</p>
+
+<div class="highlight highlight-diff"><pre><span class="gd">--- /dev/fd/63  2014-05-30 13:36:26.000000000 -0500</span>
+<span class="gi">+++ spec/full_song.txt  2014-05-30 09:34:28.000000000 -0500</span>
+<span class="gu">@@ -290,10 +290,10 @@</span>
+ Take one down and pass it around, 2 bottles of beer on the wall…
+
+ 2 bottles of beer on the wall, 2 bottles of beer.
+<span class="gd">-Take one down and pass it around, 1 bottles of beer on the wall…</span>
+<span class="gi">+Take one down and pass it around, 1 bottle of beer on the wall…</span>
+
+ 1 bottle of beer on the wall, 1 bottle of beer.
+<span class="gd">-Take one down and pass it around, 0 bottles of beer on the wall…</span>
+<span class="gi">+Take one down and pass it around, no more bottles of beer on the wall…</span>
+
+ No more bottles of beer on the wall, no more bottles of beer.
+<span class="gd">-Go to the store and buy some more, 98 bottles of beer on the wall…</span>
+<span class="gi">+Go to the store and buy some more, 99 bottles of beer on the wall…</span>
+</pre></div>
+
+<p>I'm still quite close to correct, but I am seeing that drift I decided to watch for.  This told me it was time to get serious about reaching a real solution.</p>
+
+<h4>Go Green or Go Home</h4>
+
+<p>My problems come from the fact that the verses transition into the next part of the song.  That leads me to another thing that bothered me with my initial code:  the need for <code>bottles - 1</code> in <code>Verse</code>.  If <code>Song</code> is keeping track of the current <code>Verse</code>, it feels like they shouldn't need to peek ahead internally.  This made me feel like a layer was missing and I set out to add it in <a href="https://github.com/JEG2/bottles_of_beer_song/tree/transitions">a new branch</a>.</p>
+
+<p>I decided to introduce this new concept of verses transitioning to the next verse:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="k">module</span> <span class="nn">BottlesOfBeer</span>
+  <span class="k">class</span> <span class="nc">VerseWithTransition</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">verse</span><span class="p">,</span> <span class="n">next_verse</span><span class="p">)</span>
+      <span class="vi">@verse</span>      <span class="o">=</span> <span class="n">verse</span>
+      <span class="vi">@next_verse</span> <span class="o">=</span> <span class="n">next_verse</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:verse</span><span class="p">,</span> <span class="ss">:next_verse</span>
+    <span class="kp">private</span>     <span class="ss">:verse</span><span class="p">,</span> <span class="ss">:next_verse</span>
+
+    <span class="k">def</span> <span class="nf">to_s</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">verse</span><span class="si">}</span><span class="s2">, </span><span class="si">#{</span><span class="n">next_verse</span><span class="o">.</span><span class="n">opening</span><span class="o">.</span><span class="n">downcase</span><span class="si">}</span><span class="s2">…</span><span class="se">\n</span><span class="s2">"</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Of course, that required some changes in the <code>Song</code> to make use of these new transitions:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">require_relative</span> <span class="s2">"verse"</span>
+<span class="n">require_relative</span> <span class="s2">"penultimate_verse"</span>
+<span class="n">require_relative</span> <span class="s2">"ultimate_verse"</span>
+<span class="n">require_relative</span> <span class="s2">"verse_with_transition"</span>
+
+<span class="k">module</span> <span class="nn">BottlesOfBeer</span>
+  <span class="k">class</span> <span class="nc">Song</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">verses</span> <span class="o">=</span> <span class="mi">99</span><span class="p">)</span>
+      <span class="vi">@verses</span>  <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">verses</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span> <span class="no">Verse</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">verses</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span> <span class="p">}</span>
+      <span class="vi">@verses</span> <span class="o">&lt;&lt;</span> <span class="no">PenultimateVerse</span><span class="o">.</span><span class="n">new</span>
+      <span class="vi">@verses</span> <span class="o">&lt;&lt;</span> <span class="no">UltimateVerse</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">verses</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:verses</span>
+    <span class="kp">private</span>     <span class="ss">:verses</span>
+
+    <span class="k">def</span> <span class="nf">sing</span><span class="p">(</span><span class="n">target</span> <span class="o">=</span> <span class="vg">$stdout</span><span class="p">)</span>
+      <span class="n">verses</span><span class="o">.</span><span class="n">each_cons</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">verse</span><span class="p">,</span> <span class="n">next_verse</span><span class="o">|</span>
+        <span class="n">target</span> <span class="o">&lt;&lt;</span> <span class="no">VerseWithTransition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">verse</span><span class="p">,</span> <span class="n">next_verse</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>
+      <span class="k">end</span>
+      <span class="n">target</span> <span class="o">&lt;&lt;</span> <span class="no">VerseWithTransition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">verses</span><span class="o">.</span><span class="n">last</span><span class="p">,</span> <span class="n">verses</span><span class="o">.</span><span class="n">first</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The base <code>Verse</code> itself could now quit worrying about the next number, as long as it made its <code>opening()</code> available for reuse:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">BottlesOfBeer</span>
+  <span class="k">class</span> <span class="nc">Verse</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">bottles</span><span class="p">)</span>
+      <span class="vi">@bottles</span> <span class="o">=</span> <span class="n">bottles</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:bottles</span>
+    <span class="kp">private</span>     <span class="ss">:bottles</span>
+
+    <span class="k">def</span> <span class="nf">opening</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">count_with_units</span><span class="si">}</span><span class="s2"> of beer on the wall"</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">to_s</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">opening</span><span class="si">}</span><span class="s2">, "</span>                            <span class="o">+</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">count_with_units</span><span class="o">.</span><span class="n">downcase</span><span class="si">}</span><span class="s2"> of beer.</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span>
+      <span class="n">action</span>
+    <span class="k">end</span>
+
+    <span class="kp">private</span>
+
+    <span class="k">def</span> <span class="nf">count_with_units</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">bottles</span><span class="si">}</span><span class="s2"> bottles"</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">action</span>
+      <span class="s2">"Take one down and pass it around"</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The edge cases were largely unchanged in this round, save that I pulled out an override from <code>UltimateVerse</code> that twiddled whitespace.  It felt more natural to handle that at the <code>Song</code> level.  The low number of changes needed here made me feel like I was making better use of subclasses now.</p>
+
+<p>Also, good news, my output was finally validating.</p>
+
+<h4>Things That Bug Me</h4>
+
+<p>Now that I was green, I wanted to attack other concerns I had with the code.  My biggest remaining complaint was this line in <code>Song</code>:</p>
+
+<div class="highlight highlight-ruby"><pre>      <span class="vi">@verses</span>  <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">verses</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span> <span class="no">Verse</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">verses</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span> <span class="p">}</span>
+</pre></div>
+
+<p>This represents multiple problems, in my opinion.  First, I don't like that I'm pregenerating all of the verses.  What if we want to use a huge number of verses?  Why should that be memory inefficient?  I would prefer to do the work as it comes in, when possible.</p>
+
+<p>Also, there's some very non-obvious index math in this code, if you ask me.  I had to lower the size of the initial <code>Array</code> to make room for the edge cases and I had to reverse the indexes inside the block, because the lyrics count down.</p>
+
+<p><a href="https://github.com/JEG2/bottles_of_beer_song/tree/refactoring">Another branch</a> led to another round of fixes.</p>
+
+<p>Here's a more clean iteration through the verses, in my opinion:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">require_relative</span> <span class="s2">"verse"</span>
+<span class="n">require_relative</span> <span class="s2">"penultimate_verse"</span>
+<span class="n">require_relative</span> <span class="s2">"ultimate_verse"</span>
+<span class="n">require_relative</span> <span class="s2">"verse_with_transition"</span>
+
+<span class="k">module</span> <span class="nn">BottlesOfBeer</span>
+  <span class="k">class</span> <span class="nc">Song</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">verses</span> <span class="o">=</span> <span class="mi">99</span><span class="p">)</span>
+      <span class="nb">fail</span> <span class="no">ArgumentError</span><span class="p">,</span> <span class="s2">"Cannot sing negative verses"</span> <span class="k">if</span> <span class="n">verses</span> <span class="o">&lt;</span> <span class="mi">0</span>
+
+      <span class="vi">@verses</span> <span class="o">=</span> <span class="n">verses</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:verses</span>
+    <span class="kp">private</span>     <span class="ss">:verses</span>
+
+    <span class="k">def</span> <span class="nf">sing</span><span class="p">(</span><span class="n">target</span> <span class="o">=</span> <span class="vg">$stdout</span><span class="p">)</span>
+      <span class="n">verses</span><span class="o">.</span><span class="n">downto</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">each_cons</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">bottles</span><span class="p">,</span> <span class="n">next_bottles</span><span class="o">|</span>
+        <span class="n">write_verse</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="no">Verse</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">bottles</span><span class="p">),</span> <span class="no">Verse</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">next_bottles</span><span class="p">))</span>
+      <span class="k">end</span>
+      <span class="n">write_verse</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="no">Verse</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>         <span class="no">PenultimateVerse</span><span class="o">.</span><span class="n">new</span><span class="p">)</span> <span class="p">\</span>
+        <span class="k">if</span> <span class="n">verses</span> <span class="o">&gt;=</span> <span class="mi">2</span>
+      <span class="n">write_verse</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="no">PenultimateVerse</span><span class="o">.</span><span class="n">new</span><span class="p">,</span> <span class="no">UltimateVerse</span><span class="o">.</span><span class="n">new</span><span class="p">)</span> <span class="p">\</span>
+        <span class="k">if</span> <span class="n">verses</span> <span class="o">&gt;=</span> <span class="mi">1</span>
+      <span class="n">write_verse</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="no">UltimateVerse</span><span class="o">.</span><span class="n">new</span><span class="p">,</span>    <span class="no">Verse</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">verses</span><span class="p">),</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="kp">private</span>
+
+    <span class="k">def</span> <span class="nf">write_verse</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">verse</span><span class="p">,</span> <span class="n">next_verse</span><span class="p">,</span> <span class="n">padding</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+      <span class="n">target</span> <span class="o">&lt;&lt;</span> <span class="no">VerseWithTransition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">verse</span><span class="p">,</span> <span class="n">next_verse</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="n">padding</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The main difference here is that I feel the iterators <code>downto()</code> and <code>each_cons()</code> make it easier to see how I am moving through the data.  There's a lot more object construction in this version, but that's a concern for the garbage collector (which has improved a ton in recent releases).  I try not to be afraid of using lots of objects, until I have some reason to be.</p>
+
+<p>Just for the record, there was one more tiny change that I didn't show here.  I finally dropped the argument to <code>UltimateVerse</code>'s constructor, since that's now handled by transitions.  This required that I override the base constructor to ignore it.</p>
+
+<h4>The Big Questions</h4>
+
+<p>Now that I had a working solution, I found myself wondering how much extra work I had done to objectify this code that could have a pretty short solution.  I pulled <a href="https://github.com/JEG2/bottles_of_beer_song/tree/non_oo">a fresh branch</a> off of master and solved the problem again for comparison purposes.</p>
+
+<p>I rewrote the <code>Song</code> using the least complex proceedural code that I could dream up:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="k">module</span> <span class="nn">BottlesOfBeer</span>
+  <span class="k">class</span> <span class="nc">Song</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">verses</span> <span class="o">=</span> <span class="mi">99</span><span class="p">)</span>
+      <span class="nb">fail</span> <span class="no">ArgumentError</span><span class="p">,</span> <span class="s2">"Cannot sing negative verses"</span> <span class="k">if</span> <span class="n">verses</span> <span class="o">&lt;</span> <span class="mi">0</span>
+
+      <span class="vi">@verses</span> <span class="o">=</span> <span class="n">verses</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:verses</span>
+    <span class="kp">private</span>     <span class="ss">:verses</span>
+
+    <span class="k">def</span> <span class="nf">sing</span><span class="p">(</span><span class="n">target</span> <span class="o">=</span> <span class="vg">$stdout</span><span class="p">)</span>
+      <span class="n">verses</span><span class="o">.</span><span class="n">downto</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">count</span><span class="o">|</span>
+        <span class="n">action</span>  <span class="o">=</span> <span class="n">count</span><span class="o">.</span><span class="n">zero?</span> <span class="p">?</span> <span class="s2">"Go to the store and buy some more"</span>
+                              <span class="p">:</span> <span class="s2">"Take one down and pass it around"</span>
+        <span class="n">target</span> <span class="o">&lt;&lt;</span> <span class="s2">"</span><span class="si">#{</span><span class="n">bottles</span><span class="p">(</span><span class="n">count</span><span class="p">)</span><span class="si">}</span><span class="s2"> of beer on the wall, "</span> <span class="o">+</span>
+                  <span class="s2">"</span><span class="si">#{</span><span class="n">bottles</span><span class="p">(</span><span class="n">count</span><span class="p">)</span><span class="o">.</span><span class="n">downcase</span><span class="si">}</span><span class="s2"> of beer.</span><span class="se">\n</span><span class="s2">"</span>   <span class="o">+</span>
+                  <span class="s2">"</span><span class="si">#{</span><span class="n">action</span><span class="si">}</span><span class="s2">, "</span>                             <span class="o">+</span>
+                  <span class="s2">"</span><span class="si">#{</span><span class="n">bottles</span><span class="p">(</span><span class="n">count</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">downcase</span><span class="si">}</span><span class="s2"> of beer on the wall…</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="n">target</span> <span class="o">&lt;&lt;</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="k">unless</span> <span class="n">count</span><span class="o">.</span><span class="n">zero?</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="kp">private</span>
+
+    <span class="k">def</span> <span class="nf">bottles</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">count</span> <span class="o">&lt;</span> <span class="mi">0</span>
+        <span class="n">bottles</span><span class="p">(</span><span class="n">verses</span><span class="p">)</span>
+      <span class="k">elsif</span> <span class="n">count</span><span class="o">.</span><span class="n">zero?</span>
+        <span class="s2">"No more bottles"</span>
+      <span class="k">else</span>
+        <span class="s2">"</span><span class="si">#{</span><span class="n">count</span><span class="si">}</span><span class="s2"> bottle</span><span class="si">#{</span><span class="s1">'s'</span> <span class="k">unless</span> <span class="n">count</span> <span class="o">==</span> <span class="mi">1</span><span class="si">}</span><span class="s2">"</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I'll be honest and admit that I expected to like this code better.  This is a small problem and I can keep the whole thing in my head when working at this level.  I figured a short chunk of code that reflected that would be pretty digestible.</p>
+
+<p>After seeing the two solutions side-by-side though, I'm not sure I really do feel that way.  Sure, this one is shorter and you can easily view the whole thing at once, but there's a ton of edge cases mashed into this small space that make it harder to reason about.  At least that's what I think.  Notice the three separate <code>count.zero?</code> checks and the return of <code>count - 1</code> even though the iterator is pushing us through the verses.  I'm pretty sure I would rather fix bugs in the objectified code, rather than reason out which rules are in effect here at any given time.</p>
+
+<p>Thanks for the mental workout Katrina.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/objectified-beer">
+  In: <a href="/rubies-in-the-rough/">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Object%20Orientation/">Object Orientation</a> &amp; <a href="/tags/Test-Driven%20Development/">Test-Driven Development</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/objectified-beer#comments">1 Comment</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (1)</span></h5>
+
+    <ol>
+        <li id="comment_538">
+    <div class="avatar"><img alt="Thom Parkin" height="70" src="https://avatars.githubusercontent.com/u/12994?" width="70" /></div>
+    <div class="comment-info" data-comment-id="538">
+      <span class="c_name"><a href="https://github.com/ParkinT">Thom Parkin</a></span>
+      <span class="c_date">May 30th, 2014</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/objectified-beer#comment_538">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>"Three stabs at the problem set, three stabs at the problem."<br>
+"You make a commit, checkout dash b"<br>
+"Two stabs at the problem set"</p>
+
+<p>This is, indeed, one of those problems that is deceptive at first glance.</p>
+
+<p>Thank you, James, for this wonderful walk through your thought process.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

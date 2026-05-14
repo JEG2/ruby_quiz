@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Key-Value Stores / Tokyo Cabinet&#39;s Key-Value Database Types</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This article digs deeper into the capabilities of Tokyo Cabinet.  B+Tree and Fixed-length Databases are discussed, as well as how to tune the database types to your specific needs.">
+    <meta name="keywords"    content="key-value stores, NoSQL, Tokyo Cabinet, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/key-value-stores/tokyo-cabinets-key-value-database-types/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/key-value-stores">Key-Value Stores</a></h1>
+            <span>Notes from my learning about simple NoSQL storage solutions.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>10</h4>
+    <span>
+      JAN<br>
+      2010
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Tokyo Cabinet&#39;s Key-Value Database Types</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/key-value-stores/tokyo-cabinet-as-a-key-value-store/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/key-value-stores/using-key-value-stores-from-ruby/">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      &nbsp;
+  </div>
+</div>
+
+        <p>We've taken a good look at Tokyo Cabinet's Hash Database, but there's a lot more to the library than just that.  Tokyo Cabinet supports three other kinds of databases.  In addition, each database type accepts various tuning parameters that can be used to change its behavior.  Each database type and setting involves different tradeoffs so you really have a lot of options for turning Tokyo Cabinet into exactly what you need.  Let's look into some of those options now.</p>
+
+<h4>The B+Tree Database</h4>
+
+<p>Tokyo Cabinet's B+Tree Database is a little slower than the Hash Database we looked at before.  That's its downside.  However, giving up a little speed gains you several extra features that may just allow you to work smarter instead of faster.</p>
+
+<p>The B+Tree Database is a more advanced form of the Hash Database.  What that means is that all of the stuff I showed you in the last article still applies.  You can set, read, and remove values by keys, iteration is supported, and you still have access to the neat options like adding to counters.  With a B+Tree Database you get all of that and more.</p>
+
+<p>The first major addition is that a B+Tree Database is ordered.  You don't really need to do anything to turn this on, it's just the way it is.  As you add pairs to the database, they will be ordered by the keys you use.  The default ordering is lexical:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"oklahoma_mixer"</span>
+
+<span class="no">OklahomaMixer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"ordered.tcb"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">db</span><span class="o">|</span>
+  <span class="n">db</span><span class="o">[</span><span class="ss">:c</span><span class="o">]</span> <span class="o">=</span> <span class="mi">3</span>
+  <span class="n">db</span><span class="o">[</span><span class="ss">:a</span><span class="o">]</span> <span class="o">=</span> <span class="mi">1</span>
+  <span class="n">db</span><span class="o">[</span><span class="ss">:b</span><span class="o">]</span> <span class="o">=</span> <span class="mi">2</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">to_a</span>  <span class="c1"># =&gt; [["a", "1"], ["b", "2"], ["c", "3"]]</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This simple example shows us a couple of things.  First, creating a B+Tree Database is as simple as changing the file extension.  Remember when I said the <code>.tch</code> stood for <b>T</b>okyo <b>C</b>abinet <b>H</b>ash Database?  Well, it shouldn't be too surprising that <code>.tcb</code> stands for <b>T</b>okyo <b>C</b>abinet <b>B</b>+Tree Database.  Oklahoma Mixer will notice which extension you use and load the right features for that database type.</p>
+
+<p>The other thing to notice here is the ordering.  I purposely added the keys out of order, but you can see that <code>to_a()</code> shows them all lined up correctly.  Now <code>to_a()</code> is really just an iterator the database object inherits from <code>Enumerable</code>, so we now know that iteration will be in database order.  Methods like <code>keys()</code> and even <code>values()</code> will also return their listings in order as well.</p>
+
+<p>As I said, the default ordering is lexical, so number keys are little strange:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"oklahoma_mixer"</span>
+
+<span class="no">OklahomaMixer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"lexical.tcb"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">db</span><span class="o">|</span>
+  <span class="n">db</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>  <span class="o">=</span> <span class="ss">:first</span>
+  <span class="n">db</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>  <span class="o">=</span> <span class="ss">:middle</span>
+  <span class="n">db</span><span class="o">[</span><span class="mi">11</span><span class="o">]</span> <span class="o">=</span> <span class="ss">:last</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">to_a</span>  <span class="c1"># =&gt; [["1", "first"], ["11", "last"], ["2", "middle"]]</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Notice they don't come out in the order we would probably think is most natural, as I described in the values.  To fix that we need to change the default ordering and you can do that using a tuning parameter of the B+Tree Database.  We are allowed to set a <em>comparison function</em> when we <code>open()</code> the database that will order the keys however we desire.  This function is just like a block you would pass to <code>sort()</code> in Ruby:  it will be handed two keys at a time to compare and it is expected to return negative, zero, or positive for the first argument being less than, equal to, or greater than the second.  The good news is, you can usually cheat your way out of remembering these comparison rules by leaning on Ruby's <em>spaceship operator</em>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"oklahoma_mixer"</span>
+
+<span class="no">OklahomaMixer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span> <span class="s2">"numerical.tcb"</span><span class="p">,</span>
+                    <span class="ss">:cmpfunc</span> <span class="o">=&gt;</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">|</span> <span class="n">a</span><span class="o">.</span><span class="n">to_i</span> <span class="o">&lt;=&gt;</span> <span class="n">b</span><span class="o">.</span><span class="n">to_i</span> <span class="p">}</span> <span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">db</span><span class="o">|</span>
+  <span class="n">db</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>  <span class="o">=</span> <span class="ss">:first</span>
+  <span class="n">db</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>  <span class="o">=</span> <span class="ss">:middle</span>
+  <span class="n">db</span><span class="o">[</span><span class="mi">11</span><span class="o">]</span> <span class="o">=</span> <span class="ss">:last</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">to_a</span>  <span class="c1"># =&gt; [["1", "first"], ["2", "middle"], ["11", "last"]]</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This example shows how tuning parameters get set with Oklahoma Mixer.  Just pass some keyword arguments to <code>open()</code> for each parameter you need to adjust.  This allows Oklahoma Mixer to perform the needed setup before connecting to your database.  That's critical for things like a B+Tree comparison function that have to be set before the database is accepting data.</p>
+
+<p>It's worth noting that the comparison function is not stored in the database file and needs to be reset (to the same function if you want to avoid unpredictable results) each time you <code>open()</code> that database.</p>
+
+<p>OK, enough about ordering.  What else do we get with the B+Tree Database?</p>
+
+<p>You also get key ranges.  Since the database has an inherit order, we're no longer limited to <code>:prefix</code> searches of the <code>keys()</code> and we can now ask for all of the keys between two endpoints:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"oklahoma_mixer"</span>
+
+<span class="no">OklahomaMixer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"ranges.tcb"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">db</span><span class="o">|</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="ss">:a</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="ss">:b</span> <span class="o">=&gt;</span> <span class="mi">2</span><span class="p">,</span> <span class="ss">:c</span> <span class="o">=&gt;</span> <span class="mi">3</span><span class="p">,</span> <span class="ss">:d</span> <span class="o">=&gt;</span> <span class="mi">4</span><span class="p">,</span> <span class="ss">:e</span> <span class="o">=&gt;</span> <span class="mi">5</span><span class="p">)</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">keys</span><span class="p">(</span><span class="ss">:range</span> <span class="o">=&gt;</span> <span class="s2">"ab"</span><span class="o">.</span><span class="n">.</span><span class="s2">"d"</span><span class="p">)</span>   <span class="c1"># =&gt; ["b", "c", "d"]</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">keys</span><span class="p">(</span><span class="ss">:range</span> <span class="o">=&gt;</span> <span class="s2">"ab"</span><span class="o">.</span><span class="n">.</span><span class="o">.</span><span class="s2">"d"</span><span class="p">)</span>  <span class="c1"># =&gt; ["b", "c"]</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Note that I used <code>"ab"</code> in my <code>Range</code> queries which is really between the actual <code>"a"</code> and <code>"b"</code> keys in the database.  That works just fine.</p>
+
+<p>You can also pass the <code>:limit</code> option I've shown before with <code>:range</code>, but you can't pass <code>:prefix</code>.  It's one or the other:  <code>:prefix</code> or <code>:range</code>.</p>
+
+<p>This ability to work with a <code>Range</code> of keys is even extended to the iterators.  You've always had the ability to stop iterating whenever you like using Ruby's <code>break</code> keyword, but now you can tell the iterators where to start, making it possible to iterate over a subset of the pairs in the database:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"oklahoma_mixer"</span>
+
+<span class="no">OklahomaMixer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"ranges.tcb"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">db</span><span class="o">|</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="ss">:a</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="ss">:b</span> <span class="o">=&gt;</span> <span class="mi">2</span><span class="p">,</span> <span class="ss">:c</span> <span class="o">=&gt;</span> <span class="mi">3</span><span class="p">,</span> <span class="ss">:d</span> <span class="o">=&gt;</span> <span class="mi">4</span><span class="p">,</span> <span class="ss">:e</span> <span class="o">=&gt;</span> <span class="mi">5</span><span class="p">)</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="s2">"ab"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">|</span>
+    <span class="nb">puts</span> <span class="s2">"%p =&gt; %p"</span> <span class="o">%</span> <span class="o">[</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">]</span>
+    <span class="k">break</span> <span class="k">if</span> <span class="n">key</span> <span class="o">&gt;=</span> <span class="s2">"d"</span>
+  <span class="k">end</span>
+  <span class="c1"># &gt;&gt; "b" =&gt; "2"</span>
+  <span class="c1"># &gt;&gt; "c" =&gt; "3"</span>
+  <span class="c1"># &gt;&gt; "d" =&gt; "4"</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Again, I used <code>"ab"</code> and it jumped to the first key after that.  The only place that might get a little confusing is if you try that same trick with the (also added to B+Tree Databases) <code>reverse_each()</code> iterator:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"oklahoma_mixer"</span>
+
+<span class="no">OklahomaMixer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"ranges.tcb"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">db</span><span class="o">|</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="ss">:a</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="ss">:b</span> <span class="o">=&gt;</span> <span class="mi">2</span><span class="p">,</span> <span class="ss">:c</span> <span class="o">=&gt;</span> <span class="mi">3</span><span class="p">,</span> <span class="ss">:d</span> <span class="o">=&gt;</span> <span class="mi">4</span><span class="p">,</span> <span class="ss">:e</span> <span class="o">=&gt;</span> <span class="mi">5</span><span class="p">)</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">reverse_each</span><span class="p">(</span><span class="s2">"ddd"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">|</span>
+    <span class="nb">puts</span> <span class="s2">"%p =&gt; %p"</span> <span class="o">%</span> <span class="o">[</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">]</span>
+    <span class="k">break</span> <span class="k">if</span> <span class="n">key</span> <span class="o">&lt;=</span> <span class="s2">"b"</span>
+  <span class="k">end</span>
+  <span class="c1"># &gt;&gt; "e" =&gt; "5"</span>
+  <span class="c1"># &gt;&gt; "d" =&gt; "4"</span>
+  <span class="c1"># &gt;&gt; "c" =&gt; "3"</span>
+  <span class="c1"># &gt;&gt; "b" =&gt; "2"</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>See how it started with <code>"e"</code>?  It always jumps to the first key equal to or <em>after</em> the one you provide, even if you are planning to iterate backwards.  Since <code>"ddd"</code> is between <code>"d"</code> and <code>"e"</code>, that means we start on the key after <code>"ddd"</code> (<code>"e"</code>).</p>
+
+<p>B+Tree Databases have one more feature and it's a wild one.  These databases support an additional storage mode that allows duplicate values to be stored under the same key:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"oklahoma_mixer"</span>
+
+<span class="no">OklahomaMixer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"dupes.tcb"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">db</span><span class="o">|</span>
+  <span class="sx">%w[James Dana Baby]</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">store</span><span class="p">(</span><span class="s2">"Gray"</span><span class="p">,</span> <span class="nb">name</span><span class="p">,</span> <span class="ss">:dup</span><span class="p">)</span>
+  <span class="k">end</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">to_a</span>  <span class="c1"># =&gt; [["Gray", "James"], ["Gray", "Dana"], ["Gray", "Baby"]]</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>As you can see, the <code>:dup</code> storage mode shuts off the normal value replacing behavior and instead inserts the duplicate value after what was already stored for that key.</p>
+
+<p>Several methods in Oklahoma Mixer have been expanded to support these duplicate values.  For example, with a B+Tree Database you can scope <code>values()</code> or <code>size()</code> to a specific key, retrieving just the <code>values()</code> stored under that key or getting a count of how many values there are for that key:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"oklahoma_mixer"</span>
+
+<span class="no">OklahomaMixer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"names.tcb"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">db</span><span class="o">|</span>
+  <span class="n">db</span><span class="o">[</span><span class="s2">"Matsumoto"</span><span class="o">]</span> <span class="o">=</span> <span class="s2">"Yukihiro"</span>
+  <span class="sx">%w[James Dana]</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">store</span><span class="p">(</span><span class="s2">"Gray"</span><span class="p">,</span> <span class="nb">name</span><span class="p">,</span> <span class="ss">:dup</span><span class="p">)</span>
+  <span class="k">end</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">values</span>         <span class="c1"># =&gt; ["James", "Dana", "Yukihiro"]</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="s2">"Gray"</span><span class="p">)</span> <span class="c1"># =&gt; ["James", "Dana"]</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">size</span>           <span class="c1"># =&gt; 3</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="s2">"Gray"</span><span class="p">)</span>   <span class="c1"># =&gt; 2</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>You will need to use these methods to work with duplicate values because normal indexing, <code>fetch()</code>, and <code>delete()</code> still just work with the first value stored under a key.  That behavior can be valuable too though:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"oklahoma_mixer"</span>
+
+<span class="no">OklahomaMixer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"todo.tcb"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">db</span><span class="o">|</span>
+  <span class="k">if</span> <span class="n">db</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">zero?</span>
+    <span class="sx">%w[B+tree Fixed-length tuning]</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">topic</span><span class="o">|</span>
+      <span class="n">db</span><span class="o">.</span><span class="n">store</span><span class="p">(</span><span class="ss">:blog</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="ss">:dup</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="nb">puts</span> <span class="s2">"Write about </span><span class="si">#{</span><span class="n">db</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="ss">:blog</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>If I run that program three times, this is what you see:</p>
+
+<pre><code>$ ruby tc_example.rb 
+Write about B+tree.
+$ ruby tc_example.rb 
+Write about Fixed-length.
+$ ruby tc_example.rb 
+Write about tuning.
+</code></pre>
+
+<p>See how <code>delete()</code> just kept pulling the first value that was left?  That allowed us to use it as a simple queue in this case.</p>
+
+<p>The <code>delete()</code> method can be passed the <code>:dup</code> storage mode as a second argument.  When you do, all values under the passed key will be removed.</p>
+
+<p>When working with duplicates, be aware that <code>keys()</code> and <code>each_key()</code> (or any iterator) behave differently.  <code>keys()</code> returns a unique list, so keys with duplicate values under them will only be listed once.  Iteration walks each pair in the database though, so a key will come up once for each value stored under it.  Put another way, iteration does show duplicates while <code>keys()</code> won't.</p>
+
+<p>Let me show one last, slightly bigger example to bring together all of the features discussed above.  Here's a little more involved queuing system:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"oklahoma_mixer"</span>
+
+<span class="no">GROUPS</span> <span class="o">=</span> <span class="p">{</span><span class="kp">nil</span> <span class="o">=&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"critical"</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"normal"</span> <span class="o">=&gt;</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"low"</span> <span class="o">=&gt;</span> <span class="mi">3</span><span class="p">}</span>
+
+<span class="n">order</span> <span class="o">=</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">|</span> 
+  <span class="n">a_group</span><span class="p">,</span> <span class="n">a_priority</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">":"</span><span class="p">)</span>
+  <span class="n">b_group</span><span class="p">,</span> <span class="n">b_priority</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">":"</span><span class="p">)</span>
+  <span class="o">[</span><span class="no">GROUPS</span><span class="o">[</span><span class="n">a_group</span><span class="o">]</span><span class="p">,</span> <span class="o">-</span><span class="n">a_priority</span><span class="o">.</span><span class="n">to_i</span><span class="o">]</span> <span class="o">&lt;=&gt;</span> <span class="o">[</span><span class="no">GROUPS</span><span class="o">[</span><span class="n">b_group</span><span class="o">]</span><span class="p">,</span> <span class="o">-</span><span class="n">b_priority</span><span class="o">.</span><span class="n">to_i</span><span class="o">]</span>
+<span class="p">}</span>
+<span class="no">OklahomaMixer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"queue.tcb"</span><span class="p">,</span> <span class="ss">:cmpfunc</span> <span class="o">=&gt;</span> <span class="n">order</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">db</span><span class="o">|</span>
+  <span class="k">case</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">shift</span>
+  <span class="k">when</span> <span class="s2">"add"</span>
+    <span class="n">group</span> <span class="o">=</span> <span class="s2">"normal"</span>
+    <span class="no">ARGV</span><span class="o">.</span><span class="n">delete_if</span> <span class="p">{</span> <span class="o">|</span><span class="n">o</span><span class="o">|</span> <span class="n">o</span> <span class="o">=~</span> <span class="sr">/\A--(critical|low)\z/</span> <span class="ow">and</span> <span class="n">group</span> <span class="o">=</span> <span class="vg">$1</span> <span class="p">}</span>
+    <span class="n">priority</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="no">ARGV</span><span class="o">.</span><span class="n">delete_if</span> <span class="p">{</span> <span class="o">|</span><span class="n">o</span><span class="o">|</span> <span class="n">o</span> <span class="o">=~</span> <span class="sr">/\A-(\d+)\z/</span> <span class="ow">and</span> <span class="n">priority</span> <span class="o">=</span> <span class="vg">$1</span><span class="o">.</span><span class="n">to_i</span> <span class="p">}</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">store</span><span class="p">(</span><span class="s2">"</span><span class="si">#{</span><span class="n">group</span><span class="si">}</span><span class="s2">:</span><span class="si">#{</span><span class="n">priority</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">"; "</span><span class="p">),</span> <span class="ss">:dup</span><span class="p">)</span>
+  <span class="k">when</span> <span class="s2">"list"</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">|</span>
+      <span class="nb">puts</span> <span class="n">key</span>
+      <span class="nb">puts</span> <span class="s2">"  </span><span class="si">#{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">end</span>
+  <span class="k">when</span> <span class="s2">"do_one"</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">keys</span><span class="p">(</span><span class="ss">:limit</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">first</span> <span class="ow">and</span> <span class="n">job</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+      <span class="nb">eval</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">when</span> <span class="s2">"do_all"</span>
+    <span class="kp">loop</span> <span class="k">do</span>
+      <span class="k">if</span> <span class="n">key</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">keys</span><span class="p">(</span><span class="ss">:limit</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">first</span> <span class="ow">and</span> <span class="n">job</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="nb">eval</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+      <span class="k">else</span>
+        <span class="k">break</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">else</span>
+    <span class="nb">abort</span> <span class="s2">"Usage:  </span><span class="si">#{</span><span class="vg">$PROGRAM_NAME</span><span class="si">}</span><span class="s2"> add|list|do_one|do_all [OPTIONS]"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Most of that should be pretty straightforward code after all we've talked about, but let me point out one tricky spot.  I had to add the <code>nil =&gt; 0</code> entry to my <code>GROUPS</code> because fetching a full, or in this case <code>:limit</code>ed, set of <code>keys()</code> is really just a <code>:prefix</code> query with an empty <code>:prefix</code>.  Because of that, you want to make sure your ordering functions always order an empty <code>String</code> key before anything else.  Calling <code>split()</code> on the empty <code>String</code> gives me a <code>nil</code> group, which is converted to a <code>0</code> so it will come out first.</p>
+
+<p>It's probably also worth pointing out that I could have just used <code>each()</code> with the <code>do_all</code> command.  However, always fetching the first key and using that is a little better in a multiprocessing environment where other processes might be adding to the queue.  If I'm iterating through the list, I won't see new <code>critical</code> jobs if they are added above where I am at.  Using <code>keys()</code> though, I'll always grab the most important job next.  This code isn't really built for multiprocessing to tell the truth, but let's save that discussion for a later article.</p>
+
+<p>Anyway, here's an example of me playing around with the program above, so you can see how it works in practice:</p>
+
+<pre><code>$ ruby queue.rb add 'puts "An average job."'
+$ ruby queue.rb add --low 'puts "This can wait..."'
+$ ruby queue.rb add --critical 'puts "Very important."'
+$ ruby queue.rb add --critical -100 'puts "Most important!"'
+$ ruby queue.rb listcritical:100
+  puts "Most important!"
+critical:10
+  puts "Very important."
+normal:10
+  puts "An average job."
+low:10
+  puts "This can wait..."
+$ ruby queue.rb do_one
+Most important!
+$ ruby queue.rb do_one
+Very important.
+$ ruby queue.rb do_all
+An average job.
+This can wait...
+</code></pre>
+
+<p>To summarize, the B+Tree Database gives you ordering, key ranges and cursor based iteration (the ability to skip to a specific key), and duplicate storage.  You pay a speed penalty for these added features though.  That's the tradeoff.</p>
+
+<h4>The Fixed-length Database</h4>
+
+<p>Another type of database supported by Tokyo Cabinet is the Fixed-length Database.  It too is an extension of the Hash Database, supporting most of the features I showed you in that article.  However, I'm not going to lie to you, this database type comes with three significant restrictions.</p>
+
+<p>First, all keys are <code>Integer</code>s greater than <code>0</code>.  You can't use arbitrary <code>String</code>s as you do with the Hash and B+Tree Databases.  As such, you lose the ability to do <code>:prefix</code> queries on <code>keys()</code>.  The database is ordered though, similar to the B+Tree Database.  You can't change this ordering, but it is done numerically (instead of lexically) since all keys are just <code>Integer</code>s anyway.  Given that, <code>:range</code> queries on <code>keys()</code> are supported.  Methods like <code>keys()</code> and the iterators will pass you <code>Integer</code> keys in Ruby, instead of the <code>String</code> keys you get with the other database types.</p>
+
+<p>The second downside is that all values stored have a <em>fixed-length</em>, which is what gives the database its name.  This length defaults to <code>255</code>, but you can tune it to anything you like with the <code>:width</code> tuning parameter:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"oklahoma_mixer"</span>
+
+<span class="no">OklahomaMixer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"four.tcf"</span><span class="p">,</span> <span class="ss">:width</span> <span class="o">=&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">db</span><span class="o">|</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">update</span><span class="p">(</span> <span class="mi">1</span> <span class="o">=&gt;</span> <span class="ss">:one</span><span class="p">,</span>
+             <span class="mi">2</span> <span class="o">=&gt;</span> <span class="ss">:two</span><span class="p">,</span>
+             <span class="mi">3</span> <span class="o">=&gt;</span> <span class="ss">:three</span><span class="p">,</span>
+             <span class="mi">4</span> <span class="o">=&gt;</span> <span class="ss">:four</span><span class="p">,</span>
+             <span class="mi">5</span> <span class="o">=&gt;</span> <span class="ss">:fix</span><span class="p">,</span>
+             <span class="mi">6</span> <span class="o">=&gt;</span> <span class="ss">:six</span><span class="p">,</span>
+             <span class="mi">7</span> <span class="o">=&gt;</span> <span class="ss">:seven</span><span class="p">,</span>
+             <span class="mi">8</span> <span class="o">=&gt;</span> <span class="ss">:eight</span> <span class="p">)</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">each_value</span> <span class="k">do</span> <span class="o">|</span><span class="n">num</span><span class="o">|</span>
+    <span class="nb">puts</span> <span class="n">num</span>
+  <span class="k">end</span>
+  <span class="c1"># &gt;&gt; one</span>
+  <span class="c1"># &gt;&gt; two</span>
+  <span class="c1"># &gt;&gt; thre</span>
+  <span class="c1"># &gt;&gt; four</span>
+  <span class="c1"># &gt;&gt; fix</span>
+  <span class="c1"># &gt;&gt; six</span>
+  <span class="c1"># &gt;&gt; seve</span>
+  <span class="c1"># &gt;&gt; eigh</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Notice how everything beyond my selected <code>:width</code> of <code>4</code> was just silently discarded.  That's the fixed-length at work.</p>
+
+<p>Also note that you create a <b>T</b>okyo <b>C</b>abinet <b>F</b>ixed-length Database as you probably expect by now, with the file extension <code>.tcf</code>.</p>
+
+<p>Finally, the Fixed-length Database has one last size limit.  The overall file size of the database is limited to <code>268435456</code> bytes, by default.  This too can be tuned using the <code>:limsiz</code> tuning parameter and you are free to make the limit quite large.  Just remember that values are fixed length, so setting <code>:width =&gt; 1024, :limsiz =&gt; 4 * 1024</code> will mean your database only holds four keys.  Trying to add data beyond this limit will raise an <code>OklahomaMixer::Error::CabinetError</code>.</p>
+
+<p>That's a lot of minuses and you are probably wondering why anyone would be willing to accept all of these limits when we've already seen that there are more powerful options.  The answer is performance.  The Fixed-length Database is Tokyo Cabinet's fastest weapon.  It treats the database file as a raw array of bytes and it can jump straight to any value with simple math.  (Due to this, <code>defrag()</code> isn't supported on a Fixed-length Database, though Oklahoma Mixer does provide a no-op just to match the interface of the other database types.)  That makes it wicked quick.  If your data storage needs are simple enough to fit within these limitations, you can take advantage of this added speed boost.</p>
+
+<p>The Fixed-length Database interface does have one other neat feature I should mention.  It supports four special key names:  <code>:min</code>, <code>:max</code>, <code>:prev</code>, and <code>:next</code>.  You can use these values in many of the methods that take keys.  For example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"oklahoma_mixer"</span>
+
+<span class="no">OklahomaMixer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"special.tcf"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">db</span><span class="o">|</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">update</span><span class="p">(</span> <span class="mi">1</span>  <span class="o">=&gt;</span> <span class="ss">:first</span><span class="p">,</span>
+             <span class="mi">2</span>  <span class="o">=&gt;</span> <span class="ss">:middle</span><span class="p">,</span>
+             <span class="mi">42</span> <span class="o">=&gt;</span> <span class="ss">:last</span> <span class="p">)</span>
+  <span class="n">db</span><span class="o">[</span><span class="ss">:min</span><span class="o">]</span>  <span class="c1"># =&gt; "first"</span>
+  <span class="n">db</span><span class="o">[</span><span class="ss">:max</span><span class="o">]</span>  <span class="c1"># =&gt; "last"</span>
+  <span class="n">db</span><span class="o">[</span><span class="ss">:next</span><span class="o">]</span> <span class="o">=</span> <span class="ss">:added</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">keys</span>  <span class="c1"># =&gt; [1, 2, 42, 43]</span>
+  <span class="n">db</span><span class="o">[</span><span class="mi">43</span><span class="o">]</span>   <span class="c1"># =&gt; "added"</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Be careful when using these.  <code>:min</code> and <code>:max</code> will raise an <code>OklahomaMixer::Error::CabinetError</code> if there are no keys in the database.  <code>:prev</code> (not shown above) is even pickier, requiring a <code>:min</code> key that is above <code>1</code>, so it can safely add below it without hitting <code>0</code>.  I find <code>:next</code> pretty useful though, as it makes it possible to queue up values.  Here's the simple queue example I showed in the B+Tree code rewritten to use a Fixed-length Database instead:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"oklahoma_mixer"</span>
+
+<span class="no">OklahomaMixer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"todo.tcf"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">db</span><span class="o">|</span>
+  <span class="c1"># load the data</span>
+  <span class="sx">%w[B+tree Fixed-length tuning]</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">topic</span><span class="o">|</span>
+    <span class="n">db</span><span class="o">[</span><span class="ss">:next</span><span class="o">]</span> <span class="o">=</span> <span class="s2">"Write about </span><span class="si">#{</span><span class="n">topic</span><span class="si">}</span><span class="s2">."</span>
+  <span class="k">end</span>
+
+  <span class="c1"># read it back</span>
+  <span class="kp">loop</span> <span class="k">do</span>
+    <span class="k">begin</span>
+      <span class="nb">puts</span> <span class="n">db</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="ss">:min</span><span class="p">)</span>
+    <span class="k">rescue</span> <span class="no">OklahomaMixer</span><span class="o">::</span><span class="no">Error</span><span class="o">::</span><span class="no">CabinetError</span>  <span class="c1"># no keys for :min</span>
+      <span class="k">break</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+  <span class="c1"># &gt;&gt; Write about B+tree.</span>
+  <span class="c1"># &gt;&gt; Write about Fixed-length.</span>
+  <span class="c1"># &gt;&gt; Write about tuning.</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>To summarize, the B+Tree Database may slow you down a little, but the Fixed-length speeds you up, as long as you can accept certain restrictions.  Select the database type that best fits the needs of your data.</p>
+
+<h3>Tuning Parameters</h3>
+
+<p>We've seen how to set tuning parameters in the examples above and already learned what some do.  I'm going to save some parameters for discussions in later articles, when we talk about their specific functions.  For now though, here are most of the tuning parameters available to the three databases we've covered so far.</p>
+
+<ul>
+<li>
+<code>:bnum</code> (for Hash or B+Tree—can be used with <code>optimize()</code>):  Specifies the <b>num</b>ber of elements to use in the <b>b</b>ucket array.  The default is <code>131071</code> for Hash Databases and <code>32749</code> for B+Tree Databases.  The suggested size is from 0.5 to 4 times the total number of records stored for Hash Databases or 1 to 4 times the total for B+Tree Databases.</li>
+<li>
+<code>:apow</code> (for Hash or B+Tree—can be used with <code>optimize()</code>):  Specifies to the size of record <b>a</b>lignment as a <b>pow</b>er of 2.  The default is <code>4</code> for Hash Databases and <code>8</code> for B+Tree Databases, meaning <code>2 ** 4 = 16</code> and <code>2 ** 8 = 256</code> respectively.</li>
+<li>
+<code>:fpow</code> (for Hash or B+Tree—can be used with <code>optimize()</code>):  Specifies the maximum number of elements in the <b>f</b>ree block pool as a <b>pow</b>er of 2.  The default is <code>10</code>, meaning <code>2 ** 10 = 1024</code>.</li>
+<li>
+<code>:opts</code> (for Hash or B+Tree—can be used with <code>optimize()</code>):  Specifies the <b>opt</b>ion<b>s</b> for the database in a <code>String</code> of recognized character codes.  There are no options by default, but this is commonly set to <code>"ld"</code> or <code>"lb"</code> for bigger databases.  The options are:
+
+<ul>
+<li>
+<code>"l"</code> allows the database file to grow <b>l</b>arge (over 2 GB) by using a 64-bit bucket array.</li>
+<li>
+<code>"d"</code> compresses each record in a Hash Database or page in a B+Tree Database with <b>D</b>eflate compression.</li>
+<li>
+<code>"b"</code> compresses each record in a Hash Database or page in a B+Tree Database with <b>B</b>ZIP2 compression.</li>
+<li>
+<code>"t"</code> compresses each record in a Hash Database or page in a B+Tree Database with <b>T</b>CBS compression.</li>
+</ul>
+</li>
+<li>
+<code>:rcnum</code> (for Hash):  Specifies the maximum <b>num</b>ber of <b>r</b>ecords to be <b>c</b>ached.  It is <code>0</code> or disabled by default.</li>
+<li>
+<code>:xmsiz</code> (for Hash or B+Tree):  Specifies the <b>siz</b>e of e<b>x</b>tra mapped <b>m</b>emory.  The default is <code>67108864</code> for Hash Databases or <code>0</code> (disabled) for B+Tree Databases.</li>
+<li>
+<code>:dfunit</code> (for Hash or B+Tree):  Specifies the auto <b>d</b>e<b>f</b>ragmentation <b>unit</b> step number.  It is <code>0</code> or disabled by default.</li>
+<li>
+<code>:cmpfunc</code> (for B+tree):  Specifies the <b>c</b>o<b>mp</b>arison <b>func</b>tion used to order B+Tree Databases.  See the detailed examples above for an explanation.</li>
+<li>
+<code>:lmemb</code> (for B+Tree—can be used with <code>optimize()</code>):  Specifies the number of <b>memb</b>ers in each <b>l</b>eaf page.  The default is <code>128</code>.</li>
+<li>
+<code>:nmemb</code> (for B+Tree—can be used with <code>optimize()</code>):  Specifies the number of <b>memb</b>ers in each <b>n</b>on-leaf page.  The default is <code>256</code>.</li>
+<li>
+<code>:lcnum</code> (for B+tree):  Specifies the maximum <b>num</b>ber of <b>l</b>eaf nodes to be <b>c</b>ached.  The default is <code>1024</code>.</li>
+<li>
+<code>:ncnum</code> (for B+tree):  Specifies the maximum <b>num</b>ber of <b>n</b>on-leaf nodes to be <b>c</b>ached.  The default is <code>512</code>.</li>
+<li>
+<code>:width</code> (for Fixed-length—can be used with <code>optimize()</code>):  Specifies the <b>width</b> of values in Fixed-length Databases.  See the detailed examples above for an explanation.</li>
+<li>
+<code>:limsiz</code> (for Fixed-length—can be used with <code>optimize()</code>):  Specifies the <b>lim</b>it on database file <b>siz</b>e in Fixed-length Databases.  See the detailed examples above for an explanation.</li>
+</ul><p>I apologize for keeping the cryptic names in Oklahoma Mixer, but I felt it was better to stick with what Tokyo Cabinet uses so users could read about them in documentation and other resources for that library.  Tokyo Tyrant also uses these names to configure a database by command-line, so you will find them in several different contexts.</p>
+
+<p>Database objects have an <code>optimize()</code> method that can be used to modify the tuning parameters of an <code>open()</code> database.  The parameters that can be used as such are noted above.  There are sometimes additional restrictions though.  For example, the <code>:limsiz</code> of a Fixed-length Database usually has to be increased when changed through <code>optimize()</code>.</p>
+
+<p>That covers the various key-value database types in Tokyo Cabinet.  The fourth type is quite a bit different from what we've look at so far, so I'll do a full article on it next.</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/key-value-stores/tokyo-cabinet-as-a-key-value-store/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      <a href="/key-value-stores/using-key-value-stores-from-ruby/">&uarr; Table of Contents</a>
+  </div>
+  <div class="series_link next_series_link">
+      &nbsp;
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="key-value-stores/tokyo-cabinets-key-value-database-types">
+  In: <a href="/key-value-stores/">Key-Value Stores</a>
+  <span>|</span>
+  Tags: <a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/key-value-stores/tokyo-cabinets-key-value-database-types#comments">4 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (4)</span></h5>
+
+    <ol>
+        <li id="comment_345">
+    <div class="avatar"><img alt="Ilya Grigorik" height="70" src="http://www.gravatar.com/avatar/a17f0025641b4be419a6cd3845e55dd2?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="345">
+      <span class="c_name"><a href="mailto:ilya@igvita.com">Ilya Grigorik</a></span>
+      <span class="c_date">January 16th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/key-value-stores/tokyo-cabinets-key-value-database-types#comment_345">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Awesome stuff James. Great to see a good explanation on all the tuning parameters - though to be honest, I think those deserve an entire post by themselves! Lots of people get confused and lost in them.</p></div>
+    <ol>
+      
+        <li id="comment_346">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="346">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">January 16th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/key-value-stores/tokyo-cabinets-key-value-database-types#comment_346">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I'm told there is some good documentation for them in Japanese, but I haven't seen a lot of great stuff in English, no.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_436">
+    <div class="avatar"><img alt="Mick Bisignani" height="70" src="http://www.gravatar.com/avatar/0657b2a55188dc55e48268a9cd0b9bc0?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="436">
+      <span class="c_name"><a href="mailto:mbisignani@gmail.com">Mick Bisignani</a></span>
+      <span class="c_date">March 22nd, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/key-value-stores/tokyo-cabinets-key-value-database-types#comment_436">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>James, I found your two posts on on Tokyo Cabinet to be priceless. Any thoughts on building out a Kyoto Cabinet equivalent ? </p></div>
+    <ol>
+      
+        <li id="comment_437">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="437">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">March 22nd, 2011</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/key-value-stores/tokyo-cabinets-key-value-database-types#comment_437">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I may do that some day.  I have yet to play with it myself yet, but I want to.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

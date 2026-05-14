@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / Learn to Love Mix-ins</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="In this article I distill all of my hard-won knowledge of how we should use mix-ins in Ruby code for type construction and method overriding.">
+    <meta name="keywords"    content="thinking about code, software design, Mix-ins, Object Orientation, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/learn-to-love-mix-ins/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      MAR<br>
+      2012
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Learn to Love Mix-ins</h3>
+        
+        <p>The road to mastering Ruby is paved with understanding some key Ruby concepts.  Mix-ins are one of those concepts.  I'm sure everyone reading this knows the mechanics of how mix-ins work, but it pays to spend some time really thinking about all that mix-ins imply.  Let's do just that.</p>
+
+<h4>Adding a Type</h4>
+
+<p>One of the primary reasons that Ruby needs mix-ins is that it does not support multiple inheritance.  That leaves mix-ins as our only option for modeling hybrid objects.  It's the way Ruby programmers can add another type.</p>
+
+<p>That's a good way to think about it too:  adding a type.</p>
+
+<p>Take pagination, for example.  Pagination methods are usually defined to return an object like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">PaginatedCollection</span> <span class="o">&lt;</span> <span class="nb">Array</span>
+  <span class="c1"># ... paginated helpers defined here ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That's never really felt right to me though.</p>
+
+<p>First, inheriting from Ruby's core classes can come back to bite you in some scenarios.  The reason is that Ruby makes some performance tradeoffs to keep the core classes fast, but those tradeoffs mean that those classes don't always perfectly follow Ruby's rules.</p>
+
+<p>You can get around some of these issues by delegating to an <code>Array</code>, instead of inheriting from it.  But that creates even more structure for this setup when it seems that Ruby has a totally workable built-in solution.</p>
+
+<p>The name of the created <code>Class</code> is another hint that it's not ideal, in my opinion:  <code>PaginatedCollection</code>.  <code>Collection</code> is just another way to say <code>Array</code>, right?  So why can't we just say <code>Array</code>?  In truth, <code>Collection</code> implies a lot more than just an <code>Array</code>, but solutions like this don't generally adapt to other types.</p>
+
+<p>That leaves just <code>Paginated</code>, which is used as an adjective here.  Adjectives are generally better modeled by a <code>Module</code> than a <code>Class</code>.  It's almost like Ruby is telling us the right way to model this concept, if we listen closely enough.</p>
+
+<p>To me, it's telling us to build this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Paginated</span>
+  <span class="k">def</span> <span class="nf">paginate</span><span class="p">(</span><span class="n">page</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">items_per_page</span> <span class="o">=</span> <span class="n">size</span><span class="p">,</span> <span class="n">total_items</span> <span class="o">=</span> <span class="n">size</span><span class="p">)</span>
+    <span class="vi">@page</span>           <span class="o">=</span> <span class="n">page</span>
+    <span class="vi">@items_per_page</span> <span class="o">=</span> <span class="n">items_per_page</span>
+    <span class="vi">@total_items</span>    <span class="o">=</span> <span class="n">total_items</span>
+  <span class="k">end</span>
+
+  <span class="kp">attr_reader</span> <span class="ss">:page</span><span class="p">,</span> <span class="ss">:items_per_page</span><span class="p">,</span> <span class="ss">:total_items</span>
+
+  <span class="k">def</span> <span class="nf">total_pages</span>
+    <span class="p">(</span><span class="n">total_items</span> <span class="o">/</span> <span class="n">items_per_page</span><span class="o">.</span><span class="n">to_f</span><span class="p">)</span><span class="o">.</span><span class="n">ceil</span>
+  <span class="k">end</span>
+
+  <span class="c1"># etc...</span>
+<span class="k">end</span>
+
+<span class="n">collection</span> <span class="o">=</span> <span class="sx">%w[first second third]</span>
+
+<span class="n">collection</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">Paginated</span><span class="p">)</span>
+<span class="n">collection</span><span class="o">.</span><span class="n">paginate</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+<span class="nb">puts</span> <span class="s2">"There are </span><span class="si">#{</span><span class="n">collection</span><span class="o">.</span><span class="n">total_pages</span><span class="si">}</span><span class="s2"> pages."</span>
+<span class="nb">puts</span> <span class="s2">"The collection is an Array."</span>           <span class="k">if</span> <span class="n">collection</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="nb">Array</span><span class="p">)</span>
+<span class="nb">puts</span> <span class="s2">"The collection is a Paginated object."</span> <span class="k">if</span> <span class="n">collection</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">Paginated</span><span class="p">)</span>
+</pre></div>
+
+<p>That seems more natural.  The item is an <code>Array</code>.  It also happens to be <code>Paginated</code>.  We can understand that duality and so can Ruby.</p>
+
+<p>Semantics aside though, this has actual benefits.  The code works just fine if I change this line:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">collection</span> <span class="o">=</span> <span class="sx">%w[first second third]</span>
+</pre></div>
+
+<p>to:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"set"</span>
+<span class="n">collection</span> <span class="o">=</span> <span class="no">Set</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="sx">%w[first second third]</span><span class="p">)</span>
+</pre></div>
+
+<p>or even:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">collection</span> <span class="o">=</span> <span class="p">{</span><span class="ss">first</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="ss">second</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="ss">third</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+</pre></div>
+
+<p>In other words, we can now paginate whatever we want, including our own classes.  We can also mix <code>Paginated</code> into any result set we need to, without needing to use some special collection and a <code>replace()</code> method (as you sometimes see in Rails code using <a href="https://github.com/mislav/will_paginate">will_paginate</a>).</p>
+
+<p>There's even another plus to this approach though:  you can make these type decisions as the code runs.  Let's dig into what that can do for us.</p>
+
+<h4>What do I Need Now?</h4>
+
+<p>Another great aspect of using mix-ins to build up these types is that objects can be different things at different times.  We'll start with a somewhat silly, but illustrative, example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Human</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="nb">name</span><span class="p">,</span> <span class="n">strength</span><span class="p">)</span>
+    <span class="vi">@name</span>     <span class="o">=</span> <span class="nb">name</span>
+    <span class="vi">@strength</span> <span class="o">=</span> <span class="n">strength</span>
+  <span class="k">end</span>
+
+  <span class="kp">attr_reader</span> <span class="ss">:name</span><span class="p">,</span> <span class="ss">:strength</span>
+
+  <span class="k">def</span> <span class="nf">move</span>
+    <span class="s2">"</span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2"> walks."</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">module</span> <span class="nn">Werewolf</span>
+  <span class="k">module</span> <span class="nn">HybridForm</span>
+    <span class="k">def</span> <span class="nf">strength</span>
+      <span class="k">super</span> <span class="o">+</span> <span class="mi">5</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">move</span>
+      <span class="k">super</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">"walks"</span><span class="p">,</span> <span class="s2">"lopes"</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">module</span> <span class="nn">WolfForm</span>
+    <span class="k">def</span> <span class="nf">strength</span>
+      <span class="mi">2</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">move</span>
+      <span class="k">super</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">"walks"</span><span class="p">,</span> <span class="s2">"runs on all fours"</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">human</span> <span class="o">=</span> <span class="no">Human</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"James"</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="nb">puts</span> <span class="s2">"Normally, </span><span class="si">#{</span><span class="n">human</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> is a </span><span class="si">#{</span><span class="n">human</span><span class="o">.</span><span class="n">class</span><span class="si">}</span><span class="s2"> "</span> <span class="o">+</span>
+     <span class="s2">"with a strength of </span><span class="si">#{</span><span class="n">human</span><span class="o">.</span><span class="n">strength</span><span class="si">}</span><span class="s2">.  </span><span class="si">#{</span><span class="n">human</span><span class="o">.</span><span class="n">move</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">puts</span>
+
+<span class="n">werewolf</span> <span class="o">=</span> <span class="n">human</span><span class="o">.</span><span class="n">dup</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">Werewolf</span><span class="o">::</span><span class="no">HybridForm</span><span class="p">)</span>
+<span class="nb">puts</span> <span class="s2">"But when there's a full moon, "</span> <span class="o">+</span>
+     <span class="s2">"strength raises to </span><span class="si">#{</span><span class="n">werewolf</span><span class="o">.</span><span class="n">strength</span><span class="si">}</span><span class="s2"> and </span><span class="si">#{</span><span class="n">werewolf</span><span class="o">.</span><span class="n">move</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">puts</span>
+
+<span class="n">wolf</span> <span class="o">=</span> <span class="n">human</span><span class="o">.</span><span class="n">dup</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">Werewolf</span><span class="o">::</span><span class="no">WolfForm</span><span class="p">)</span>
+<span class="nb">puts</span> <span class="s2">"Some also claim to have seen him as a normal wolf, "</span> <span class="o">+</span>
+     <span class="s2">"with a strength of </span><span class="si">#{</span><span class="n">wolf</span><span class="o">.</span><span class="n">strength</span><span class="si">}</span><span class="s2">."</span>
+<span class="nb">puts</span> <span class="s2">"In this form </span><span class="si">#{</span><span class="n">wolf</span><span class="o">.</span><span class="n">move</span><span class="si">}</span><span class="s2">"</span>
+</pre></div>
+
+<p>That code outputs:</p>
+
+<pre><code>Normally, James is a Human with a strength of 3.  James walks.
+
+But when there's a full moon, strength raises to 8 and James lopes.
+
+Some also claim to have seen him as a normal wolf, with a strength of 2.
+In this form James runs on all fours.
+</code></pre>
+
+<p>As you can see, we're able to change the <code>human</code> object as needed.  We can add in the abilities of the <code>Werewolf::HybridForm</code> or the <code>Werewolf::WolfForm</code>.  The object then has those behaviors.</p>
+
+<p>Believe it or not, this does have practical value outside of building fantasy games.  For example, I once worked on a Rails application that had some pretty complex reporting needs.  The queries used to do the reporting were a bit sluggish, so we wanted to make sure that kind of thing never got run during a normal request.  Thus we had a model and a separate <code>Module</code> for the reporting code.  They looked something like:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">User</span> <span class="o">&lt;</span> <span class="no">ActiveRecord</span><span class="o">::</span><span class="no">Base</span>
+  <span class="c1"># no generate_report method here</span>
+<span class="k">end</span>
+
+<span class="k">module</span> <span class="nn">Reportable</span>
+  <span class="k">def</span> <span class="nf">generate_report</span>
+    <span class="c1"># build and return a processing intensive report</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The <code>Module</code> wasn't even loaded by our normal application.  Instead, we ran a nightly background process, on a different server, that used our backup dump of the database to do the reporting.  That code is where the <code>Module</code> actually lived.  The reporting process then used it in a loop like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">User</span><span class="o">.</span><span class="n">find_each</span> <span class="k">do</span> <span class="o">|</span><span class="n">user</span><span class="o">|</span>
+  <span class="n">user</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">Reportable</span><span class="p">)</span>
+  <span class="n">report</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">generate_report</span>
+  <span class="c1"># report sending code here...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This has other benefits besides safety.  For example, it really helps with code organization.  The reporting code was quite complex and it just didn't apply to the normal workings of the application.  With this setup, we only had to dig through that code when it was relevant to what we were doing.  The rest of the time we could pretty much forget it was there.  (We did have tests to ensure <code>User</code> kept the contract <code>Reportable</code> counted on, so we wouldn't accidentally break it.)</p>
+
+<p>I would like to see Rails move towards supporting a system like this.  I'll build a plugin at some point that lets you add various mix-ins for the models.  They could be stored in the application like this:</p>
+
+<pre><code>app/models/user.rb
+app/models/user/authenticatible.rb
+app/models/user/reportable.rb
+…
+</code></pre>
+
+<p>Then I'll add a method for mixing these into the query results they apply to.  For example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">user_logging_in</span> <span class="o">=</span> <span class="no">User</span><span class="o">.</span><span class="n">behavior</span><span class="p">(</span><span class="no">Authenticatible</span><span class="p">)</span><span class="o">.</span><span class="n">find_by_email</span><span class="p">(</span><span class="n">email</span><span class="p">)</span>
+</pre></div>
+
+<p>and:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">User</span><span class="o">.</span><span class="n">behavior</span><span class="p">(</span><span class="no">Reportable</span><span class="p">)</span><span class="o">.</span><span class="n">find_each</span> <span class="k">do</span> <span class="o">|</span><span class="n">user</span><span class="o">|</span>
+  <span class="c1"># ... generate reports...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>You get the idea.</p>
+
+<p>OK, let's consider modules in one more way to round out this exercise.</p>
+
+<h4>Monkey Patching is Generally Silly</h4>
+
+<p>We always say that we love how dynamic Ruby is.  It allows us to rewrite the rules as we go.  The ultimate expression of this is how we can just reopen a class and replace some of its methods wholesale.  We lovingly refer to this practice as "monkey patching."</p>
+
+<p>When you think about it though, the practice is almost silly for most of the cases we use it for.</p>
+
+<p>To explain that claim, we need to take a quick detour and discuss Ruby's method lookup.  Instead of explaining how it works, let's just ask Ruby to show us:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Object</span>
+  <span class="k">def</span> <span class="nf">show_yourself</span>
+    <span class="nb">puts</span> <span class="s2">"In Object."</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">class</span> <span class="nc">Parent</span>
+  <span class="k">def</span> <span class="nf">show_yourself</span>
+    <span class="nb">puts</span> <span class="s2">"In Parent."</span>
+    <span class="nb">puts</span> <span class="s2">"Handing up the line..."</span>
+    <span class="nb">puts</span>
+    <span class="k">super</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">class</span> <span class="nc">Child</span> <span class="o">&lt;</span> <span class="no">Parent</span>
+  <span class="k">def</span> <span class="nf">show_yourself</span>
+    <span class="nb">puts</span> <span class="s2">"In Child."</span>
+    <span class="nb">puts</span> <span class="s2">"Handing up the line..."</span>
+    <span class="nb">puts</span>
+    <span class="k">super</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">o</span> <span class="o">=</span> <span class="no">Child</span><span class="o">.</span><span class="n">new</span>
+<span class="n">o</span><span class="o">.</span><span class="n">show_yourself</span>
+</pre></div>
+
+<p>That code prints:</p>
+
+<pre><code>In Child.
+Handing up the line...
+
+In Parent.
+Handing up the line...
+
+In Object.
+</code></pre>
+
+<p>Hopefully, that's pretty straightforward.  We called a method on a <code>Child</code> instance.  That method then handed up to the same method defined in <code>Parent</code>, because <code>Child</code> inherits from <code>Parent</code>.  That method then hands up to <code>Object</code>, because anything that doesn't declare a superclass, like <code>Parent</code>, gets <code>Object</code>.</p>
+
+<p>In Ruby though, that's not the full story.  Let's change the last chunk of code to this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="n">o</span> <span class="o">=</span> <span class="no">Child</span><span class="o">.</span><span class="n">new</span>
+<span class="k">class</span> <span class="o">&lt;&lt;</span> <span class="n">o</span>
+  <span class="k">def</span> <span class="nf">show_yourself</span>
+    <span class="nb">puts</span> <span class="s2">"In the hidden singleton class."</span>
+    <span class="nb">puts</span> <span class="s2">"Handing up the line..."</span>
+    <span class="nb">puts</span>
+    <span class="k">super</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="n">o</span><span class="o">.</span><span class="n">show_yourself</span>
+</pre></div>
+
+<p>Now we get this output:</p>
+
+<pre><code>In the hidden singleton class.
+Handing up the line...
+
+In Child.
+Handing up the line...
+
+In Parent.
+Handing up the line...
+
+In Object.
+</code></pre>
+
+<p>Each instance in Ruby has its own <code>Class</code>, called the singleton class.  (No, we're not talking about the Singleton design pattern here.  This is a different use of the term.)  This is why we can modify individual objects no matter what their <code>Class</code> is.  The specializations end up in the singleton class.  Ruby mostly hides this class from us as an implementation detail, which is why I had to open the object's singleton class explicitly to get it to show up above.</p>
+
+<p>We can now see that method lookup is a straight line in Ruby.  You start at the bottom, with the object's singleton class and go straight up until you find a matching method.</p>
+
+<p>That leads us to a question though:  how do mix-ins play into this?  The answer is pretty simple:  they are inserted into the call chain <strong>behind</strong> a <code>Class</code>.  <em>[<strong>Update</strong>:  Ruby 2's <code>prepend()</code> gives us the ability to insert mix-ins <strong>in front of</strong> a <code>Class</code> as well.]</em>  To see what I mean, let's mix something into <code>Child</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="k">module</span> <span class="nn">Mixin</span>
+  <span class="k">def</span> <span class="nf">show_yourself</span>
+    <span class="nb">puts</span> <span class="s2">"In Mixin."</span>
+    <span class="nb">puts</span> <span class="s2">"Handing up the line..."</span>
+    <span class="nb">puts</span>
+    <span class="k">super</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">class</span> <span class="nc">Child</span> <span class="o">&lt;</span> <span class="no">Parent</span>
+  <span class="kp">include</span> <span class="no">Mixin</span>
+
+  <span class="k">def</span> <span class="nf">show_yourself</span>
+    <span class="nb">puts</span> <span class="s2">"In Child."</span>
+    <span class="nb">puts</span> <span class="s2">"Handing up the line..."</span>
+    <span class="nb">puts</span>
+    <span class="k">super</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>That prints:</p>
+
+<pre><code>In the hidden singleton class.
+Handing up the line...
+
+In Child.
+Handing up the line...
+
+In Mixin.
+Handing up the line...
+
+In Parent.
+Handing up the line...
+
+In Object.
+</code></pre>
+
+<p>See how <code>Mixin</code> just hopped in line behind <code>Child</code>?  That's what they do.</p>
+
+<p>Well, that's what <code>include()</code> does.  Isn't <code>extend()</code> special?  Not really.  The fact is that <code>extend()</code> is just a shortcut that translates to this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="n">mixin</span><span class="p">)</span>
+  <span class="n">singleton_class</span><span class="o">.</span><span class="n">class_eval</span> <span class="k">do</span>
+    <span class="kp">include</span> <span class="n">mixin</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>As you can see, <code>extend()</code> just does an <code>include()</code> under the hood, but it does it on the singleton class.  Using that knowledge, we can modify our example one last time to show off a superior form of monkey patching:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># ...</span>
+
+<span class="k">module</span> <span class="nn">SuperiorMonkeyPatch</span>
+  <span class="k">def</span> <span class="nf">show_yourself</span>
+    <span class="nb">puts</span> <span class="s2">"In SuperiorMonkeyPatch."</span>
+    <span class="nb">puts</span> <span class="s2">"Handing up the line..."</span>
+    <span class="nb">puts</span>
+    <span class="k">super</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">o</span> <span class="o">=</span> <span class="no">Child</span><span class="o">.</span><span class="n">new</span>
+<span class="n">o</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">SuperiorMonkeyPatch</span><span class="p">)</span>
+<span class="k">class</span> <span class="o">&lt;&lt;</span> <span class="n">o</span>
+  <span class="k">def</span> <span class="nf">show_yourself</span>
+    <span class="nb">puts</span> <span class="s2">"In the hidden singleton class."</span>
+    <span class="nb">puts</span> <span class="s2">"Handing up the line..."</span>
+    <span class="nb">puts</span>
+    <span class="k">super</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="n">o</span><span class="o">.</span><span class="n">show_yourself</span>
+</pre></div>
+
+<p>Now the code prints:</p>
+
+<pre><code>In the hidden singleton class.
+Handing up the line...
+
+In SuperiorMonkeyPatch.
+Handing up the line...
+
+In Child.
+Handing up the line...
+
+In Mixin.
+Handing up the line...
+
+In Parent.
+Handing up the line...
+
+In Object.
+</code></pre>
+
+<p>Note the <code>SuperiorMonkeyPatch</code> is <strong>behind</strong> the singleton class, because mix-ins are always inserted behind a <code>Class</code>.  But that puts it <strong>in front of</strong> <code>Child</code>, which is right where we need it to be if we want to override some behavior.</p>
+
+<p>To sum this up, the key insights are:</p>
+
+<ul>
+<li>Ruby's method lookup is just a straight line</li>
+<li>Using mix-ins, we can insert code at various points along that line</li>
+</ul><p>This is the ideal way to override behavior.  Why?  Well, if you monkey patch a <code>Class</code>, you have changed it for the whole world.  We've already seen though that mix-ins give us the choice of when we want the changes and when we don't.</p>
+
+<p>Furthermore, you have to be very careful when monkey patching if you want to keep the old code.  This involves a dance of aliasing (really copying) the old method, replacing it, and then referring to the renamed code.  (That's how the infamous <code>alias_method_chain()</code> in Rails works.)  With a mix-in though, <code>super</code> can be used normally.</p>
+
+<p>This makes using a <code>Module</code> safer.  We're not all playing in one namespace and aliasing a bunch of names that could eventually collide.</p>
+
+<p>To give a realistic example of how you can use this technique in practice, let's talk about a support email I received recently.  The programmer who wrote me was working with a database that spit out some pretty goofy CSV.  It would escape quotes with <code>\"</code>, even though the CSV format calls for <code>""</code>.  It also escaped other things, like null characters as <code>\0</code>.  Because this created a non-standard data format, he couldn't find anything that could read it.  That made him write me and ask if there were some way he could modify the <code>CSV</code> library to read it.</p>
+
+<p>"No need," I told him.  CSV is a simple wrapper over a normal Ruby <code>IO</code> object and it mostly just counts on one method <code>gets()</code>.  When you call <code>CSV#gets</code>, it pulls some data from <code>IO#gets</code>, then parses it and returns it to you.  That gives us a familiar method lookup line:</p>
+
+<pre><code> IO#gets
+   ^
+   |
+CSV#gets
+</code></pre>
+
+<p>All we need to do is get some code in the middle of that line.  That code can translate from the broken CSV format to the correct format the library expects and everything else will just work.  No monkey patching is required.  Here's the code I sent to him:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">CSVNormalizer</span>
+  <span class="k">def</span> <span class="nf">gets</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="k">super</span>
+    <span class="k">if</span> <span class="n">result</span>
+      <span class="c1"># FIXME:  Improve escape handling</span>
+      <span class="n">result</span><span class="o">.</span><span class="n">gsub!</span><span class="p">(</span><span class="sr">/\\(["0])/</span><span class="p">)</span> <span class="p">{</span> <span class="vg">$1</span> <span class="o">==</span> <span class="s2">"0"</span> <span class="p">?</span> <span class="s2">"</span><span class="se">\0</span><span class="s2">"</span> <span class="p">:</span> <span class="s1">'""'</span> <span class="p">}</span>
+    <span class="k">end</span>
+    <span class="n">result</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">if</span> <span class="bp">__FILE__</span> <span class="o">==</span> <span class="vg">$PROGRAM_NAME</span>
+  <span class="nb">require</span> <span class="s2">"csv"</span>
+
+  <span class="nb">abort</span> <span class="s2">"</span><span class="si">#{</span><span class="vg">$PROGRAM_NAME</span><span class="si">}</span><span class="s2"> FILE_PATH"</span> <span class="k">unless</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">first</span>
+
+  <span class="nb">open</span><span class="p">(</span><span class="no">ARGV</span><span class="o">.</span><span class="n">first</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">io</span><span class="o">|</span>
+    <span class="n">io</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">CSVNormalizer</span><span class="p">)</span>
+    <span class="n">csv</span> <span class="o">=</span> <span class="no">CSV</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">io</span><span class="p">)</span>
+    <span class="n">csv</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">row</span><span class="o">|</span>
+      <span class="c1"># use row here...</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>My unescaping code may not be perfect, if there are other scenarios than those he described, but that's not the point.  Note how easy this was to setup:  I defined a module that uses <code>super</code> to get the data, transforms it, and returns the fixed data; I manually setup the <code>IO</code> object, instead of letting <code>CSV</code> do it for me; I used my mix-in to make that object return good data; then I hand the now safe-to-use object on to <code>CSV</code>.  This is a clean patch job that won't affect any other code, even if we use it in a project that also processes some normal CSV data.  Perfect.</p>
+
+<h4>Keep Modules in Mind</h4>
+
+<p>Ruby gives us these different ways to construct types using mix-ins.  We can combine them, use them conditionally, and even build up modified behaviors with them, as needed.</p>
+
+<p>A lot of this power comes the elegance of how Ruby handles method lookup.  Once you realize that message passing happens down a straight line and that you can make interceptions at points along that line, you gain a lot of control over what is happening in your programs.</p>
+
+<p>I strongly encourage to play with these techniques in your programs, or just on the side.  It can take a while for all of this to click, but it really expands your understanding of Ruby when you get there.</p>
+
+<h4>Learn More About Modules</h4>
+
+<p>If you enjoyed this discussion of how to make mix-ins work for you, I'm pretty sure you would also enjoy:</p>
+
+<ul>
+<li>
+<a href="http://www.confreaks.com/videos/201-lsrc2009-module-magic">Module Magic</a> is a presentation I gave at the Lone Star Ruby Conference in 2009.  I showed some of the tricks discussed above (in less detail) and some other handy tricks you can use.  My <a href="http://www.slideshare.net/JamesEdwardGrayII/module-magic">slides</a> are also available.</li>
+<li>The book <a href="http://pragprog.com/book/jvrails/crafting-rails-applications">Crafting Rails Applications</a> is a detailed explanation of how Rails 3 works under the hood.  One of the most significant changes from Rails 2 to Rails 3, was to rework the framework from using old style monkey patching (with <code>alias_method_chain()</code>) to the <code>Module</code> approach I've covered here.  This had many benefits which this book covers very well.  We <a href="http://rubyrogues.com/048-rr-crafting-rails-applications-with-jose-valim/">discussed this book on the Ruby Rogues podcast</a>.</li>
+<li>Dave Thomas did a screencast series a while back on <a href="http://pragprog.com/screencasts/v-dtrubyom/the-ruby-object-model-and-metaprogramming">The Ruby Object Model and Metaprogramming</a>.  Though it uses an old version of Ruby, and misses out on some niceties added later (like the <code>singleton_class()</code> method), it's easily one of the best discussions of Ruby's method lookup system and a lot more.  If you have struggled to understand the tricks we are using when metaprogramming, this is the place to get those questions answered.</li>
+</ul>
+        
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/learn-to-love-mix-ins">
+  In: <a href="/rubies-in-the-rough/">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Mix-ins/">Mix-ins</a> &amp; <a href="/tags/Object%20Orientation/">Object Orientation</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/learn-to-love-mix-ins#comments">1 Comment</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (1)</span></h5>
+
+    <ol>
+        <li id="comment_515">
+    <div class="avatar"><img alt="Tim Rand" height="70" src="http://www.gravatar.com/avatar/699a3d471442eb22c0ab9458c2c573a4?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="515">
+      <span class="c_name"><a href="mailto:timrandg@gmail.com">Tim Rand</a></span>
+      <span class="c_date">March 27th, 2012</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/rubies-in-the-rough/learn-to-love-mix-ins#comment_515">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks James,<br>
+This was an inspiring article for me. I used the mix-in pattern to extend the behavior of an array to use operators the way that R does (vectorized functions)—applying the operator to each element in the array and giving you back the collected array. Of course, <code>array.map{|item| item * 2 }</code> works, but it feels like wasted keystrokes coming from the R world where <code>c(1,2,3) * 2</code> suffices. The metaprogramming approach to "vectorize" the operator methods might be interesting to others so I thought I'd post and share.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">vector</span> <span class="o">=</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">19</span><span class="o">]</span>
+
+<span class="k">module</span> <span class="nn">VectorizedOperators</span>
+  <span class="nb">require</span> <span class="s1">'mathn'</span>
+  <span class="c1">#for any Fixnum instance operator methods</span>
+  <span class="k">for</span> <span class="nb">method</span> <span class="k">in</span> <span class="p">(</span><span class="no">Fixnum</span><span class="o">.</span><span class="n">instance_methods</span><span class="p">)</span><span class="o">.</span><span class="n">reject</span><span class="p">{</span><span class="o">|</span><span class="n">i</span><span class="o">|</span> <span class="n">i</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sr">/^[A-Za-z_]/</span><span class="p">)}</span> 
+    <span class="n">define_method</span><span class="p">(</span><span class="nb">method</span><span class="p">)</span> <span class="p">{</span><span class="o">|</span><span class="n">num</span><span class="o">|</span> <span class="nb">self</span><span class="o">.</span><span class="n">collect</span><span class="p">{</span><span class="o">|</span><span class="n">item</span><span class="o">|</span> <span class="n">item</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">__method__</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span> <span class="p">}</span> <span class="p">}</span>
+  <span class="k">end</span> 
+<span class="k">end</span>
+
+<span class="n">vector</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">VectorizedOperators</span><span class="p">)</span>
+
+<span class="nb">p</span> <span class="n">vector</span> <span class="o">*</span> <span class="mi">2</span>
+<span class="nb">p</span> <span class="n">vector</span> <span class="o">**</span> <span class="mi">2</span> 
+<span class="nb">p</span> <span class="n">vector</span> <span class="o">-</span> <span class="mi">40</span> 
+<span class="nb">p</span> <span class="n">vector</span> <span class="o">%</span> <span class="mi">2</span> 
+<span class="nb">p</span> <span class="n">vector</span> <span class="o">==</span> <span class="mi">4</span>
+
+<span class="c1"># &gt;&gt; [0, 2, 8, 10, 38]</span>
+<span class="c1"># &gt;&gt; [0, 1, 16, 25, 361]</span>
+<span class="c1"># &gt;&gt; [-40, -39, -36, -35, -21]</span>
+<span class="c1"># &gt;&gt; [0, 1, 0, 1, 1]</span>
+<span class="c1"># &gt;&gt; [false, false, true, false, false] </span>
+</pre></div></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

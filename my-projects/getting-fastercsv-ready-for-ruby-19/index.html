@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / My Projects / Getting FasterCSV Ready for Ruby 1.9</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="I want to share some tips I learned converting code to run on Ruby 1.9.">
+    <meta name="keywords"    content="projects, JEG2&#39;s code, FasterCSV, Iterators, Multilingualization, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/my-projects/getting-fastercsv-ready-for-ruby-19/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/my-projects">My Projects</a></h1>
+            <span>The projects that I have spent significant time on.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>2</h4>
+    <span>
+      JAN<br>
+      2008
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Getting FasterCSV Ready for Ruby 1.9</h3>
+        
+        <p>The call came down from on high just before the Ruby 1.9 release:  replace the standard <code>csv.rb</code> library with <code>faster_csv.rb</code>.  With only hours to make the change it was a little harder than I expected.  The <code>FasterCSV</code> code base was pretty vanilla Ruby, but it required more work than I would have guessed to get running on Ruby 1.9.  Let me share a few of the tips I learned while doctoring the code in the hope that it will help others get their code ready for Ruby 1.9.</p>
+
+<h4>Ruby's <code>String</code> Class Grows Up</h4>
+
+<p>One of the biggest changes in Ruby 1.9 is the addition of m17n (multilingualization).  This means that Ruby's Strings are now encoding aware and we must clarify in our code if we are working with bytes, characters, or lines.</p>
+
+<p>This is a good change, but the odds are that most of us have lazily used the old way to our advantage in the past.  If you've ever written code like:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">lines</span> <span class="o">=</span> <span class="n">str</span><span class="o">.</span><span class="n">to_a</span>
+</pre></div>
+
+<p>you have bad habits to break.  I sure did.  Under Ruby 1.9 that code would translate to:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">lines</span> <span class="o">=</span> <span class="n">str</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">to_a</span>
+</pre></div>
+
+<p><code>String#lines()</code> returns an <code>Enumerable::Enumerator</code> by default (more on that shortly), so you need to add the <code>to_a()</code> call unless you are going to follow-up with other iteration methods.</p>
+
+<p>Now, if you need the code to run on both 1.8 and 1.9, you will need one more trick.  First, if you just need to iterate over the lines you can use <code>String#each_line()</code> which is present in both versions.  For less basic iterations, I recommend:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">lines</span> <span class="o">=</span> <span class="n">str</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">str</span><span class="o">.</span><span class="n">respond_to?</span><span class="p">(</span><span class="ss">:lines</span><span class="p">)</span> <span class="p">?</span> <span class="ss">:lines</span> <span class="p">:</span> <span class="ss">:to_s</span><span class="p">)</span><span class="o">.</span><span class="n">to_a</span>
+</pre></div>
+
+<p>Here I just call <code>String#lines()</code> if it is available and a no-op <code>String#to_s()</code> when it's not.  You can safely follow that with any <code>Enumerable</code> method and it will work in Ruby 1.8 and Ruby 1.9.</p>
+
+<h4>
+<code>Enumerable#zip()</code> Took a Beating</h4>
+
+<p><em>[<strong>Update</strong>:  Both of my complaints about <code>zip()</code> were eventually addressed.  The 1.8 behavior has been restored.]</em></p>
+
+<p>If you were a fan of <code>Enumerable#zip()</code> under Ruby 1.8, odds are good that it's going to surprise you under Ruby 1.9.</p>
+
+<p>First, the standard <code>Enumerable::Enumerator</code> library has been moved into the core as we already saw with <code>String#lines()</code>.  With this move the core iteration methods have been enhanced to return an <code>Enumerable::Enumerator</code>, if called without a block.  This is generally a nice iterator chaining feature.  For example, making the fictional but oft-requested <code>map_with_index()</code> is now as easy as:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">enum</span><span class="o">.</span><span class="n">each_with_index</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="err">…</span> <span class="p">}</span>
+</pre></div>
+
+<p><code>Enumerable#zip()</code> may be the exception though.  It already had a meaningful return value when called without a block.  That has been overridden by the new behavior though, so you will now get an <code>Enumerable::Enumerator</code> when you probably expected an <code>Array</code>.  I've found that I now need to type the following to get what I usually want:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">enum</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">other_enum</span><span class="p">)</span><span class="o">.</span><span class="n">to_a</span>
+</pre></div>
+
+<p>It's hard to see that as an improvement, but the fact is that it gets worse.  For some reason I can't justify, another change was made to <code>Enumerable#zip()</code>.  Let's look at what happens with <code>Enumerable</code> objects of different sizes under Ruby 1.8:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">short</span> <span class="o">=</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span>
+<span class="o">=&gt;</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span>
+<span class="o">&gt;&gt;</span> <span class="n">long</span> <span class="o">=</span> <span class="sx">%w[one two three four]</span>
+<span class="o">=&gt;</span> <span class="o">[</span><span class="s2">"one"</span><span class="p">,</span> <span class="s2">"two"</span><span class="p">,</span> <span class="s2">"three"</span><span class="p">,</span> <span class="s2">"four"</span><span class="o">]</span>
+<span class="o">&gt;&gt;</span> <span class="n">short</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">long</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="o">[[</span><span class="mi">1</span><span class="p">,</span> <span class="s2">"one"</span><span class="o">]</span><span class="p">,</span> <span class="o">[</span><span class="mi">2</span><span class="p">,</span> <span class="s2">"two"</span><span class="o">]]</span>
+<span class="o">&gt;&gt;</span> <span class="n">long</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">short</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="o">[[</span><span class="s2">"one"</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span><span class="p">,</span> <span class="o">[</span><span class="s2">"two"</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span><span class="p">,</span> <span class="o">[</span><span class="s2">"three"</span><span class="p">,</span> <span class="kp">nil</span><span class="o">]</span><span class="p">,</span> <span class="o">[</span><span class="s2">"four"</span><span class="p">,</span> <span class="kp">nil</span><span class="o">]]</span>
+</pre></div>
+
+<p>Note that the size of the result set is based on the size of the <code>Enumerable</code> that is used as the receiver for the <code>Enumerable#zip()</code> call.  This works out well in practice, because you can always find the longer count if you need to preserve all of the data.  If you want the shorter results, you can lead with the smaller set or filter out the <code>nil</code> objects.  The choice is in your hands.</p>
+
+<p>Unfortunately, Ruby 1.9 changes the rules:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">short</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">long</span><span class="p">)</span><span class="o">.</span><span class="n">to_a</span>
+<span class="o">=&gt;</span> <span class="o">[[</span><span class="mi">1</span><span class="p">,</span> <span class="s2">"one"</span><span class="o">]</span><span class="p">,</span> <span class="o">[</span><span class="mi">2</span><span class="p">,</span> <span class="s2">"two"</span><span class="o">]]</span>
+<span class="o">&gt;&gt;</span> <span class="n">long</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">short</span><span class="p">)</span><span class="o">.</span><span class="n">to_a</span>
+<span class="o">=&gt;</span> <span class="o">[[</span><span class="s2">"one"</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span><span class="p">,</span> <span class="o">[</span><span class="s2">"two"</span><span class="p">,</span> <span class="mi">2</span><span class="o">]]</span>
+</pre></div>
+
+<p>As you can see, the shortest <code>Enumerable</code> now limits the results no matter where it occurs.  The problem with this change is that it discards data and you have to go out of your way to save it.  This new behavior is documented though, so I assume it's intentional.</p>
+
+<p>What do you do if you want a safe 1.8 data preserving <code>Enumerable#zip()</code> that works on 1.8 and 1.9?  About the best I can come up with is:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"enumerator"</span>
+<span class="n">zipped</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">enum_for</span><span class="p">(</span><span class="ss">:each_with_index</span><span class="p">)</span><span class="o">.</span>
+              <span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">e</span><span class="p">,</span> <span class="n">i</span><span class="o">|</span> <span class="o">[</span><span class="n">e</span><span class="p">,</span> <span class="n">short</span><span class="o">.</span><span class="n">to_a</span><span class="o">[</span><span class="n">i</span><span class="o">]]</span> <span class="p">}</span>
+</pre></div>
+
+<p>Obviously, I'm open to better ideas.</p>
+
+<h4>
+<code>FasterCSV</code> is the New <code>CSV</code>
+</h4>
+
+<p>I found the above incompatibilities by introducing a new one.  <code>FasterCSV</code> has replaced the standard <code>CSV</code> class in the standard library.  By replaced, I mean that it is now called <code>CSV</code>.  This will cause code that used the old library problems.</p>
+
+<p>The methods provided on the <code>CSV</code> object are similar, but the old <code>CSV</code> code used positional parameters where as the new library uses a <code>Hash</code> argument syntax (e.g., <code>row_sep: "\r\n"</code>).  That's going to trip up any non-trivial usage.</p>
+
+<p>The new library is feature rich and fully documented, so I don't expect anyone to have trouble getting their code working under 1.9.  The problem will be writing code that works on both versions.  For that, I recommend using code like the following to determined which library you are working with:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"csv"</span>
+<span class="k">if</span> <span class="no">CSV</span><span class="o">.</span><span class="n">const_defined?</span> <span class="ss">:Reader</span>
+  <span class="c1"># use old CSV code here…</span>
+<span class="k">else</span>
+  <span class="c1"># use FasterCSV style code, but with CSV class, here…</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Feel free to <a href="mailto:james@graysoftinc.com">email me</a> with any other <code>CSV</code> compatibility questions.</p>
+
+<h4>This is Just a Start</h4>
+
+<p>The above is a short list of issues I've run into a couple of times now.  Please feel free to add your own observations about Ruby 1.9 compatibility in the comments below.  Let's do our best to make this post a generally useful resource for all.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="my-projects/getting-fastercsv-ready-for-ruby-19">
+  In: <a href="/my-projects/">My Projects</a>
+  <span>|</span>
+  Tags: <a href="/tags/FasterCSV/">FasterCSV</a>, <a href="/tags/Iterators/">Iterators</a> &amp; <a href="/tags/Multilingualization/">Multilingualization</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comments">33 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (33)</span></h5>
+
+    <ol>
+        <li id="comment_146">
+    <div class="avatar"><img alt="Sam Ruby" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="146">
+      <span class="c_name"><a href="http://intertwingly.net/blog/">Sam Ruby</a></span>
+      <span class="c_date">January 2nd, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_146">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p><a href="http://intertwingly.net/blog/2007/12/31/Porting-REXML-to-Ruby-1-9">Porting REXML to Ruby 1.9</a> overlaps slightly and covers some additional ground.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_147">
+    <div class="avatar"><img alt="Alex Fenton" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="147">
+      <span class="c_name">Alex Fenton</span>
+      <span class="c_date">January 2nd, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_147">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Ruby 1.9 introduces an incompatible syntax change for conditional statements such as <code>if</code> and <code>case</code>/<code>when</code>. Previously a colon could be used as  a shorthand for a <code>then</code> statement; this is perhaps most useful with multiple <code>when</code> statements on one line. </p>
+
+<p>The following is legitimate Ruby in 1.8:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">case</span> <span class="n">x</span> 
+<span class="k">when</span> <span class="no">Regexp</span>  <span class="p">:</span> <span class="nb">puts</span> <span class="s1">'a regex'</span>
+<span class="k">when</span> <span class="no">Hash</span>    <span class="p">:</span> <span class="nb">puts</span> <span class="s1">'a regex'</span>
+<span class="k">when</span> <span class="no">Numeric</span> <span class="p">:</span> <span class="nb">puts</span> <span class="s1">'a number'</span>
+<span class="k">when</span> <span class="nb">String</span>  <span class="p">:</span> <span class="nb">puts</span> <span class="s1">'a string'</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>But not in Ruby 1.9; now an explicit <code>then</code> statement must be used:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">case</span> <span class="n">x</span>
+<span class="k">when</span> <span class="no">Regexp</span> <span class="k">then</span> <span class="nb">puts</span> <span class="s1">'a regex'</span>
+<span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</pre></div></div>
+    <ol>
+      
+        <li id="comment_148">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="148">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">January 2nd, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_148">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Just to be clear the <code>then</code> keyword was also supported in Ruby 1.8 so using it for conditionals is fine for both versions.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_154">
+    <div class="avatar"><img alt="hk" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="154">
+      <span class="c_name">hk</span>
+      <span class="c_date">January 4th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_154">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><blockquote>
+<p>But not in Ruby 1.9; now an explicit <code>then</code> statement must be used</p>
+</blockquote>
+
+<p>Or you could just do what everyone else does, and put what happens <code>then</code> on a new line. Then, you won't need <code>then</code>, and your code is more consistent and readable.</p>
+
+<p>I prefer this implementation. Allowing same-line <code>then</code> with a colon was bad style, IMO - as is the use of colons as meaningful operators in general.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_155">
+    <div class="avatar"><img alt="Chris Gaffney" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="155">
+      <span class="c_name">Chris Gaffney</span>
+      <span class="c_date">January 4th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_155">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>If you still prefer the single character single line notation you can just substitute the colon with a semi-colon</p>
+
+<p>1.9:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">case</span> <span class="n">sound</span>
+    <span class="k">when</span> <span class="sr">/bamf/i</span><span class="p">;</span> <span class="nb">puts</span> <span class="s1">'Nightcrawler'</span>
+    <span class="k">when</span> <span class="sr">/boff/i</span><span class="p">;</span> <span class="nb">puts</span> <span class="s1">'Batman'</span>
+<span class="k">end</span>
+</pre></div></div>
+    <ol>
+      
+        <li id="comment_257">
+    <div class="avatar"><img alt="TJ Holowaychuk" height="70" src="http://www.gravatar.com/avatar/f1e3ab214a976a39cfd713bc93deb10f?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="257">
+      <span class="c_name"><a href="mailto:tj@vision-media.ca">TJ Holowaychuk</a></span>
+      <span class="c_date">February 2nd, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_257">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I thought the semi colon functioning as an alias for <code>then</code> was great, its easier to look read IMO</p></div>
+    <ol>
+      
+        <li id="comment_258">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="258">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">February 2nd, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_258">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>It's actually the colon, not semicolon, that use to stand in for <code>then</code>.  It was removed because it is being used in other ways, like the new <code>Hash</code> syntax.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_376">
+    <div class="avatar"><img alt="Rein Henrichs" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="376">
+      <span class="c_name"><a href="http://reinh.com">Rein Henrichs</a></span>
+      <span class="c_date">May 13th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_376">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>The <code>:</code> for case statements was removed from Ruby syntax because <code>;</code> works in all versions and does not require special syntax.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">case</span> <span class="n">x</span>
+  <span class="k">when</span> <span class="no">Hash</span> <span class="p">;</span> <span class="nb">puts</span> <span class="s1">'a hash'</span>
+</pre></div>
+
+<p>I prefer it to <code>then</code>.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_149">
+    <div class="avatar"><img alt="Frederick Cheung" height="70" src="http://www.gravatar.com/avatar/81b61875e41eaa58887543635d556fca?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="149">
+      <span class="c_name"><a href="mailto:frederick.cheung@gmail.com">Frederick Cheung</a></span>
+      <span class="c_date">January 3rd, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_149">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>A bunch of methods like <code>instance_variables</code>, <code>constants</code>, etc… that used to return strings now return symbols.</p></div>
+    <ol>
+      
+        <li id="comment_150">
+    <div class="avatar"><img alt="Francisco Laguna" height="70" src="http://www.gravatar.com/avatar/ca0154b96d7b29c7b06e3ec8af15bb82?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="150">
+      <span class="c_name"><a href="mailto:fla@synapps.de">Francisco Laguna</a></span>
+      <span class="c_date">January 3rd, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_150">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I found what Frederick said is especially important for the typical <code>BlankSlate</code> type of class. What was in 1.8:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">BlankSlate</span>
+  <span class="nb">instance_methods</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">meth</span><span class="o">|</span>
+    <span class="n">undef_method</span><span class="p">(</span><span class="n">meth</span><span class="p">)</span> <span class="k">unless</span> <span class="n">meth</span> <span class="o">=~</span> <span class="sr">/\A__/</span>
+  <span class="p">}</span>
+  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>becomes in 1.9 (for example):</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">BlankSlate</span>
+  <span class="nb">instance_methods</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">meth</span><span class="o">|</span>
+    <span class="n">undef_method</span><span class="p">(</span><span class="n">meth</span><span class="p">)</span> <span class="k">unless</span> <span class="n">meth</span><span class="o">.</span><span class="n">to_s</span> <span class="o">=~</span> <span class="sr">/\A__/</span>
+  <span class="p">}</span>
+  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Other than that, I noticed that <code>Thread#critical</code> and <code>Thread#critical=</code> went away, but for those of us who want to explicitely schedule stuff, <code>Fiber</code>s are nicer anyway. </p>
+
+<p><code>IO.getc</code> will return a <code>String</code> thats one character long instead of the ASCII value of the character itself.</p>
+
+<p>1.8:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">STDIN</span><span class="o">.</span><span class="n">getc</span>
+<span class="n">a</span>
+<span class="o">=&gt;</span> <span class="mi">97</span>
+</pre></div>
+
+<p>1.9:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">002</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="no">STDIN</span><span class="o">.</span><span class="n">getc</span>
+<span class="n">a</span>
+<span class="o">=&gt;</span> <span class="s2">"a"</span>
+</pre></div>
+
+<p>This also breaks the excellent <code>HighLine</code> lib. <em>hint hint</em> </p></div>
+    <ol>
+      
+        <li id="comment_151">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="151">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">January 3rd, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_151">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Yes, I do need to get <code>HighLine</code> working under 1.9.  I'll try to get to that before too long now.  Thanks for reminding me.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_161">
+    <div class="avatar"><img alt="Daniel Luz" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="161">
+      <span class="c_name">Daniel Luz</span>
+      <span class="c_date">January 7th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_161">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Francisco Laguna, since symbols now respond to <code>#=~</code>, I don't think that change is necessary, unless I am missing something. It should be noted, though, that for some reason Ruby 1.9 now emits a warning about <code>undef</code>'ing <code>object_id</code>, so you may want to preserve it too.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_152">
+    <div class="avatar"><img alt="Sander Land" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="152">
+      <span class="c_name">Sander Land</span>
+      <span class="c_date">January 3rd, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_152">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Using each or map on a result from <code>Enumerable#zip</code> is also extremely slow in 1.9. I discovered this when an application took twice as long in 1.9 as in 1.8. The innermost loop had a <code>zip_with()</code> call (<code>zip</code> -&gt; <code>map</code>) which caused this.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s1">'benchmark'</span>
+<span class="n">a</span> <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">25</span><span class="p">){</span><span class="nb">rand</span><span class="p">}</span>
+<span class="no">Benchmark</span><span class="o">.</span><span class="n">bmbm</span><span class="p">{</span><span class="o">|</span><span class="n">x</span><span class="o">|</span>
+  <span class="n">x</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="s2">"zip"</span><span class="p">){</span> <span class="mi">1_000_000</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="n">a</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">{}</span> <span class="p">}</span> <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Results in 1.8.6</p>
+
+<pre><code>          user     system      total        real
+zip  16.170000   0.320000  16.490000 ( 16.576643)
+</code></pre>
+
+<p>Results in 1.9</p>
+
+<pre><code>          user     system      total        real
+zip 192.360000   1.430000 193.790000 (195.467429)
+</code></pre>
+
+<p>Using <code>to_a</code> gives the same results.</p>
+
+<p>And this is with the slow 1.8.6 ubuntu/enable-pthread version vs an -O3/no-pthread compiled 1.9. On most code the 1.9 version is about four times as fast as the 1.8.6 version.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_153">
+    <div class="avatar"><img alt="gga" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="153">
+      <span class="c_name">gga</span>
+      <span class="c_date">January 4th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_153">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>For extension writers, ruby1.9 has, incorrectly in my opinion, deprecated Ruby's <code>version.h</code> file.</p>
+
+<p>This means it is not possible to know the ruby version easily and you now MUST write a Makefile of some sort to pass the proper defines or to check if your ruby supports some feature through some try-compile checks.</p>
+
+<p>This probably ranks as one of the worst changes in ruby 1.9.</p>
+
+<p>This obviously begs the question why this was done (as there's no benefit) and what should extension developers do if some function exists in both ruby1.8 and ruby1.9 but has different functionality (as some of the cases show here).</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_156">
+    <div class="avatar"><img alt="Robert Dober" height="70" src="http://www.gravatar.com/avatar/703fbc991fd63e0e1db54dca9ea31b53?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="156">
+      <span class="c_name"><a href="mailto:robert.dober@gmail.com">Robert Dober</a></span>
+      <span class="c_date">January 5th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_156">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>James I am just working on RQ#151 and I want my solution to be version agnostic, up to now the following was my idea:</p>
+
+<p>Write the code in v1.9 and just require a file to upgrade 1.8 ruby just enough to run your code, such the require can go away one day, here is a very first shot:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">String</span>
+   <span class="k">unless</span> <span class="nb">instance_methods</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span> <span class="s2">"to_char"</span> <span class="p">)</span> <span class="k">then</span>
+     <span class="nb">require</span> <span class="s2">"enumerator"</span>
+     <span class="k">def</span> <span class="nf">each_char</span> <span class="o">&amp;</span><span class="n">blk</span>
+       <span class="k">return</span> <span class="n">enum_for</span><span class="p">(</span><span class="ss">:each_byte</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">{</span> <span class="o">|</span><span class="n">b</span><span class="o">|</span> <span class="n">b</span><span class="o">.</span><span class="n">chr</span> <span class="p">}</span> <span class="k">unless</span> <span class="n">blk</span>
+       <span class="n">enum_for</span><span class="p">(</span><span class="ss">:each_byte</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">b</span><span class="o">|</span> <span class="n">blk</span><span class="o">.</span><span class="n">call</span> <span class="n">b</span><span class="o">.</span><span class="n">chr</span> <span class="k">end</span>
+     <span class="k">end</span> 
+   <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>of course it would be much better to wrap the whole include<br>
+file into a version test, but that very test might be a tough one, the following is rather a bad example:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">begin</span>
+  <span class="s2">""</span><span class="o">.</span><span class="n">to_a</span>
+  <span class="k">def</span> <span class="nf">to_char</span><span class="o">.</span><span class="n">.</span><span class="o">.</span>
+     <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+  <span class="k">end</span>
+<span class="k">rescue</span>
+  <span class="kp">nil</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Going for the Ruby version constant</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">if</span> <span class="sr">/^1\.8/</span> <span class="o">===</span> <span class="no">RUBY_VERSION</span> <span class="k">then</span>
+   <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>is probably a sound decision after all.</p>
+
+<p>What do you think?</p>
+
+<p>Cheers</p></div>
+    <ol>
+      
+        <li id="comment_157">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="157">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">January 6th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_157">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I would probable just do:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"jcode"</span> <span class="k">unless</span> <span class="s2">""</span><span class="o">.</span><span class="n">respond_to?</span><span class="p">(</span><span class="ss">:each_char</span><span class="p">)</span>
+</pre></div></div>
+    <ol>
+      
+        <li id="comment_158">
+    <div class="avatar"><img alt="Robert Dober" height="70" src="http://www.gravatar.com/avatar/703fbc991fd63e0e1db54dca9ea31b53?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="158">
+      <span class="c_name"><a href="mailto:robert.dober@gmail.com">Robert Dober</a></span>
+      <span class="c_date">January 6th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_158">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>James</p>
+
+<p>Now for the idea of saying</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"jcode"</span> <span class="k">unless</span> <span class="s2">""</span><span class="o">.</span><span class="n">respond_to?</span><span class="p">(</span><span class="ss">:each_char</span><span class="p">)</span>
+</pre></div>
+
+<p>This is an approach I have seen first in Javascript for Browser  Quirks but after some thoughts I believe that it is a bad idea for libraries. What if a <code>require</code> before our <code>require</code> just added <code>each_char</code> to <code>String</code>? And that is not exactly far fetched an idea either. </p>
+
+<p>For applications however it will work, unless you <code>require</code> third part libraries carelessly before the code above, this however can be debugged easily…</p>
+
+<p>For libraries there would be no way to debug or even fix it in a general manner.</p>
+
+<p>One could of course argue that someone could tamper with <code>RUBY_VERSION</code> too, but well we still have to let people kill themselves if they insist, sigh!</p></div>
+    <ol>
+      
+        <li id="comment_159">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="159">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">January 6th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_159">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Well, I hope that any <code>each_char()</code> implementation would give me the expected one character at a time.</p>
+
+<p>My main point though was that I felt safer using the <code>each_char()</code> method that comes with Ruby 1.8 than building my own.</p></div>
+    <ol>
+      
+        <li id="comment_160">
+    <div class="avatar"><img alt="Robert Dober" height="70" src="http://www.gravatar.com/avatar/703fbc991fd63e0e1db54dca9ea31b53?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="160">
+      <span class="c_name"><a href="mailto:robert.dober@gmail.com">Robert Dober</a></span>
+      <span class="c_date">January 6th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_160">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I see we are talking about two different things.</p>
+
+<ol>
+<li>I wanted a guard against the ruby version for <strong>lots</strong> of definitions, not only <code>String#to_char</code>.</li>
+<li>I cannot use Ruby's <code>String#to_char</code> because I need the 1.9 functionality of the returned <code>Enumerator</code> in case it is called without a block.</li>
+</ol><p>Maybe the idea to write version agnostic code was not really what you are after here, and you emphasis on 1.9, in that case I am a little bit OT, as usual...</p></div>
+    <ol>
+      
+        <li id="comment_162">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="162">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">January 7th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_162">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Robert:  I guess I am still a little confused about our discussion.  You've mentioned both <code>String#to_char()</code> and <code>String#each_char()</code> and your code checks for one but creates the other.  <code>String#to_char()</code> isn't a method I'm familiar with and I can't locate and documentation on it.</p>
+
+<p>Just FYI, I believe your code also has a bug in it.  Checks like <code>instance_methods.include?("some_str")</code> don't work as expected in Ruby 1.9.  Those method names are now returned as <code>Symbol</code> objects so <code>include?()</code> will fail to match the <code>String</code>.</p>
+
+<p>You can load <code>jcode</code> and <code>enumerator</code> and use <code>enum_for(:each_char)</code> to get an <code>Enumerable::Enumerator</code> in Ruby 1.8 or 1.9.  I do now understand that we were discussing many methods instead of a specific example though, so that may not help.</p></div>
+    <ol>
+      
+        <li id="comment_163">
+    <div class="avatar"><img alt="Robert Dober" height="70" src="http://www.gravatar.com/avatar/703fbc991fd63e0e1db54dca9ea31b53?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="163">
+      <span class="c_name"><a href="mailto:robert.dober@gmail.com">Robert Dober</a></span>
+      <span class="c_date">January 7th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_163">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>James</p>
+
+<p>many apologies about such many typos, I was referring to <code>#each_char</code> <strong>only</strong>. Thanks for the hint with <code>jcode</code> and <code>instance_methods.include?</code>. I missed <code>jcode</code>'s functionality.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_167">
+    <div class="avatar"><img alt="Sander Land" height="70" src="http://www.gravatar.com/avatar/38d738b4c7b89ab44ad6c0f7d56fb2e4?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="167">
+      <span class="c_name"><a href="mailto:sander.land@gmail.com">Sander Land</a></span>
+      <span class="c_date">January 9th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_167">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>The <code>zip</code> problems appear to be fixed with the January 8th version, it's still ~50% slower than 1.8, but that's manageable.</p>
+
+<p>James, I saw you post about this on Ruby-CORE mailing list. Is this the way to go for posting bugs?<br>
+I'm asking this because I discovered what I think is a rather serious bug and posted a bug report on Rubyforge about three weeks ago, but there is no reply to the report or any of my follow-ups, other than the bug getting assigned to Matz.</p></div>
+    <ol>
+      
+        <li id="comment_168">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="168">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">January 9th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_168">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Yes, I was able to sway Matz and <code>Enumerable#zip()</code> has been "repaired."</p>
+
+<p>Opinions seem to differ on whether on not to use the bug tracker on Rubyforge or the Ruby Core mailing list.  I believe the core team is trying to get more into the bug tacker habit, so it's probably best to start there for most things.  I find I have more success with topics that should be discussed, like the <code>Enumerable#zip()</code> issue, on Ruby Core though.  For serious issues, I recommend putting it on in the bug tracker then drawing attention to it on Ruby Core.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_169">
+    <div class="avatar"><img alt="Gavin Sinclair" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="169">
+      <span class="c_name">Gavin Sinclair</span>
+      <span class="c_date">January 14th, 2008</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_169">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>When Ruby 1.8 was on the horizon and 1.6 was the normal version for people to use, someone created a library called "shim", which allowed the use of 1.7/1.8-style features in 1.6 code.</p>
+
+<p>With compatibility between 1.8 and 1.9 a key issue for many people, such a "shim" library could be very useful.</p></div>
+    <ol>
+      
+        <li id="comment_385">
+    <div class="avatar"><img alt="Benoit Daloze" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="385">
+      <span class="c_name">Benoit Daloze</span>
+      <span class="c_date">July 10th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_385">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><blockquote>
+<p>When Ruby 1.8 was on the horizon and 1.6 was the normal version for people to use, someone created a library called "shim", which allowed the use of 1.7/1.8-style features in 1.6 code.</p>
+
+<p>With compatibility between 1.8 and 1.9 a key issue for many people, such a "shim" library could be very useful.</p>
+</blockquote>
+
+<p>I would recommend you backports<br><a href="http://github.com/marcandre/backports">http://github.com/marcandre/backports</a></p>
+
+<p>As it is pure Ruby, I believe you should still care where speed is important (though it would be better if users upgrade to 1.9 of course)</p>
+
+<p>I found these "hacks" very bad to read, I would personally be tempted to use sth like backports instead (or maybe only a part of it)</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_325">
+    <div class="avatar"><img alt="Michael Barton" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="325">
+      <span class="c_name"><a href="http://www.michaelbarton.me.uk">Michael Barton</a></span>
+      <span class="c_date">September 22nd, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_325">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Hi James,</p>
+
+<p>Thanks for sharing. Based on your code I've tried the following for backwards compatiblity with Ruby 1.8 where everything uses the <code>CSV</code> class constant.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"csv"</span>
+<span class="k">if</span> <span class="no">CSV</span><span class="o">.</span><span class="n">const_defined?</span> <span class="ss">:Reader</span>
+  <span class="c1"># Ruby 1.8 compatible</span>
+  <span class="nb">require</span> <span class="s1">'fastercsv'</span>
+  <span class="no">Object</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="ss">:remove_const</span><span class="p">,</span> <span class="ss">:CSV</span><span class="p">)</span>
+  <span class="no">CSV</span> <span class="o">=</span> <span class="no">FasterCSV</span>
+<span class="k">else</span>
+  <span class="c1"># CSV is now FasterCSV in ruby 1.9</span>
+<span class="k">end</span>
+</pre></div></div>
+    <ol>
+      
+        <li id="comment_331">
+    <div class="avatar"><img alt="William" height="70" src="http://www.gravatar.com/avatar/3b6047ca4d219092711075f11bb5a63d?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="331">
+      <span class="c_name"><a href="mailto:wtnelson@gmail.com">William</a></span>
+      <span class="c_date">October 12th, 2009</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_331">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks to Michael Barton. His fix is just what I sought.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_377">
+    <div class="avatar"><img alt="Chandan" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="377">
+      <span class="c_name">Chandan</span>
+      <span class="c_date">June 23rd, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_377">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Hi James,</p>
+
+<p>I just upgraded from Ruby 1.8.6 to 1.9.1 and I found couple of issue while starting <code>script/server</code>.</p>
+
+<ol>
+<li>Case stmt with <code>:</code> was throwing the error. I changed <code>:</code> to <code>then</code>, it worked</li>
+<li>Just below the case stmt I had the below line </li>
+</ol><div class="highlight highlight-erb"><pre><span class="cp">&lt;%=</span> <span class="n">link_to</span> <span class="p">(</span> <span class="n">h</span><span class="p">(</span><span class="n">oval</span><span class="p">),</span> <span class="ss">:action</span> <span class="o">=&gt;</span> <span class="s1">'find_oval'</span><span class="p">,</span>
+      <span class="ss">:id</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="vi">@sas_report_id</span><span class="p">,</span> <span class="n">new_oval</span> <span class="p">,</span> <span class="n">the_cve</span> <span class="o">].</span><span class="n">join</span><span class="p">(</span><span class="s2">"_"</span><span class="p">))</span><span class="cp">%&gt;</span><span class="x">&lt;br&gt;</span>
+</pre></div>
+
+<p>It thrown me the errors like </p>
+
+<pre><code>-------------------------------------------------------------
+/home/ton/vsweb/nvd/app/views/report/_sas_manual_show.rhtml:16:
+syntax error, unexpected ',', expecting ')'
+...( oval, :action =&gt; 'find_oval',:id =&gt; [@sas_report_id, new_o...
+...                               ^
+/home/ton/vsweb/nvd/app/views/report/_sas_manual_show.rhtml:16:
+syntax error, unexpected ')', expecting keyword_end
+...l , the_cve ].join("_"))).to_s); @output_buffer.concat "&lt;br&gt;...
+---------------------------------------------------------
+</code></pre>
+
+<p>I then removed the opening and closing parentheses</p>
+
+<div class="highlight highlight-erb"><pre><span class="cp">&lt;%=</span> <span class="n">link_to</span>  <span class="n">h</span><span class="p">(</span><span class="n">oval</span><span class="p">),</span> <span class="ss">:action</span> <span class="o">=&gt;</span> <span class="s1">'find_oval'</span><span class="p">,</span>
+      <span class="ss">:id</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="vi">@sas_report_id</span><span class="p">,</span> <span class="n">new_oval</span> <span class="p">,</span> <span class="n">the_cve</span> <span class="o">].</span><span class="n">join</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)</span><span class="cp">%&gt;</span><span class="x">&lt;br&gt;</span>
+</pre></div>
+
+<p>It worked !!</p>
+
+<p>Wondering what has got changed here in Ruby 1.9.1. </p>
+
+<p>What else syntax changes are present in 1.9.1.  I don't know which else places we need to change our code.</p>
+
+<p>Anybody else got this error with 1.9.1. Have you got any solution. Please let me know. </p>
+
+<p>Thanks<br>
+Chandu</p></div>
+    <ol>
+      
+        <li id="comment_378">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="378">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">June 23rd, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_378">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I'm just guessing, but I believe the issue was that you had a space between the method name (<code>link_to</code>) and the opening parenthesis (<code>(</code>).  Try taking out the space and I bet that fixes it up.</p></div>
+    <ol>
+      
+        <li id="comment_379">
+    <div class="avatar"><img alt="Chandan" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="379">
+      <span class="c_name">Chandan</span>
+      <span class="c_date">June 23rd, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_379">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I think, You are right. After removing spaces it looks good. It seems to be working.</p>
+
+<p>But I am not sure how the same code was working with Ruby 1.8.6.</p>
+
+<p>Thanks<br>
+Chandan</p></div>
+    <ol>
+      
+        <li id="comment_380">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="380">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">June 23rd, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_380">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>It was allowed in Ruby 1.8.6, though it did print a warning back then that it was deprecated.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_381">
+    <div class="avatar"><img alt="Chandan" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="381">
+      <span class="c_name">Chandan</span>
+      <span class="c_date">June 23rd, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_381">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Hi James,</p>
+
+<p>I am now getting the following error</p>
+
+<pre><code>=============================================================
+formal argument cannot be an instance variable
+...@checklists.each do |@checklist|; @output_buffer.concat "\r\...
+...                               ^
+
+Extracted source (around line #14):
+
+11:     &lt;%= sort_header_tag('last_modified_datetime',
+                            :title =&gt; 'Last Modified') %&gt;
+12:     &lt;%= sort_header_tag('last_import_datetime',
+                            :title =&gt; 'Last Import') %&gt;
+13:     &lt;th&gt;Resources&lt;/th&gt;
+14:     &lt;% @checklists.each do |@checklist|%&gt;
+15:     &lt;tr&gt;
+16:         &lt;td&gt;
+17:             &lt;%
+==============================================================
+</code></pre>
+
+<p>Have you ever got this error. What could be the issue. </p>
+
+<p>All these errors I am getting after migrating to Ruby 1.91</p>
+
+<p>Thanks<br>
+Chandu</p></div>
+    <ol>
+      
+        <li id="comment_382">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="382">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">June 24th, 2010</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comment_382">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Yeah, blocks are no longer allowed to abuse variables like that (since they stick around after the iteration).  You will need to switch to an explicit assignment, if that's what's really needed:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="vi">@checklists</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">checklist</span><span class="o">|</span>
+  <span class="vi">@checklist</span> <span class="o">=</span> <span class="n">checklist</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Hope that helps.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / The Right Ruby Mix</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="In this article I look at some of the influences of the Ruby language and use those to decide how we should be writing Ruby code.">
+    <meta name="keywords"    content="thinking about code, software design, Functional Programming, Object Orientation, Scripting, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/the-right-ruby-mix/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      MAR<br>
+      2012
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">The Right Ruby Mix</h3>
+        
+        <p>Ruby is a melting pot language.  It borrows ideas from many things that came before.  It combines several different programming philosophies.</p>
+
+<p>This aspect of the language can be a plus.  It means that Ruby is suited to multiple applications.  It also opens up some pragmatic shortcuts.  Even better, it sometimes encourages us to think about problems using a different lens of thought.</p>
+
+<p>Of course, this cuts both ways.  Ruby living at the intersection of many ideas does have some downsides.  First, there's more to learn than you find with some simpler languages.  There's a cost for the extra knowledge we have to track.  Even worse though, in my opinion, is that it's sometimes hard to know exactly what Ruby's style really is.</p>
+
+<h4>Going Off Script</h4>
+
+<p>One culture Ruby borrowed heavily from is that of the so called "Scripting Languages."  The main source of these features was Perl, in my opinion, but you can also find influences from Bash and other sources.  I found this comforting since I came to Ruby from Perl, but the truth is that <a href="https://twitter.com/#!/garybernhardt/status/172080693021655040">it bothers some people</a>.</p>
+
+<p>What's up with that <code>test()</code> method, really?</p>
+
+<p>One thought is that Ruby has it to make Bash programmers more comfortable.  In other words, this Bash code:</p>
+
+<pre><code>$ if [[ -e "Gemfile" ]]; then echo "This project uses Bundler."; fi
+This project uses Bundler.
+</code></pre>
+
+<p>can be ported to similar Ruby code:</p>
+
+<pre><code>$ ruby -e 'if test ?e, "Gemfile" then puts "This project uses Bundler." end'
+This project uses Bundler.
+</code></pre>
+
+<p>That's not a very Rubyish way to check for a file though.  Typically you would see it written more like this:</p>
+
+<pre><code>$ ruby -e 'puts "This project uses Bundler." if File.exist?("Gemfile")'
+This project uses Bundler.
+</code></pre>
+
+<p>That's shorter and it reads better, so it's no surprise that Rubyists prefer it.  We generally love code that reads well.</p>
+
+<p>The interface to <code>test()</code> is still a little bizarre though, don't you think?  I guess we wanted something close to <code>-e</code> and Ruby's character syntax <code>?e</code> was deemed close enough.  The truth is that we could get closer to the Bash syntax, if we really wanted to:</p>
+
+<pre><code>$ ruby -r ./bash -e 'if bash_test [[ -e, "Gemfile" ]] then puts "..." end'
+...
+$ cat bash.rb
+%w[A b c C d e f g G k l M o O p r R s S u w W x X z].each do |arg|
+  flag = -arg.getbyte(0)
+  if arg.downcase == arg
+    Object.class_eval do
+      define_method(arg) { flag }
+    end
+  else
+    Object.const_set(arg, flag)
+  end
+end
+
+def bash_test(*args)
+  test(*args.flatten)
+end
+</code></pre>
+
+<p>Why didn't Ruby go this far?  I assume the reasons are pretty obvious, but let's discuss them briefly.</p>
+
+<p>First, it pollutes the top level namespace with several methods and constants.  This already bit me in the creation of this tiny example.  I had a bug in my first attempt at this code and I tried to debug it with <code>p()</code> only to realize that I had replaced that method with a much less helpful chunk of code.  (If you ever run into that problem, you can still get to it with <code>Kernel.p()</code> thanks to the magic of <code>module_function()</code>.)  The added methods and constants return almost senseless values, so it's unlikely they would be good for much else.</p>
+
+<p>Another problem is that I couldn't support all of the operators <code>test()</code> accepts using this trick.  It also understands <code>?-</code>, <code>?=</code>, <code>?&lt;</code>, and <code>?&gt;</code>.</p>
+
+<p>We can see that <code>test()</code> was a compromise, to get close to some Bash-like support without doing too much damage to Ruby itself.  Was it worth it?  Tough call.  I favor methods like <code>File.exist?()</code> and the <code>File::Stat</code> module when I do checks, because I think they better reveal my intentions and they don't make the code a lot longer.</p>
+
+<p>Now, I do use several of the borrowed Perl shortcuts.  You probably know that, since <a href="/rubies-in-the-rough/the-wrong-tool-for-the-job/">I have written about them before</a>.  I find that using Ruby on the command-line with <code>-n</code> or <code>-p</code>, <code>$_</code>, and the flip-flop operator does save me a lot of code and time.  In those cases, the tradeoff feels worth it to me.</p>
+
+<p>But perhaps this just shows that I was more of a Perl guy than a Bash guy when I came to Ruby.</p>
+
+<p>Do I use these crazy shortcuts when I'm writing full Ruby programs?  Not usually.  I am not above shelling out to a command when I think it's easier though.  For example, I've seen several complex and slow ways to generate a UUID in Ruby over the years, but I usually favor this cheat:</p>
+
+<pre><code>$ ruby -e 'uuid = `uuidgen`.strip; p uuid'
+"6196D647-F6C4-4764-90A8-1775E22400B9"
+</code></pre>
+
+<p>It's been fast enough for any need I've ever had and I haven't had to run the code anywhere that didn't support this trick.  (Windows probably wouldn't out of the box.)</p>
+
+<p>This is the real win of Ruby's scripting heritage, in my opinion.  It allows us to think about some problems in a different way.  Instead of being forced to think, "I need to find a library for generating UUID's," Ruby makes it easy to substitute, "Doesn't Unix have a standard tool for this that I can talk to?"  Would you try the same trick in a language like Java?  Probably not, just because scripting support is a lot less robust there.  That's why they tend to favor the libraries.</p>
+
+<p>I vote we keep the I-can-always-fall-back-to-scripting attitude.</p>
+
+<h4>Life After Functional Programming</h4>
+
+<p>Does Ruby inherit from the functional programming languages?  I would say that it definitely does.  The functional languages are really where concepts like iterators originated.  In fact, I believe Ruby's blocks in general were inspired by <a href="http://en.wikipedia.org/wiki/Thunk_(functional_programming)">functional concepts</a>.</p>
+
+<p>Does that mean Ruby is a functional programming language?  That question is a lot tougher, but I lean towards answering, "No."  There are definitely <a href="http://www.randomhacks.net/articles/2005/12/03/why-ruby-is-an-acceptable-lisp">folks that disagree with me on this point</a> though.</p>
+
+<p>Ruby methods aren't quite first-class functions.  However, you can pretty much simulate that style of programming if you stick to using <code>lambda()</code>.  That allows us to store "functions" in variables:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">multiply</span> <span class="o">=</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="o">|</span> <span class="n">l</span> <span class="o">*</span> <span class="n">r</span> <span class="p">}</span>
+<span class="n">double</span>   <span class="o">=</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="n">multiply</span><span class="o">[</span><span class="n">n</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span> <span class="p">}</span>
+<span class="n">triple</span>   <span class="o">=</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="n">multiply</span><span class="o">[</span><span class="n">n</span><span class="p">,</span> <span class="mi">3</span><span class="o">]</span> <span class="p">}</span>
+
+<span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">n</span><span class="p">,</span> <span class="n">i</span><span class="o">|</span>
+  <span class="nb">puts</span> <span class="k">unless</span> <span class="n">i</span><span class="o">.</span><span class="n">zero?</span>
+  <span class="nb">puts</span> <span class="s2">"      N: </span><span class="si">#{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span>
+  <span class="nb">puts</span> <span class="s2">"Doubled: </span><span class="si">#{</span><span class="n">double</span><span class="o">[</span><span class="n">n</span><span class="o">]</span><span class="si">}</span><span class="s2">"</span>
+  <span class="nb">puts</span> <span class="s2">"Tripled: </span><span class="si">#{</span><span class="n">triple</span><span class="o">[</span><span class="n">n</span><span class="o">]</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Because the block passed to <code>lambda()</code> is a closure, we can later refer to those functions by name.</p>
+
+<p>We can also return functions from functions:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">build_multiplier</span> <span class="o">=</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">multiplier</span><span class="o">|</span>
+  <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="n">multiplier</span> <span class="o">*</span> <span class="n">n</span> <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">double</span> <span class="o">=</span> <span class="n">build_multiplier</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
+<span class="n">triple</span> <span class="o">=</span> <span class="n">build_multiplier</span><span class="o">[</span><span class="mi">3</span><span class="o">]</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>Of course, we can also pass functions to functions:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">poor_mans_curry</span> <span class="o">=</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">arg</span><span class="p">,</span> <span class="n">f</span><span class="o">|</span>
+  <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|*</span><span class="n">rest</span><span class="o">|</span> <span class="n">f</span><span class="o">[</span><span class="n">arg</span><span class="p">,</span> <span class="o">*</span><span class="n">rest</span><span class="o">]</span> <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">double</span> <span class="o">=</span> <span class="n">poor_mans_curry</span><span class="o">[</span><span class="mi">2</span><span class="p">,</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="o">|</span> <span class="n">l</span> <span class="o">*</span> <span class="n">r</span> <span class="p">}</span><span class="o">]</span>
+<span class="n">triple</span> <span class="o">=</span> <span class="n">poor_mans_curry</span><span class="o">[</span><span class="mi">3</span><span class="p">,</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="o">|</span> <span class="n">l</span> <span class="o">*</span> <span class="n">r</span> <span class="p">}</span><span class="o">]</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>The example above also shows that anonymous functions are supported.</p>
+
+<p>Ruby even has features to support this kind of work in some ways.  I could have written the first example as:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">multiply</span> <span class="o">=</span> <span class="nb">lambda</span> <span class="p">{</span> <span class="o">|</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="o">|</span> <span class="n">l</span> <span class="o">*</span> <span class="n">r</span> <span class="p">}</span>
+<span class="n">double</span>   <span class="o">=</span> <span class="n">multiply</span><span class="o">.</span><span class="n">curry</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
+<span class="n">triple</span>   <span class="o">=</span> <span class="n">multiply</span><span class="o">.</span><span class="n">curry</span><span class="o">[</span><span class="mi">3</span><span class="o">]</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+
+<p>Since we've established that Ruby supports all of these functional features, why do I say it's not a functional language?  Well, it's true that we can compose with functions in Ruby.  That's pretty much the gateway to functional programming.  But things don't end there.</p>
+
+<p>Once you have those features, you start to do things in a certain way to maximize the benefits of using them.  For example, it's ideal to use immutable data structures and treat variables more like constants.  This allows you to guarantee that the same function called with the same arguments always returns the same results.</p>
+
+<p>It's also very common to write recursive functions when programming functionally, so it's nice for the language to support that.</p>
+
+<p>These are examples of areas where Ruby stops scoring so well.  Of course, you can make immutable data structures and write recursive functions.  However, there are downsides to using these tactics.  Ruby's GC isn't really tuned for immutable data structures and you can definitely take some performance hits while the language struggles to clean up after you.  Similarly, Ruby doesn't do tail-call optimization by default, so it's easy to exhaust the stack with a recursive function.</p>
+
+<p>In my opinion, details like these make it clear that Ruby wasn't designed to favor this style of programming, even if it does make it possible.  That's why I say that it's not really a functional language.</p>
+
+<p>In Ruby, we could write a function to wrap another function and add some feature:  say memoization.  But the fact is that Ruby often has other ways to accomplish these tasks.  For example, here's a dirt simple memoization technique for Ruby:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">fibonacci</span><span class="p">(</span><span class="n">nth</span><span class="p">,</span> <span class="n">series</span> <span class="o">=</span> <span class="nb">method</span><span class="p">(</span><span class="ss">:fibonacci</span><span class="p">))</span>
+  <span class="k">if</span> <span class="n">nth</span> <span class="o">&lt;</span> <span class="mi">2</span>
+    <span class="n">nth</span>
+  <span class="k">else</span>
+    <span class="n">series</span><span class="o">[</span><span class="n">nth</span> <span class="o">-</span> <span class="mi">2</span><span class="o">]</span> <span class="o">+</span> <span class="n">series</span><span class="o">[</span><span class="n">nth</span> <span class="o">-</span> <span class="mi">1</span><span class="o">]</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="c1"># The easiest memoization in the world:</span>
+<span class="n">fibs</span> <span class="o">=</span> <span class="no">Hash</span><span class="o">.</span><span class="n">new</span> <span class="p">{</span> <span class="o">|</span><span class="n">series</span><span class="p">,</span> <span class="n">nth</span><span class="o">|</span> <span class="n">series</span><span class="o">[</span><span class="n">nth</span><span class="o">]</span> <span class="o">=</span> <span class="n">fibonacci</span><span class="p">(</span><span class="n">nth</span><span class="p">,</span> <span class="n">series</span><span class="p">)</span> <span class="p">}</span>
+
+<span class="nb">p</span> <span class="n">fibs</span><span class="o">[</span><span class="mi">100</span><span class="o">]</span>
+</pre></div>
+
+<p>The "function" above is originally recursive, though probably not as you normally see them written.  I allow for the source of the series to be passed as an argument.  That was just to make it trivial to swap it out later and that argument defaults to a reference of the method (Ruby's terminology) itself.  This means it's really normal recursion (in disguise).</p>
+
+<p>The main point here is that the default block of a <code>Hash</code> is actually just a memoization function already written for us in optimized C.  We can just use a <code>Hash</code> to achieve that effect.  It's clean and lightning quick.</p>
+
+<p>I've seen multiple Rubyists over the years take detours into the functional languages, then come back and try to apply the concepts they have learned to Ruby itself.  I did the same thing myself and <a href="/higher-order-ruby/">wrote a lot about it</a>.  I never ended up finishing that series, because I realized that it wasn't really working.  If I followed the functional code too closely, the resulting Ruby had issues.  In other cases I really liked the code I came up with, but that's just because I translated the underlying concepts to how Ruby would better handle them (leaving functional programming behind).</p>
+
+<p>The moral is that Ruby did inherit a lot from the functional programming languages, but you are probably already using the important bits.  Work with blocks and iterators where they make sense and you will gain the most benefit from that style.  Going any further than that may work for some cases, but the path is full of pitfalls.</p>
+
+<h4>It's Objects All the Way Down</h4>
+
+<p>Did I save the best for last?  You bet!</p>
+
+<p>Ruby clearly inherits from object oriented languages, like Smalltalk.  That's a major focus of the design of the language.</p>
+
+<p>The fact is that it really paid off too.  Ruby has a gorgeous object model due to features like:</p>
+
+<ul>
+<li>Almost everything is an object</li>
+<li>Classes are objects too</li>
+<li>Class definitions are just plain Ruby code being executed</li>
+<li>Classes are open</li>
+<li>Hooks like <code>method_missing()</code> and <code>const_missing()</code>
+</li>
+<li>Per object behavior via singleton classes</li>
+<li>Mix-ins</li>
+</ul><p>Sure, the system isn't perfect.  We traded method overloading for dynamic typing (which is good and bad, in my opinion).  We also don't really have keyword arguments.  <em>[<strong>Update</strong>:  I am finally satisfied with Ruby's keyword arguments as of Ruby 2.1.]</em>  We do have techniques for getting around these deficiencies that generally seem to be good enough though.</p>
+
+<p>What about multiple inheritance?  Some say it's a feature.  Others say it's a bug.  It's definitely debatable, but Ruby seems dynamic enough to get by without it, in either case.</p>
+
+<p>The fact is, whether by accidental or purposeful design, Ruby really has a terrific object model.  The more I've learned about it over the years, the more I have come to appreciate it.  I mean it's almost a zen moment when you finally realize that Ruby's method lookup is just a straight line and tools like classes, singleton classes, and mix-ins allow you to define methods at desired points on that line.  It all fits together so well.</p>
+
+<p>What's more, as I have been a Rubyist, I have studied some of the more classical material on object orientation.  The more I learn from that world, the better my Ruby seems to get.  It's almost exactly the opposite of trying to apply functional techniques to the language in that Ruby seems to welcome such ideas.</p>
+
+<p>For example, look at a simple pattern like <a href="http://sourcemaking.com/implementation-patterns/pluggable-selector">Pluggable Selector in Java</a>, a mainstream object oriented language.  Now observe the same pattern in Ruby:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">PluggableSelector</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">selector</span><span class="p">)</span>
+    <span class="vi">@selector</span> <span class="o">=</span> <span class="n">selector</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">run</span>
+    <span class="nb">send</span><span class="p">(</span><span class="s2">"run_</span><span class="si">#{</span><span class="vi">@selector</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">run_foo</span>
+    <span class="s2">"foo"</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">run_bar</span>
+    <span class="s2">"bar"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="no">PluggableSelector</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:foo</span><span class="p">)</span><span class="o">.</span><span class="n">run</span>
+<span class="nb">puts</span> <span class="s2">"Ran </span><span class="si">#{</span><span class="n">result</span><span class="si">}</span><span class="s2">"</span>
+</pre></div>
+
+<p>Features like <code>Symbol</code> objects, interpolation, and <code>send()</code> just make this kind of work trivial.  Ruby was made to do this.</p>
+
+<p>Object thinking should always remain a big part of the Ruby we do.</p>
+
+<h4>What's Our Style?</h4>
+
+<p>I've argued that Ruby isn't just a scripting language, a functional language, or even just an object oriented language.  It even has some other influences that I didn't visit here.</p>
+
+<p>So, what kind of language is Ruby?  What's the kind of programming that we do with it called?</p>
+
+<p>I don't know that there is a name for it, but clearly it's a blend of many ideas.  The trick is to find the right mix to make great code.</p>
+
+<p>How do we define "great code?"  Code's first priority is always to communicate with the reader.  Start there.</p>
+
+<p>Here's the mix I recommend for great Ruby:</p>
+
+<ul>
+<li>
+<strong>74.41% Object Oriented Programming</strong>:  the classic techniques enhanced by Ruby's dynamic nature</li>
+<li>
+<strong>17.21% Functional Programming</strong>:  mostly the bits Ruby has adopted, like blocks and iterators</li>
+<li>
+<strong>9.38% Scripting</strong>:  for quick hacks and pragmatic shortcuts</li>
+</ul><p>You can clearly see by my exact figures and excellent math that this is a highly scientific calculation not to be argued with.</p>
+
+<h4>Further Reading</h4>
+
+<p>If you want to dig deeper into the various styles of programming, you might enjoy some of these resources:</p>
+
+<ul>
+<li>The best guide to tactical object oriented programming I have ever read is easily <a href="http://www.pearsonhighered.com/educator/product/Smalltalk-Best-Practice-Patterns/9780134769042.page">Smalltalk Best Practice Patterns</a>.  It's worth learning a little Smalltalk just to read this book.  It's that good.</li>
+<li>You can often learn about using Ruby as a scripting language if you watch for articles that mention Ruby with a Unix slant.  Here's <a href="http://tomayko.com/writings/unicorn-is-unix">a classic example</a> and <a href="http://jstorimer.com/2012/02/16/a-unix-shell-in-ruby.html">a newer one</a>.</li>
+<li>I haven't read it yet, but <a href="http://pragprog.com/book/btlang/seven-languages-in-seven-weeks">Seven Languages in Seven Weeks</a> is on my reading list.  It looks like a fun way to tour many different programming styles, including functional programming and prototype languages (which I didn't go into here).</li>
+</ul>
+        
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/the-right-ruby-mix">
+  In: <a href="/rubies-in-the-rough/">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Functional%20Programming/">Functional Programming</a>, <a href="/tags/Object%20Orientation/">Object Orientation</a> &amp; <a href="/tags/Scripting/">Scripting</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/the-right-ruby-mix#comments">0 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (0)</span></h5>
+
+    <ol>
+      
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

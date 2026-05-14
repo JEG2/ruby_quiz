@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="The Ruby programming blog of James Edward Gray II (JEG2).  Any content of interest to Rubyists specifically, or developers in general, is fair game.">
+    <meta name="keywords"    content="Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1>Gray Soft</h1>
+            <span>The Ruby programming blog of James Edward Gray II (JEG2).</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+            <ul class="blog-list">
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>23</h4>
+    <span>
+      APR<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rails/the-nice-new-italian-restaurant-of-server-monitoring/"><h3 class="blog-title">The Nice New Italian Restaurant of Server Monitoring</h3></a>
+          <p>David Heinemeier Hanson, the creator of Rails, has made <a href="http://www.37signals.com/svn/posts/981-the-secret-to-making-money-online">one of his business strategy talks</a> available recently.  This is a great talk about how we all might be trying just a little too hard at what can be a fairly simple task.</p>
+
+<p>We all hear advice like this over and over again, but we seem to forget it so fast that we need that constant reminding.  Just today I saw a site redesigned to improve a section users haven't even seen yet (as that section isn't yet public).  Is that really the top use of resources for an unlaunched portion of the site?  How do we know they wouldn't have liked it?  How do we know they will like the new version better?  I'm sure it won't surprise readers to learn that this site is over budget on time and money.</p>
+
+<p>The point of all of this is that I want to tell you about a new server monitoring tool <a href="http://highgroove.com/">the company I work for</a> has recently launched.  The new service is called <a href="http://scoutapp.com/">Scout</a> and we've done our dead-level best to keep to the simplicity principal both because we agree with David and because we flat out need it to work that way.</p><p><a href="/rails/the-nice-new-italian-restaurant-of-server-monitoring/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rails/the-nice-new-italian-restaurant-of-server-monitoring">
+  In: <a href="/rails/">Rails</a>
+  <span>|</span>
+  Tags: <a href="/tags/Monitoring/">Monitoring</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rails/the-nice-new-italian-restaurant-of-server-monitoring#comments">2 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>10</h4>
+    <span>
+      APR<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/rails/five-activerecord-tips/"><h3 class="blog-title">Five ActiveRecord Tips</h3></a>
+          <p>This article was written for the <a href="http://railscasts.com/contest">Railcasts 100th Episode Contest</a>.  I think the idea is great and I look forward to reading great tips from all who decide to participate.</p>
+
+<h4>1. <code>create_or_find_by_…</code>
+</h4>
+
+<p>I imagine most of you know that <code>ActiveRecord</code> can handle finders like:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">MyARClass</span><span class="o">.</span><span class="n">find_or_create_by_name</span><span class="p">(</span><span class="n">some_name</span><span class="p">)</span>
+</pre></div>
+
+<p>This will attempt to find the object that has <code>some_name</code> in its <code>name</code> field or, if the find fails, a new object will be created with that <code>name</code>.  It's important to note that the order is exactly as I just listed it:  find then create.  Here are the relevant lines from the current Rails source showing the process:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">record</span> <span class="o">=</span> <span class="n">find_initial</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">nil?</span>
+  <span class="n">record</span> <span class="o">=</span> <span class="nb">self</span><span class="o">.</span><span class="n">new</span> <span class="p">{</span> <span class="o">|</span><span class="n">r</span><span class="o">|</span> <span class="n">r</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="ss">:attributes</span><span class="o">=</span><span class="p">,</span> <span class="n">attributes</span><span class="p">,</span> <span class="n">guard_protected_attributes</span><span class="p">)</span> <span class="p">}</span>
+  <span class="c1">#{'yield(record) if block_given?'}</span>
+  <span class="c1">#{'record.save' if instantiator == :create}</span>
+  <span class="n">record</span>
+<span class="k">else</span>
+  <span class="n">record</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The above code is inside a <code>String</code> literal fed to <code>class_eval()</code>, which is why you see interpolation being used.</p>
+
+<p>Unfortunately, this process is subject to race conditions because the object could be created by another process (or <code>Thread</code>) between the find and the creation.  If that happens, you are likely to run into another hardship in that calls to <code>create()</code> fail quietly (returning the unsaved object).  These are some pretty rare happenings for sure, but they can be avoided under certain conditions.</p><p><a href="/rails/five-activerecord-tips/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="rails/five-activerecord-tips">
+  In: <a href="/rails/">Rails</a>
+  <span>|</span>
+  Tags: <a href="/tags/ActiveRecord/">ActiveRecord</a> &amp; <a href="/tags/FasterCSV/">FasterCSV</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rails/five-activerecord-tips#comments">11 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>18</h4>
+    <span>
+      MAR<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/about-this-blog/death-and-spam/"><h3 class="blog-title">Death and Spam</h3></a>
+          <p>The popular expression warns us that death and taxes are the only two certainties, but I'm worried we may need to add spam to the list.  Publish any material that draws readership on the Web and invites reader feedback and you can be certain sure you will be swimming in spam soon enough.</p>
+
+<p>One of the biggest reasons I switched to my own blogging engine was to fine tune my spam control strategy.  Until today, the system was that I received an email anytime a comment was posted to this blog and it was a single keystroke to remove any offensive content.  While that was as simple as I can think to make a process, the fact was that it still wasn't good enough.</p>
+
+<p>The spammers ramped up their efforts until I was facing about 50 useless posts every 12 hours.  While I didn't mind clearing them, the fact was that visitors were probably seeing spam due to the regularity of the postings and the time between the post and my clearing it.  Obviously, there was at least spam on the blog while I slept each night.</p><p><a href="/about-this-blog/death-and-spam/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="about-this-blog/death-and-spam">
+  In: <a href="/about-this-blog/">About This Blog</a>
+  <span>|</span>
+  Tags: <a href="/tags/Blogging/">Blogging</a> &amp; <a href="/tags/Spam/">Spam</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/about-this-blog/death-and-spam#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>1</h4>
+    <span>
+      MAR<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/book-reviews/design-patterns-in-ruby/"><h3 class="blog-title">Design Patterns in Ruby</h3></a>
+          <p>I've been lucky enough to read a string of good Ruby books lately and the latest in that line is <cite>Design Patterns in Ruby</cite>.  This book attempts to modernize the software design patterns by showing how these patterns can be applied in a language as dynamic as Ruby.  Despite a couple of minor missteps along the way, the book definitely delivers on this goal.</p>
+
+<p><cite>Design Patterns in Ruby</cite> begins with a couple of introductory chapters introducing both the concepts behind reusable software patterns and the Ruby programming language.  After that, the main section of the book has 13 chapters that walk through 14 of the patterns first introduced in the famous "Gang of Four" book that began the design patterns movement.  The author then introduces three new patterns he feels have grown out of day to day Ruby usage.  Finally the book closes with a short conclusion and two appendices on installing Ruby and other sources of information.</p>
+
+<p>Most of that content is exactly what I wanted to find in this book, but you're going to have to tolerate a diversion about a pet peeve of mine that is strangely common in Ruby books.  This is really, really important, so listen up:  you can't teach Ruby in 30 pages.  Period.  I can hear all on the "But…" replies forming out there now…  No buts.  You can't.  Trust me.  Not even if the person is already an experienced programmer.  It just can't be done.  Authors and publishers need to come to terms with that and move on.  Its just fine to say, "This is not a beginning Ruby book."  We even prefer that, because we know when we are ready to read it and we don't have to skip that useless 30 page chapter when we do.  Please, stop including introductory Ruby chapters in every book.</p><p><a href="/book-reviews/design-patterns-in-ruby/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="book-reviews/design-patterns-in-ruby">
+  In: <a href="/book-reviews/">Book Reviews</a>
+  <span>|</span>
+  Tags: <a href="/tags/Patterns/">Patterns</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/book-reviews/design-patterns-in-ruby#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>29</h4>
+    <span>
+      FEB<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/the-standard-library/a-bug-today-only/"><h3 class="blog-title">A Bug, Today Only</h3></a>
+          <p>I had to debug some tests that just started failing first thing this morning.  I guess I should have procrastinated though, because they would have magically fixed themselves tomorrow morning.  The cause of the one day only bug:  Leap Year Day, of course.</p>
+
+<p>If you run the following code on a day like today, February 29th 2008, <code>Date</code> will choke on your invalid date:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"date"</span>  
+
+<span class="k">class</span> <span class="nc">Date</span>
+  <span class="c1"># Returns a Date in the past +year_offset+ years ago.</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">years_ago</span><span class="p">(</span><span class="n">year_offset</span><span class="p">)</span>
+    <span class="n">now</span> <span class="o">=</span> <span class="n">today</span>
+    <span class="no">Date</span><span class="o">.</span><span class="n">civil</span><span class="p">(</span><span class="n">now</span><span class="o">.</span><span class="n">year</span> <span class="o">-</span> <span class="n">year_offset</span><span class="p">,</span> <span class="n">now</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">now</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="nb">puts</span> <span class="no">Date</span><span class="o">.</span><span class="n">years_ago</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+<p>I came up with the following fix, which is accurate enough for my purposes:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"date"</span>
+
+<span class="k">class</span> <span class="nc">Date</span>   <span class="c1"># Returns a Date in the past +year_offset+ years ago.</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">years_ago</span><span class="p">(</span><span class="n">year_offset</span><span class="p">)</span>
+    <span class="n">today</span> <span class="o">-</span> <span class="mi">365</span> <span class="o">*</span> <span class="n">year_offset</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="nb">puts</span> <span class="no">Date</span><span class="o">.</span><span class="n">years_ago</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+<p>I'm not 100% sure that covers all cases though, so use with caution.  Date's are tricky business!</p>
+        </div>
+        <div class="meta-info" data-slug="the-standard-library/a-bug-today-only">
+  In: <a href="/the-standard-library/">The Standard Library</a>
+  <span>|</span>
+  Tags: <a href="/tags/Bugs/">Bugs</a>, <a href="/tags/Date%2FTime/">Date/Time</a> &amp; <a href="/tags/Leap%20Year/">Leap Year</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-standard-library/a-bug-today-only#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>28</h4>
+    <span>
+      JAN<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/book-reviews/practical-ruby-projects/"><h3 class="blog-title">Practical Ruby Projects</h3></a>
+          <p><cite>Practical Ruby Projects</cite> is a pretty poorly named title, but, luckily, that doesn't stop it from being a very strong book.  The book actually turns out to be an exploring-the-Ruby-programming-language-by-example book.  These aren't your trivial beginners-only tasks though.  There's enough meat in these pages for the intermediate crowd to really get into.</p>
+
+<p>Let me start by clarifying my earlier comment about the title.  It's clear this book is named after the series it appears in, instead of the actual content it holds.  There are lots of projects in the book and they are definitely written in Ruby, but <em>Practical</em> is not the word I would use to describe them.  <em>Fun</em>, on the other hand, would be a great word.  Beyond that, the code and concepts used in these projects is well worth studying.  Just don't expect to find the typical (for Ruby) collection of Web programming tips inside.  To me, that was a big plus.  The title just misrepresents what's inside.</p>
+
+<p>The projects you will find in the book include:  MIDI music generation, SVG graphic building, pocket change simulations, a turn-based strategy game, a Mac OS X GUI, a genetic algorithms framework, as well as both a parser and interpreter for the Lisp programming language.  While these projects obviously tackle subsets of each problem space, they go deep enough to serve as a solid introduction in each area.  The author is also good at focusing on the more interesting aspects of each challenge and throwing in a few twists to keep your interests high.</p><p><a href="/book-reviews/practical-ruby-projects/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="book-reviews/practical-ruby-projects">
+  In: <a href="/book-reviews/">Book Reviews</a>
+  <span>|</span>
+  Tags: <a href="/tags/Code%20Reading/">Code Reading</a> &amp; <a href="/tags/For%20Fun/">For Fun</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/book-reviews/practical-ruby-projects#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>24</h4>
+    <span>
+      JAN<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/book-reviews/from-bash-to-z-shell/"><h3 class="blog-title">From Bash to Z Shell</h3></a>
+          <p>I work on multiple Unix platforms all day long.  I had never really taken the time to learn about the shells, but I had picked up the basics over time.  I knew how to run commands, string them together with pipes, and redirect their output into files.  So when I tell you that I started learning new things in the first chapter of <cite>From Bash to Z Shell</cite>, you will know the coverage is in depth.  If you are a casual shell user, or even less experienced, this book has a lot to offer you.</p>
+
+<p><cite>From Bash to Z Shell</cite> is organized into three parts.  Part one is an introduction to shell basics.  It focuses on typical interactions with a shell including all of the things I mentioned knowing before reading this book.  There is surprisingly good depth even here though and I doubt that anyone short of a power user could make it through this section without picking up a new trick or two.  I learned multiple things from each chapter in this section.</p>
+
+<p>In part two, each chapter takes a single aspect of the shells and really focuses in on just that.  You will find chapters about the startup files each shell invokes as well as shell command histories.  This is comprehensive coverage that really gets you to understand how things work as well as how to tune them to your personal tastes.  You are even less likely to not pickup great tips in here.</p><p><a href="/book-reviews/from-bash-to-z-shell/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="book-reviews/from-bash-to-z-shell">
+  In: <a href="/book-reviews/">Book Reviews</a>
+  <span>|</span>
+  Tags: <a href="/tags/Unix%20Shells/">Unix Shells</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/book-reviews/from-bash-to-z-shell#comments">6 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>4</h4>
+    <span>
+      JAN<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/my-heroes/dave-thomas-is-definitely-the-sammy-sosa-of-programming/"><h3 class="blog-title">Dave Thomas is Definitely the Sammy Sosa of Programming</h3></a>
+          <p>There is a debate raging in the Ruby community that I don't want any part of.  I'm not going to engage in any of the mud slinging and there will be no debate here.  Commenters have been warned.  What I do want to do is to share some simple uncontested facts about a man I am lucky enough to know.</p>
+
+<p>Sammy Sosa is famous for one thing:  hitting home runs.  In the entire history of the game of baseball five players have managed to hit over 600 home runs and Sammy is one of them.  If that wasn't amazing enough, he has hit at least one home run against every single Major League team and in 44 Major League ballparks.  Baseball fans everywhere love to watch Sammy Sosa at bat.</p>
+
+<p>Now if I had to name five programmers who get me as excited about programming as Sammy Sosa does about baseball, Dave Thomas would definitely make the list.  Dave does exactly what Sammy always does:  continually preforms the hardest tasks of his profession while making it look easy to the fans.  Allow me to give a few examples.</p><p><a href="/my-heroes/dave-thomas-is-definitely-the-sammy-sosa-of-programming/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="my-heroes/dave-thomas-is-definitely-the-sammy-sosa-of-programming">
+  In: <a href="/my-heroes/">My Heroes</a>
+  <span>|</span>
+  Tags: <a href="/tags/Community/">Community</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/my-heroes/dave-thomas-is-definitely-the-sammy-sosa-of-programming#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>2</h4>
+    <span>
+      JAN<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/my-projects/getting-fastercsv-ready-for-ruby-19/"><h3 class="blog-title">Getting FasterCSV Ready for Ruby 1.9</h3></a>
+          <p>The call came down from on high just before the Ruby 1.9 release:  replace the standard <code>csv.rb</code> library with <code>faster_csv.rb</code>.  With only hours to make the change it was a little harder than I expected.  The <code>FasterCSV</code> code base was pretty vanilla Ruby, but it required more work than I would have guessed to get running on Ruby 1.9.  Let me share a few of the tips I learned while doctoring the code in the hope that it will help others get their code ready for Ruby 1.9.</p>
+
+<h4>Ruby's <code>String</code> Class Grows Up</h4>
+
+<p>One of the biggest changes in Ruby 1.9 is the addition of m17n (multilingualization).  This means that Ruby's Strings are now encoding aware and we must clarify in our code if we are working with bytes, characters, or lines.</p>
+
+<p>This is a good change, but the odds are that most of us have lazily used the old way to our advantage in the past.  If you've ever written code like:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">lines</span> <span class="o">=</span> <span class="n">str</span><span class="o">.</span><span class="n">to_a</span>
+</pre></div>
+
+<p>you have bad habits to break.  I sure did.  Under Ruby 1.9 that code would translate to:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">lines</span> <span class="o">=</span> <span class="n">str</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">to_a</span>
+</pre></div><p><a href="/my-projects/getting-fastercsv-ready-for-ruby-19/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="my-projects/getting-fastercsv-ready-for-ruby-19">
+  In: <a href="/my-projects/">My Projects</a>
+  <span>|</span>
+  Tags: <a href="/tags/FasterCSV/">FasterCSV</a>, <a href="/tags/Iterators/">Iterators</a> &amp; <a href="/tags/Multilingualization/">Multilingualization</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/my-projects/getting-fastercsv-ready-for-ruby-19#comments">33 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>18</h4>
+    <span>
+      NOV<br>
+      2007
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/my-projects/ghost-wheel-example/"><h3 class="blog-title">Ghost Wheel Example</h3></a>
+          <p>There has been a fair bit of buzz around the <a href="https://github.com/nathansobo/treetop">Treetop parser</a> in the Ruby community lately.  Part of that is fueled by the nice <a href="http://www.pivotalblabs.com/files/treetop-arithmetic-example.mov">screencast</a> that shows off how to use the parser generator.</p>
+
+<p>It doesn't get talked about as much, but I wrote a parser generator too, called <a href="http://rubygems.org/gems/ghostwheel">Ghost Wheel</a>.  Probably the main reason Ghost Wheel doesn't receive much attention yet is that I have been slow in getting the documentation written.  Given that, I thought I would show how the code built in the Treetop screencast translates to Ghost Wheel:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+
+<span class="nb">require</span> <span class="s2">"rubygems"</span>
+<span class="nb">require</span> <span class="s2">"ghost_wheel"</span>
+
+<span class="c1"># define a parser using Ghost Wheel's Ruby DSL</span>
+<span class="no">RubyParser</span>    <span class="o">=</span> <span class="no">GhostWheel</span><span class="o">.</span><span class="n">build_parser</span> <span class="k">do</span>
+  <span class="n">rule</span><span class="p">(</span> <span class="ss">:additive</span><span class="p">,</span>
+        <span class="n">alt</span><span class="p">(</span> <span class="n">seq</span><span class="p">(</span> <span class="ss">:multiplicative</span><span class="p">,</span>
+                  <span class="ss">:space</span><span class="p">,</span>
+                  <span class="ss">:additive_op</span><span class="p">,</span>
+                  <span class="ss">:space</span><span class="p">,</span>
+                  <span class="ss">:additive</span> <span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">add</span><span class="o">|</span> <span class="n">add</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="n">send</span><span class="p">(</span><span class="n">add</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span><span class="p">,</span> <span class="n">add</span><span class="o">[-</span><span class="mi">1</span><span class="o">]</span><span class="p">)},</span>
+             <span class="ss">:multiplicative</span> <span class="p">)</span> <span class="p">)</span>
+  <span class="n">rule</span><span class="p">(</span><span class="ss">:additive_op</span><span class="p">,</span> <span class="n">alt</span><span class="p">(</span><span class="s2">"+"</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">))</span>
+
+  <span class="n">rule</span><span class="p">(</span> <span class="ss">:multiplicative</span><span class="p">,</span>
+        <span class="n">alt</span><span class="p">(</span> <span class="n">seq</span><span class="p">(</span> <span class="ss">:primary</span><span class="p">,</span>
+                  <span class="ss">:space</span><span class="p">,</span>
+                  <span class="ss">:multiplicative_op</span><span class="p">,</span>
+                  <span class="ss">:space</span><span class="p">,</span>
+                  <span class="ss">:multiplicative</span> <span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">mul</span><span class="o">|</span> <span class="n">mul</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="n">send</span><span class="p">(</span><span class="n">mul</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span><span class="p">,</span> <span class="n">mul</span><span class="o">[-</span><span class="mi">1</span><span class="o">]</span><span class="p">)},</span>
+             <span class="ss">:primary</span> <span class="p">)</span> <span class="p">)</span>
+  <span class="n">rule</span><span class="p">(</span><span class="ss">:multiplicative_op</span><span class="p">,</span> <span class="n">alt</span><span class="p">(</span><span class="s2">"*"</span><span class="p">,</span> <span class="s2">"/"</span><span class="p">))</span>
+
+  <span class="n">rule</span><span class="p">(</span><span class="ss">:primary</span><span class="p">,</span> <span class="n">alt</span><span class="p">(</span><span class="ss">:parenthized_additive</span><span class="p">,</span> <span class="ss">:number</span><span class="p">))</span>
+  <span class="n">rule</span><span class="p">(</span> <span class="ss">:parenthized_additive</span><span class="p">,</span>
+        <span class="n">seq</span><span class="p">(</span><span class="s2">"("</span><span class="p">,</span> <span class="ss">:space</span><span class="p">,</span> <span class="ss">:additive</span><span class="p">,</span> <span class="ss">:space</span><span class="p">,</span> <span class="s2">")"</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">par</span><span class="o">|</span> <span class="n">par</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span> <span class="p">}</span> <span class="p">)</span>
+  <span class="n">rule</span><span class="p">(</span><span class="ss">:number</span><span class="p">,</span> <span class="sr">/[1-9][0-9]*|0/</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="nb">Integer</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="p">}</span>
+
+  <span class="n">rule</span><span class="p">(</span><span class="ss">:space</span><span class="p">,</span> <span class="sr">/\s*/</span><span class="p">)</span>
+  <span class="n">parser</span><span class="p">(</span><span class="ss">:exp</span><span class="p">,</span> <span class="n">seq</span><span class="p">(</span><span class="ss">:additive</span><span class="p">,</span> <span class="n">eof</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">e</span><span class="o">|</span> <span class="n">e</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="p">})</span>
+<span class="k">end</span>
+
+<span class="c1"># define a parser using Ghost Wheel's grammar syntax</span>
+<span class="no">GrammarParser</span> <span class="o">=</span> <span class="no">GhostWheel</span><span class="o">.</span><span class="n">build_parser</span> <span class="sx">%q{</span>
+<span class="sx">  additive             =  multiplicative space additive_op space additive</span>
+<span class="sx">                          { ast[0].send(ast[2], ast[-1]) }</span>
+<span class="sx">                       |  multiplicative</span>
+<span class="sx">  additive_op          =  "+" | "-"</span>
+
+<span class="sx">  multiplicative       =  primary space multiplicative_op space multiplicative</span>
+<span class="sx">                          { ast[0].send(ast[2], ast[-1])}</span>
+<span class="sx">                       |  primary</span>
+<span class="sx">  multiplicative_op    =  "*" | "/"</span>
+
+<span class="sx">  primary              = parenthized_additive | number</span>
+<span class="sx">  parenthized_additive =  "(" space additive space ")" { ast[2] }</span>
+<span class="sx">  number               =  /[1-9][0-9]*|0/ { Integer(ast) }</span>
+
+<span class="sx">  space                =  /\s*/</span>
+<span class="sx">  exp                  := additive EOF { ast[0] }</span>
+<span class="sx">}</span>
+
+<span class="k">if</span> <span class="bp">__FILE__</span> <span class="o">==</span> <span class="vg">$PROGRAM_NAME</span>
+  <span class="nb">require</span> <span class="s2">"test/unit"</span>
+
+  <span class="k">class</span> <span class="nc">TestArithmetic</span> <span class="o">&lt;</span> <span class="no">Test</span><span class="o">::</span><span class="no">Unit</span><span class="o">::</span><span class="no">TestCase</span>
+    <span class="k">def</span> <span class="nf">test_paring_numbers</span>
+      <span class="n">assert_parses</span>         <span class="s2">"0"</span>
+      <span class="n">assert_parses</span>         <span class="s2">"1"</span>
+      <span class="n">assert_parses</span>         <span class="s2">"123"</span>
+      <span class="n">assert_does_not_parse</span> <span class="s2">"01"</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">test_parsing_multiplicative</span>
+      <span class="n">assert_parses</span> <span class="s2">"1*2"</span>
+      <span class="n">assert_parses</span> <span class="s2">"1 * 2"</span>
+      <span class="n">assert_parses</span> <span class="s2">"1/2"</span>
+      <span class="n">assert_parses</span> <span class="s2">"1 / 2"</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">test_parsing_additive</span>
+      <span class="n">assert_parses</span> <span class="s2">"1+2"</span>
+      <span class="n">assert_parses</span> <span class="s2">"1 + 2"</span>
+      <span class="n">assert_parses</span> <span class="s2">"1-2"</span>
+      <span class="n">assert_parses</span> <span class="s2">"1 - 2"</span>
+
+      <span class="n">assert_parses</span> <span class="s2">"1*2 + 3 * 4"</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">test_parsing_parenthized_expressions</span>
+      <span class="n">assert_parses</span> <span class="s2">"1 * (2 + 3) * 4"</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">test_parse_results</span>
+      <span class="n">assert_correct_result</span> <span class="s2">"0"</span>
+      <span class="n">assert_correct_result</span> <span class="s2">"1"</span>
+      <span class="n">assert_correct_result</span> <span class="s2">"123"</span>
+
+      <span class="n">assert_correct_result</span> <span class="s2">"1*2"</span>
+      <span class="n">assert_correct_result</span> <span class="s2">"1 * 2"</span>
+      <span class="n">assert_correct_result</span> <span class="s2">"1/2"</span>
+      <span class="n">assert_correct_result</span> <span class="s2">"1 / 2"</span>
+
+      <span class="n">assert_correct_result</span> <span class="s2">"1+2"</span>
+      <span class="n">assert_correct_result</span> <span class="s2">"1 + 2"</span>
+      <span class="n">assert_correct_result</span> <span class="s2">"1-2"</span>
+      <span class="n">assert_correct_result</span> <span class="s2">"1 - 2"</span>
+
+      <span class="n">assert_correct_result</span> <span class="s2">"1*2 + 3 * 4"</span>
+      <span class="n">assert_correct_result</span> <span class="s2">"1 * (2 + 3) * 4"</span>
+    <span class="k">end</span>
+
+    <span class="kp">private</span>
+
+    <span class="no">PARSERS</span> <span class="o">=</span> <span class="o">[</span><span class="no">RubyParser</span><span class="p">,</span> <span class="no">GrammarParser</span><span class="o">]</span>
+
+    <span class="k">def</span> <span class="nf">assert_parses</span><span class="p">(</span><span class="n">input</span><span class="p">)</span>
+      <span class="no">PARSERS</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">parser</span><span class="o">|</span>
+        <span class="n">assert_nothing_raised</span><span class="p">(</span><span class="no">GhostWheel</span><span class="o">::</span><span class="no">FailedParseError</span><span class="p">)</span> <span class="k">do</span>
+          <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">input</span><span class="p">)</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">assert_does_not_parse</span><span class="p">(</span><span class="n">input</span><span class="p">)</span>
+      <span class="no">PARSERS</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">parser</span><span class="o">|</span>
+        <span class="n">assert_raises</span><span class="p">(</span><span class="no">GhostWheel</span><span class="o">::</span><span class="no">FailedParseError</span><span class="p">)</span> <span class="p">{</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">input</span><span class="p">)</span> <span class="p">}</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">assert_correct_result</span><span class="p">(</span><span class="n">input</span><span class="p">)</span>
+      <span class="no">PARSERS</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">parser</span><span class="o">|</span> <span class="n">assert_equal</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">input</span><span class="p">),</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">input</span><span class="p">))</span> <span class="p">}</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div><p><a href="/my-projects/ghost-wheel-example/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="my-projects/ghost-wheel-example">
+  In: <a href="/my-projects/">My Projects</a>
+  <span>|</span>
+  Tags: <a href="/tags/Parsing/">Parsing</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/my-projects/ghost-wheel-example#comments">7 Comments</a>
+</div>
+
+      </li>
+</ul>
+
+<div class="pagination text-center"><ul><li class="previous_page"><a class="previous_page" rel="prev" href="/p9/">&#8592; Previous</a></li> <li><a rel="start" href="/">1</a></li> <li><a href="/p2/">2</a></li> <li class="disabled"><a>&hellip;</a></li> <li><a href="/p6/">6</a></li> <li><a href="/p7/">7</a></li> <li><a href="/p8/">8</a></li> <li><a rel="prev" href="/p9/">9</a></li> <li class="active"><a class="active">10</a></li> <li><a rel="next" href="/p11/">11</a></li> <li><a href="/p12/">12</a></li> <li><a href="/p13/">13</a></li> <li><a href="/p14/">14</a></li> <li class="next"><a class="next" rel="next" href="/p11/">Next &#8594;</a></li></ul></div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

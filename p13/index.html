@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="The Ruby programming blog of James Edward Gray II (JEG2).  Any content of interest to Rubyists specifically, or developers in general, is fair game.">
+    <meta name="keywords"    content="Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1>Gray Soft</h1>
+            <span>The Ruby programming blog of James Edward Gray II (JEG2).</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+            <ul class="blog-list">
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>30</h4>
+    <span>
+      JUL<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/the-standard-library/pstore-meets-yaml/"><h3 class="blog-title">PStore Meets YAML</h3></a>
+          <p>I love the <code>PStore</code> standard library.  It's a very graceful interface to get some fairly robust serialized mini-database handling in just a few lines.  With it you get:</p>
+
+<ol>
+<li> Transactions with commit and rollbacks (automatic on exception).</li>
+<li> File locking, shared and exclusive.</li>
+<li> Multiprocessing safety.</li>
+</ol><p><code>PStore</code> does even more, including some file mode checking and MD5 hashing to avoid unneeded writes, but the above are the major selling points for me.</p>
+
+<p>Now, if I had to level any one complaint at <code>PStore</code>, it would be that because it uses <code>Marshal</code> under the hood it doesn't create files you can easily browse or tweak by hand.  (<code>Marshal</code> is a feature, don't get me wrong.  It's fast, which is very helpful.)  Sometimes though I want <code>PStore</code> protection with the <code>YAML</code> file format.</p>
+
+<p>I'm embarrassed to admit that I use to use a hack for this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"pstore"</span>
+<span class="nb">require</span> <span class="s2">"yaml"</span>
+<span class="k">class</span> <span class="nc">PStore</span><span class="p">;</span> <span class="no">Marshal</span> <span class="o">=</span> <span class="no">YAML</span><span class="p">;</span> <span class="k">end</span>
+</pre></div>
+
+<p>That just redefines the <code>Marshal</code> constant in a scope that should only alter <code>PStore</code>.  The library only uses <code>dump()</code> and <code>load()</code> and those methods work the same with <code>Marshal</code> and <code>YAML</code>.</p><p><a href="/the-standard-library/pstore-meets-yaml/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="the-standard-library/pstore-meets-yaml">
+  In: <a href="/the-standard-library/">The Standard Library</a>
+  <span>|</span>
+  Tags: <a href="/tags/Hidden%20Features/">Hidden Features</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-standard-library/pstore-meets-yaml#comments">2 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>29</h4>
+    <span>
+      JUL<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/language-comparisons/yarv-looking-promising-jamess-c-is-not/"><h3 class="blog-title">YARV Looking Promising, James&#39;s C is Not</h3></a>
+          <p>I participated in the <a href="http://icfpcontest.org/">ICFP programming contest</a> last weekend with a group of friends.  We had a great time with the event and learned a ton.  I thought I should share two interesting insights with others that might appreciate them.</p>
+
+<p>First, <a href="http://www.atdot.net/yarv/">YARV</a> looks very promising for some general speed increases in Ruby.  If you are not familiar with YARV, that's the virtual machine that will run Ruby 1.9.  During the contest, we ran into some performance issues with our Ruby solution and after we had optimized all we could think of, we decided to try running our entry on the experimental YARV VM to see if it was faster there.  Good news:  it was a lot faster.</p>
+
+<p>Please do not take these numbers as anything more than very non-scientific observations, but we did notice a huge speed increase on YARV.  We were reliably waiting around 15 minutes for one section of our program to run on Ruby 1.8.4, but when we introduced YARV the same section generally ran in just under seven minutes.  You heard me right there, it was over twice as fast.  I think that's very promising news for the future of Ruby.</p><p><a href="/language-comparisons/yarv-looking-promising-jamess-c-is-not/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="language-comparisons/yarv-looking-promising-jamess-c-is-not">
+  In: <a href="/language-comparisons/">Language Comparisons</a>
+  <span>|</span>
+  Tags: <a href="/tags/Performance/">Performance</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/language-comparisons/yarv-looking-promising-jamess-c-is-not#comments">1 Comment</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>16</h4>
+    <span>
+      JUL<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/early-steps/string-has-other-methods-besides-match-and-sub/"><h3 class="blog-title">String Has Other Methods Besides =~/match() and sub()</h3></a>
+          <p>Ask anyone who knows me and they will tell you I'm a huge fan of regular expressions.  I use them all the time and my <code>FasterCSV</code> library is a regular expression powered parser.  However, even I know they are not for everything, and lately I keep running into almost comical examples of misuse.  Here are some of my favorites.</p>
+
+<p>First, we have:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">str</span> <span class="o">=~</span> <span class="sr">/=/</span>
+</pre></div>
+
+<p>That snippet is like calling for a military escort (the regular expression engine) to see you safely to the grocery store down the block.  That's fun, but probably overkill.  In this case, a call to <code>include?()</code> will do the trick:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">str</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="s2">"="</span><span class="p">)</span>
+</pre></div>
+
+<p>That may be more like riding your bike to the grocery store, but it gets the job done and is a bit faster to boot.</p>
+
+<p>Funny example number two.  I've seen this before:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">str</span> <span class="o">=~</span> <span class="sr">/\Aquit\Z/</span>
+</pre></div>
+
+<p>Again, the regular expression engine appreciates the love, but you really just want <code>==</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">str</span> <span class="o">==</span> <span class="s2">"quit"</span>
+</pre></div>
+
+<p>Even for some of the fancier stuff, you don't need a full blown regular expression.  For example, this:</p><p><a href="/early-steps/string-has-other-methods-besides-match-and-sub/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="early-steps/string-has-other-methods-besides-match-and-sub">
+  In: <a href="/early-steps/">Early Steps</a>
+  <span>|</span>
+  Tags: <a href="/tags/Hidden%20Features/">Hidden Features</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/early-steps/string-has-other-methods-besides-match-and-sub#comments">3 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>8</h4>
+    <span>
+      JUL<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/the-standard-library/the-books-are-wrong-about-logger/"><h3 class="blog-title">The Books are Wrong About Logger</h3></a>
+          <p>I've read several books that introduced the standard <code>Logger</code> library and they all agree on one thing:  you can't customize the output.  That's so last version in thinking!  Behold…</p>
+
+<p>Here's a trivial <code>Logger</code> script, showing basic functionality:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"logger"</span>
+
+<span class="k">def</span> <span class="nf">expensive_error_report</span>
+  <span class="nb">sleep</span> <span class="mi">3</span>  <span class="c1"># Heavy Computation Simulation (patent pending)</span>
+  <span class="s2">"YOU BROKE IT!"</span>
+<span class="k">end</span>
+
+<span class="n">log</span>       <span class="o">=</span> <span class="no">Logger</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">STDOUT</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="no">Logger</span><span class="o">::</span><span class="no">INFO</span>  <span class="c1"># set out output level above the DEBUG default</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"We're not in the verbose debug mode."</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"We do see informative logs though."</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">log</span><span class="o">.</span><span class="n">error?</span>  <span class="c1"># check that this will be printed, before waste time</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">expensive_error_report</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>If you run that you will see:</p>
+
+<pre><code>I, [2006-07-08T11:17:19.531943 #340]  INFO -- : We do see informative logs though.
+E, [2006-07-08T11:17:22.532424 #340] ERROR -- : YOU BROKE IT!
+</code></pre>
+
+<p>Now everyone has always known you can format the date and time display using a <code>strftime()</code> compatible pattern:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"logger"</span>
+
+<span class="k">def</span> <span class="nf">expensive_error_report</span>
+  <span class="nb">sleep</span> <span class="mi">3</span>
+  <span class="s2">"YOU BROKE IT!"</span>
+<span class="k">end</span>
+
+<span class="n">log</span>                 <span class="o">=</span> <span class="no">Logger</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">STDOUT</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">level</span>           <span class="o">=</span> <span class="no">Logger</span><span class="o">::</span><span class="no">INFO</span>
+<span class="n">log</span><span class="o">.</span><span class="n">datetime_format</span> <span class="o">=</span> <span class="s2">"%Y-%m-%d %H:%M "</span>  <span class="c1"># simplify time output</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"We're not in the verbose debug mode."</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"We do see informative logs though."</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">log</span><span class="o">.</span><span class="n">error?</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">expensive_error_report</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div><p><a href="/the-standard-library/the-books-are-wrong-about-logger/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="the-standard-library/the-books-are-wrong-about-logger">
+  In: <a href="/the-standard-library/">The Standard Library</a>
+  <span>|</span>
+  Tags: <a href="/tags/Hidden%20Features/">Hidden Features</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/the-standard-library/the-books-are-wrong-about-logger#comments">7 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>13</h4>
+    <span>
+      JUN<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/early-steps/do-i-need-these-parentheses/"><h3 class="blog-title">Do I Need (These Parentheses()?)</h3></a>
+          <p>If you came to Ruby via the <em>Learn to Program</em> book or just don't yet have a consistent set of rules for when you do and don't need parentheses in Ruby code, this post is for you.</p>
+
+<p>I have nothing against <em>Learn to Program</em>, just to be clear.  A member of my family is learning Ruby from it and it's going pretty well.  I recommend it.  However, Chris is a little inconsistent with his use of parentheses in the code samples, and worse, he doesn't really give you a good set of rules to decide when to make the choice.  No problem.  Let me give you the rules.</p>
+
+<p>I'm a chess player.  In learning chess, you really go through two phases.  First, you learn the rules of strategy.  These will make you good because the rules are designed to help you avoid common mistakes.  Now, to get great, you go through the second phase:  learning when to break the strategy rules.  Ruby is exactly the same.</p>
+
+<p>Here's the <strong>only</strong> rule of strategy you need to learn to get good:  methods need parentheses around their arguments.</p><p><a href="/early-steps/do-i-need-these-parentheses/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="early-steps/do-i-need-these-parentheses">
+  In: <a href="/early-steps/">Early Steps</a>
+  <span>|</span>
+  Tags: <a href="/tags/Style/">Style</a> &amp; <a href="/tags/Syntax/">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/early-steps/do-i-need-these-parentheses#comments">18 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      APR<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/ruby-tutorials/unit-testers-get-more-chicks/"><h3 class="blog-title">Unit Testers Get More Chicks</h3></a>
+          <p>Just recently, a developer I respect very much was caught uttering the this surprising statement:  "Unit tests just really aren't my thing."  Now, I still respect this developer very much and I can tell you that the person single-handedly created one of my very favorite pieces of software.  However, I do think the developer is dead wrong on this point.  This is my attempt to change the mind of everyone that thinks similar things about unit testing.</p>
+
+<p>My belief is that unit testing is for everyone and, in fact, I'll go so far as to say that I believe becoming a test-driven developer is the single best change a programmer can make in their day to day routine.  Here are just some of the reasons why:</p>
+
+<ul>
+<li>Though counterintuitive, I swear that it makes you code faster.  No one tends to believe me on this, but most test-driven developers come to this realization eventually.  The reason is simple:  you spend <em>much</em> less time debugging the 935 errors from your two hour code sprees.</li>
+<li>The tests are my memory.  My head is too full of all the languages, frameworks, APIs, and family birthdays I am expected to know to remember everything I've ever done on top of that.  This week at work I've touched three separate projects all with over 1,000 lines of code.  I'm sure I had good ideas when I wrote those lines, but now I doubt I can tell you what they are.  My tests can though.  They remember so I don't have to.  If I go into the code and change something I don't remember was needed or why, my tests will remind me immediately.</li>
+<li>In team development, my test powered memory even travels to the machines of the other developers!  How cool is that?  When someone goes into the code and says, "Why on Earth did James do this?  We don't need this.  I'm going to change that…" my tests will look after my interests for me.</li>
+<li>I'm a lot more confident in my software.  I use to say things like, "I just
+finished this, so it hasn't been used much yet and probably still has plenty
+of issues."  Now by the time I finish something my tests have been using the
+heck out of it.  I won't kid you and tell you that my software now springs
+fully formed from the head of my tests, but it definitely comes out farther
+along the track.</li>
+<li>Environment changes seldom surprise me anymore.  When I move my software to
+a different box and it can't cope for whatever reason, I not only know the
+first time I run the tests, I have an excellent idea of exactly where the
+problem is.</li>
+</ul><p><a href="/ruby-tutorials/unit-testers-get-more-chicks/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="ruby-tutorials/unit-testers-get-more-chicks">
+  In: <a href="/ruby-tutorials/">Ruby Tutorials</a>
+  <span>|</span>
+  Tags: <a href="/tags/Test-Driven%20Development/">Test-Driven Development</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-tutorials/unit-testers-get-more-chicks#comments">8 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>12</h4>
+    <span>
+      APR<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/tools-of-the-trade/ruby-idioms-bundle-for-textmate/"><h3 class="blog-title">Ruby Idioms Bundle for TextMate</h3></a>
+          <p><em>[<strong>Update</strong>:  An improved version of Ruby Idioms has been merged into the Ruby bundle in TextMate.  Everyone gets Ruby Idioms with TextMate now.]</em></p>
+
+<p>If you are a TextMate user (a Mac OS X text editor), we have something in common and you might be interested in the rest of this post.  If not, skip it.</p>
+
+<p>I have made my <a href="https://github.com/textmate/ruby.tmbundle">Ruby Idioms</a> bundle available for anyone who would like to download it and try it out.  This bundle contains all the Ruby shortcuts I use to program everyday.  I've spent a lot of energy over the last six months refining them down to the keystroke, so hopefully there is a lot of value hidden in there.</p>
+
+<p>If you just want to get to the goods and start playing, click the above link and run.  However, if you want some insight into my thinking with these shortcuts, read on…</p>
+
+<h4>Tab Triggers</h4>
+
+<p>I'm a Unix guy, so I'm very comfortable with two or three letter triggers and that's what you are going to find here.    Sometimes I use a one or two caracter trigger (r, w, and rw just make sense for <code>attr_reader</code>, <code>attr_writer</code>, and <code>attr_accessor</code>, for example), but three is the norm.</p><p><a href="/tools-of-the-trade/ruby-idioms-bundle-for-textmate/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="tools-of-the-trade/ruby-idioms-bundle-for-textmate">
+  In: <a href="/tools-of-the-trade/">Tools of the Trade</a>
+  <span>|</span>
+  Tags: <a href="/tags/Editors/">Editors</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/tools-of-the-trade/ruby-idioms-bundle-for-textmate#comments">7 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      MAR<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/language-comparisons/the-why-and-how-of-iterators/"><h3 class="blog-title">The Why and How of Iterators</h3></a>
+          <p>A friend of mine has been asking some general questions about iterators in private emails we have traded.  I wanted to put some of my answers here, in case they appeal to a wider audience.</p>
+
+<h4>Why do we have iterators?</h4>
+
+<p>First, let's invent a little data to play with:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="no">Name</span> <span class="o">=</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:first</span><span class="p">,</span> <span class="ss">:last</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="no">Name</span>
+<span class="o">&gt;&gt;</span> <span class="n">names</span> <span class="o">=</span> <span class="o">[</span> <span class="no">Name</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"James"</span><span class="p">,</span> <span class="s2">"Gray"</span><span class="p">),</span>
+<span class="sc">?&gt;</span>           <span class="no">Name</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"Dana"</span><span class="p">,</span> <span class="s2">"Gray"</span><span class="p">),</span>
+<span class="sc">?&gt;</span>           <span class="no">Name</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"Caleb"</span><span class="p">,</span> <span class="s2">"Nordloh"</span><span class="p">),</span>
+<span class="sc">?&gt;</span>           <span class="no">Name</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"Tina"</span><span class="p">,</span> <span class="s2">"Nordloh"</span><span class="p">)</span> <span class="o">]</span>
+<span class="o">=&gt;</span> <span class="o">[</span><span class="c1">#&lt;struct Name first="James", last="Gray"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="Dana", last="Gray"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="Caleb", last="Nordloh"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="Tina", last="Nordloh"&gt;]</span>
+</pre></div>
+
+<p>Now let's assume we want to print some names.  We can use the <code>each()</code> iterator for that, no index:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">names</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="nb">puts</span> <span class="s2">"</span><span class="si">#{</span><span class="nb">name</span><span class="o">.</span><span class="n">last</span><span class="si">}</span><span class="s2">, </span><span class="si">#{</span><span class="nb">name</span><span class="o">.</span><span class="n">first</span><span class="si">}</span><span class="s2">"</span> <span class="p">}</span>
+<span class="no">Gray</span><span class="p">,</span> <span class="no">James</span>
+<span class="no">Gray</span><span class="p">,</span> <span class="no">Dana</span>
+<span class="no">Nordloh</span><span class="p">,</span> <span class="no">Caleb</span>
+<span class="no">Nordloh</span><span class="p">,</span> <span class="no">Tina</span>
+<span class="o">=&gt;</span> <span class="o">[</span><span class="c1">#&lt;struct Name first="James", last="Gray"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="Dana", last="Gray"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="Caleb", last="Nordloh"&gt;,</span>
+    <span class="c1">#&lt;struct Name first="Tina", last="Nordloh"&gt;]</span>
+</pre></div><p><a href="/language-comparisons/the-why-and-how-of-iterators/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="language-comparisons/the-why-and-how-of-iterators">
+  In: <a href="/language-comparisons/">Language Comparisons</a>
+  <span>|</span>
+  Tags: <a href="/tags/Iterators/">Iterators</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/language-comparisons/the-why-and-how-of-iterators#comments">3 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>10</h4>
+    <span>
+      MAR<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/language-comparisons/java-a-bit-on-the-wordy-side/"><h3 class="blog-title">Java a Bit on the Wordy Side</h3></a>
+          <p>I was helping a friend of mine with a Java problem yesterday and couldn't help but notice this totally normal (for Java) file in his project:</p>
+
+<div class="highlight highlight-java"><pre><span class="kn">import</span> <span class="nn">java.io.Serializable</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">Contact</span> <span class="kd">implements</span> <span class="n">Serializable</span>
+<span class="o">{</span>
+   <span class="kd">private</span> <span class="n">String</span> <span class="n">firstName</span><span class="o">;</span>
+   <span class="kd">private</span> <span class="n">String</span> <span class="n">lastName</span><span class="o">;</span>
+   <span class="kd">private</span> <span class="n">String</span> <span class="n">email</span><span class="o">;</span>
+   <span class="kd">private</span> <span class="n">String</span> <span class="n">phone</span><span class="o">;</span>
+
+   <span class="kd">public</span> <span class="nf">Contact</span><span class="o">()</span>
+   <span class="o">{</span>
+       <span class="k">this</span><span class="o">(</span><span class="s">""</span><span class="o">,</span> <span class="s">""</span><span class="o">,</span> <span class="s">""</span><span class="o">,</span> <span class="s">""</span><span class="o">);</span> <span class="c1">// call four-argument constructor</span>
+   <span class="o">}</span> <span class="c1">// end no-argument Contact constructor</span>
+
+   <span class="c1">// initialize a record</span>
+   <span class="kd">public</span> <span class="nf">Contact</span><span class="o">(</span><span class="n">String</span> <span class="n">first</span><span class="o">,</span> <span class="n">String</span> <span class="n">last</span><span class="o">,</span> <span class="n">String</span> <span class="n">eml</span><span class="o">,</span> <span class="n">String</span> <span class="n">phn</span><span class="o">)</span>
+   <span class="o">{</span>
+       <span class="n">setFirstName</span><span class="o">(</span><span class="n">first</span><span class="o">);</span>
+       <span class="n">setLastName</span><span class="o">(</span><span class="n">last</span><span class="o">);</span>
+       <span class="n">setEmail</span><span class="o">(</span><span class="n">eml</span><span class="o">);</span>
+       <span class="n">setPhone</span><span class="o">(</span><span class="n">phn</span><span class="o">);</span>
+   <span class="o">}</span> <span class="c1">// end four-argument Contact constructor</span>
+
+   <span class="c1">// set first name</span>
+   <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setFirstName</span><span class="o">(</span><span class="n">String</span> <span class="n">first</span><span class="o">)</span>
+   <span class="o">{</span>
+      <span class="n">firstName</span> <span class="o">=</span> <span class="n">first</span><span class="o">;</span>
+   <span class="o">}</span> <span class="c1">// end method setFirstName</span>
+
+   <span class="c1">// get first name</span>
+   <span class="kd">public</span> <span class="n">String</span> <span class="nf">getFirstName</span><span class="o">()</span>
+   <span class="o">{</span>
+      <span class="k">return</span> <span class="n">firstName</span><span class="o">;</span>
+   <span class="o">}</span> <span class="c1">// end method getFirstName</span>
+
+   <span class="c1">// set last name</span>
+   <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setLastName</span><span class="o">(</span><span class="n">String</span> <span class="n">last</span><span class="o">)</span>
+   <span class="o">{</span>
+      <span class="n">lastName</span> <span class="o">=</span> <span class="n">last</span><span class="o">;</span>
+   <span class="o">}</span> <span class="c1">// end method setLastName</span>
+
+   <span class="c1">// get last name</span>
+   <span class="kd">public</span> <span class="n">String</span> <span class="nf">getLastName</span><span class="o">()</span>
+   <span class="o">{</span>
+      <span class="k">return</span> <span class="n">lastName</span><span class="o">;</span>
+   <span class="o">}</span> <span class="c1">// end method getLastName</span>
+
+   <span class="c1">// set email address</span>
+   <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setEmail</span><span class="o">(</span><span class="n">String</span> <span class="n">eml</span><span class="o">)</span>
+   <span class="o">{</span>
+      <span class="n">email</span> <span class="o">=</span> <span class="n">eml</span><span class="o">;</span>
+   <span class="o">}</span> <span class="c1">// end method setEmail</span>
+
+   <span class="c1">// get email address</span>
+   <span class="kd">public</span> <span class="n">String</span> <span class="nf">getEmail</span><span class="o">()</span>
+   <span class="o">{</span>
+      <span class="k">return</span> <span class="n">email</span><span class="o">;</span>
+   <span class="o">}</span> <span class="c1">// end method getEmail</span>
+
+   <span class="c1">// set phone number</span>
+   <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setPhone</span><span class="o">(</span><span class="n">String</span> <span class="n">phn</span><span class="o">)</span>
+   <span class="o">{</span>
+      <span class="n">phone</span> <span class="o">=</span> <span class="n">phn</span><span class="o">;</span>
+   <span class="o">}</span> <span class="c1">// end method setPhone</span>
+
+   <span class="c1">// get phone</span>
+   <span class="kd">public</span> <span class="n">String</span> <span class="nf">getPhone</span><span class="o">()</span>
+   <span class="o">{</span>
+      <span class="k">return</span> <span class="n">phone</span><span class="o">;</span>
+   <span class="o">}</span> <span class="c1">// end method getPhone</span>
+<span class="o">}</span> <span class="c1">// end class Contacts</span>
+</pre></div><p><a href="/language-comparisons/java-a-bit-on-the-wordy-side/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="language-comparisons/java-a-bit-on-the-wordy-side">
+  In: <a href="/language-comparisons/">Language Comparisons</a>
+  <span>|</span>
+  Tags: <a href="/tags/Java/">Java</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/language-comparisons/java-a-bit-on-the-wordy-side#comments">12 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>22</h4>
+    <span>
+      FEB<br>
+      2006
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/ruby-tutorials/class-level-mix-ins/"><h3 class="blog-title">Class Level Mix-ins</h3></a>
+          <p>A question that comes up pretty often in Ruby circles was posed again today, by Xavier Noria:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#</span>
+<span class="c1"># Is there standard idiom to add module methods to classes that mix them in?</span>
+<span class="c1">#</span>
+<span class="c1"># That is, I would like class C to croak:</span>
+<span class="c1">#</span>
+
+<span class="k">module</span> <span class="nn">M</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">croak</span>
+    <span class="nb">puts</span> <span class="s2">"Croak!"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">class</span> <span class="nc">C</span>
+  <span class="kp">include</span> <span class="n">M</span>
+  <span class="n">croak</span>  <span class="c1"># doesn't work</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This brings up a couple of interesting points about mix-ins.  Obviously, class methods are not easily added to things, but we generally want class methods so we can call them directly from the module.  Here's how I deal with this issue.</p>
+
+<p>First, instance methods are the way to go for anything you will be mixing in, period.  With instance methods, you can inject them into a class or object.  With anything else you have to start hacking.  That gives us our first change:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">M</span>
+  <span class="k">def</span> <span class="nf">croak</span>
+    <span class="nb">puts</span> <span class="s2">"Croak!"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Now, we really wanted a module method, so I've made things worse.  However, as I've said, we have all the choices with this setup.  Let's just mix the module into it's own class!</p><p><a href="/ruby-tutorials/class-level-mix-ins/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="ruby-tutorials/class-level-mix-ins">
+  In: <a href="/ruby-tutorials/">Ruby Tutorials</a>
+  <span>|</span>
+  Tags: <a href="/tags/Mix-ins/">Mix-ins</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/ruby-tutorials/class-level-mix-ins#comments">1 Comment</a>
+</div>
+
+      </li>
+</ul>
+
+<div class="pagination text-center"><ul><li class="previous_page"><a class="previous_page" rel="prev" href="/p12/">&#8592; Previous</a></li> <li><a rel="start" href="/">1</a></li> <li><a href="/p2/">2</a></li> <li class="disabled"><a>&hellip;</a></li> <li><a href="/p6/">6</a></li> <li><a href="/p7/">7</a></li> <li><a href="/p8/">8</a></li> <li><a href="/p9/">9</a></li> <li><a href="/p10/">10</a></li> <li><a href="/p11/">11</a></li> <li><a rel="prev" href="/p12/">12</a></li> <li class="active"><a class="active">13</a></li> <li><a rel="next" href="/p14/">14</a></li> <li class="next"><a class="next" rel="next" href="/p14/">Next &#8594;</a></li></ul></div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

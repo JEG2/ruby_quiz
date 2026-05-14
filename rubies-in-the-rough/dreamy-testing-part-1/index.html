@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / Dreamy Testing (Part 1)</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This article is the first part of an intentionally careless exploration of oft repeated code for the sake of what we can learn from it.">
+    <meta name="keywords"    content="thinking about code, software design, Test-Driven Development, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/dreamy-testing-part-1/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      NOV<br>
+      2011
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Dreamy Testing (Part 1)</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/rubies-in-the-rough/doing-it-wrong/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/rubies-in-the-rough/dreamy-testing-part-2/">&rarr; Next Post</a>
+  </div>
+</div>
+
+        <p>I want to take a swing at one last rule before I wrap up this <em>Breaking All of the Rules</em> miniseries, at least for now.  I'm not the type of guy to come out full on against many things and I won't do that here.  But there is one rule I think is on pretty shaky ground for how often I hear it thrown about.  Let's analyze it and break it.</p>
+
+<h4>Don't Reinvent the Wheel</h4>
+
+<p>It should be pretty thoroughly drilled into most programmer's minds that we don't want to waste our time reinventing wheels.  Well, let's try to find the why behind that before we accept it as law.</p>
+
+<p>First, what's the not-so-hidden assumption this time?  It's that we are wasting our time.  If we aren't, should the rule still hold?</p>
+
+<p>As always, there are good reasons that this rule exists.  Here are a couple I feel are worth honoring:</p>
+
+<ul>
+<li>When you are in the middle of a job and you figure out that you need something, it's usually a much better idea to go with an existing, ready-to-use solution.  It would take you time to rebuild it and your version isn't likely to be as robust (just due to it being newer).</li>
+<li>If there's an existing solution that is 90% of what you need, it's probably better to contribute the other 10% than to separately build a new 100% solution.  Contributing should be faster for you and help others in return.</li>
+</ul><p>Those are great arguments.  But look at how many arguments I can throw against this rule just off the top of my head:</p>
+
+<ul>
+<li>It's rare, but an existing solution may not exist</li>
+<li>Even if it does, it could suck (Perhaps just for your needs.)</li>
+<li>Or be abandoned (This generally means it's falling into a less robust state.)</li>
+<li>Contributions may not be welcome (Maybe it's not open source.)</li>
+<li>You may think you can do it better (Smaller, more efficient, etc.)</li>
+</ul><p>That last one is particularly interesting, because, in that case, I think a fork is generally preferable.  I said you <em>think</em> you can do it better, but if you are anything like me, you will be wrong more often than you are right.  It's usually when I try to replace something that I gain a real appreciation for all the things it was handling that I just didn't understand yet.  This may eventually lead me to throw my attempt away.</p>
+
+<p>Even if I do succeed, my solution is likely to be quite different.  I mean, that was the point of the exercise.  If so, both projects can coexist going forward until users figure out what they prefer.  Or perhaps both approaches will retain their charms.</p>
+
+<p>This is dancing around the real reason we rewrite code:</p>
+
+<ul>
+<li>To learn something</li>
+</ul><p>I mean, "Duh!"  Right?  Look at how we teach programming:  writing temperature converters all the way up to doing code katas or quizzes.  We're not writing this stuff because the world is low on temperature conversion tools.  It's what we are pushing into our brain that counts, not our text editor.</p>
+
+<p>Obviously, reuse can be great, but I encourage you to remain highly suspect of this rule in many scenarios.  What you learn is king.  Don't sacrifice that!</p>
+
+<h4>Here Be Dragons!</h4>
+
+<p>Let's prove it.  I want to break this rule as spectacularly as I can manage.  I'm going to purposefully choose a seemingly bad wheel to reinvent.  It's a new experiment that I've never tried.  This has <strong>fail</strong> written all over it.  The goal is to learn something and hopefully share some ideas with you as I flail about.</p>
+
+<h4>We Don't Need Another One</h4>
+
+<p>I figured the two most over invented projects in the Ruby community had to be:</p>
+
+<ul>
+<li>Command-line option parsers</li>
+<li>Testing frameworks</li>
+</ul><p>It just so happens that I've always wanted to write a testing framework!  Why?  It's that I think I can do it so much better than anyone else.  (Relax folks, that was a joke!  I have no such delusions.)  In truth, I just want to experiment with some ideas to see how they work out.</p>
+
+<p>There are two things that bug me about typical testing frameworks.  First, think about about how many references to testing there are in a minimal scenario.  Let's say I have this file in my project as <code>test/number_test.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"minitest/autorun"</span>
+
+<span class="k">class</span> <span class="nc">NumberTest</span> <span class="o">&lt;</span> <span class="no">MiniTest</span><span class="o">::</span><span class="no">Unit</span><span class="o">::</span><span class="no">TestCase</span>
+  <span class="k">def</span> <span class="nf">test_42</span>
+    <span class="n">assert_equal</span><span class="p">(</span><span class="mi">42</span><span class="p">,</span> <span class="mi">40</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>How many testing concepts are here?  Well, we usually stick these files in a <code>test/</code> or <code>spec/</code> directory.  One.  Even though they are there, we generally tack <code>_test</code> or <code>_spec</code> onto the ends of their names.  That's two before we wrote any code!  Then we require a testing framework—three—inherit from a test case—four—write methods with the magic <code>test_</code> prefix (feel free to <code>describe()</code> how specs are superior in this <code>context()</code> and I'll buy <code>it()</code>)—five.  Wow, that's a lot of code that's not about what I am doing here!  This is starting to feel like Java's <code>main()</code> definition when I just want to print <code>"Hello World!"</code>.</p>
+
+<p>In fact, a desire for simpler testing affects me on many levels.  The second thing I would like to focus on is how assertions work.  I used test/unit for a long time, so I have <code>assert()</code>, <code>assert_equal()</code>, <code>assert_match()</code>, <code>assert_nil()</code>, <code>assert_raise()</code> (Oops, I had to glance at the docs just now to see if that needed an <code>s</code> on it.), and the surprisingly useful <code>assert_in_delta()</code> burned into my brain.  I know a few others, all the way down to the horrible interface that is <code>assert_operator()</code>.  (Don't go there!  Just use <code>assert()</code>.)  I know I can stick <code>not_</code> in the middle of most of those to negate the check, though it's <code>no_</code> for <code>assert_match()</code> and <code>assert_raise()</code> goes all the way to <code>assert_nothing_raised()</code> (Crap, another peek at the documentation!).  MiniTest improves this a bit, by replacing <code>assert_</code> with <code>refute_</code>.  But, without looking, do I give the expected value and then the actual or the actual and then the expected?</p>
+
+<p>Let's face it, that's an interface train wreck.</p>
+
+<p>Is RSpec better here?  Probably a little, but I don't like the look of:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">some_method</span><span class="o">.</span><span class="n">should</span> <span class="o">==</span> <span class="mi">42</span>
+</pre></div>
+
+<p>Ruby doesn't like it either, if you have warnings turned on, and you really should.  (RSpec 2 adds <code>eq()</code> for this reason.)</p>
+
+<p>Also, I hate having to explain to my students that this method they just wrote:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">MyObject</span>
+  <span class="k">def</span> <span class="nf">handled?</span>
+    <span class="c1"># return true or false here</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Is tested with:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">my_object</span><span class="o">.</span><span class="n">should</span> <span class="n">be_handled</span>
+</pre></div>
+
+<p>I actually had a student ask me, "Why can't I just call the method I wrote?"  Excellent question.  I would like to know that too.</p>
+
+<p>So, those are the issues that rob me of sleep at night.  Let's see how hard it would be to fix some of them.  We may even learn that there are good reasons to keep some of them.</p>
+
+<h4>Starting a Ruby Library</h4>
+
+<p>My process for beginning a new Ruby library is always the same.  Throw down some needed directories, add a <code>README</code> file explaining what I'm doing (I think <a href="http://tom.preston-werner.com/2010/08/23/readme-driven-development.html">Readme Driven Development</a> is a great idea), and start developing.  The first two steps go like this:</p>
+
+<pre><code>$ mkdir -p ok/{bin,lib,test}
+$ cd ok
+$ ruby -e 'puts "# OK\n\nJEG2''s ideal testing framework."' &gt; README.md
+$ ls
+README.md bin       lib       test
+</code></pre>
+
+<p>Yes, that's a pitiful attempt at a <code>README</code>, but that's not our focus here.  The reasoning written above might have made a great start to the <code>README</code>, realistically.</p>
+
+<p>Note that I wrote the <code>README</code> in <a href="http://daringfireball.net/projects/markdown/">Markdown</a>.  I use Markdown for everything, including these articles you are reading.  It's human readable, it's trivial to convert into HTML for simple formatting, and GitHub understands it.  I encourage everyone to learn Markdown.  It's so worth it.</p>
+
+<h4>My Friend, Spike</h4>
+
+<p>I realize I made a <code>test/</code> directory in the setup.  Ordinarily I would start test driving some code at this point and I promise to do plenty of articles on that in the future.</p>
+
+<p>However, this code is a quick <strong>spike</strong>.  Episode 38 of <a href="https://www.destroyallsoftware.com/">Destroy All Software</a> had a great definition for that:  a small, disposable experiment.  This is used to determine what some code should do and how it should do it.</p>
+
+<p>I may end up tossing this code at the end and chalking it up to the lessons learned in the attempt.  If I don't, then it will be time to go back and ensure that I flesh things out.</p>
+
+<p>Given that, let's pass on the tests this time and just try to get something working.</p>
+
+<h4>When I Say Minimal, I Mean It</h4>
+
+<p>You may have noticed that I named the project OK, for now.  That's just a working title because I don't want to get too hung up on finding the perfect name.  But I did have something in mind when I chose it.</p>
+
+<p>Perl has a <a href="http://perldoc.perl.org/Test/Simple.html">Test::Simple</a> library that I sometimes miss from my time in that world.  After you load it, you can start calling an <code>ok()</code> function and passing it tests.  I like the feel of that.</p>
+
+<p>In the Ruby would, the testing framework that has changed the way I think the most is <a href="https://github.com/thumblemonks/riot">Riot</a>.  It's closer to a more full featured testing framework, but assertions are just blocks that return a boolean value, a lot like Perl's <code>ok()</code>.</p>
+
+<p>You know how we're always saying that a test should probably just have one assertion in it?  Well, this approach forces that line of thought.  It also mean your tests are just Ruby, plus a call to <code>ok()</code>.</p>
+
+<p>That's what I had in mind when I named the project and that's where I want to begin.</p>
+
+<p>I finally started typing a little code and ended up with this in <code>lib/ok.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">ok</span><span class="p">(</span><span class="o">&amp;</span><span class="nb">test</span><span class="p">)</span>
+  <span class="k">if</span> <span class="nb">test</span><span class="o">.</span><span class="n">call</span>
+    <span class="nb">puts</span> <span class="s2">"Success."</span>
+  <span class="k">else</span>
+    <span class="nb">puts</span> <span class="s2">"Failed."</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That's the minimal test I had in mind.  Obviously, it's missing almost every nicety we can think of, but it's a starting point and we can iterate from here.</p>
+
+<p>I wanted to check my work, without writing tests, so I added an <code>example/</code> directory and stuck this code in a <code>basic_test.rb</code> inside of there:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">ok</span> <span class="p">{</span> <span class="kp">true</span>  <span class="p">}</span>
+<span class="n">ok</span> <span class="p">{</span> <span class="kp">false</span> <span class="p">}</span>
+</pre></div>
+
+<p>Then I checked my work:</p>
+
+<pre><code>$ ruby -I lib -r ok example/basic_test.rb 
+Success.
+Failed.
+</code></pre>
+
+<p>We're off and running.</p>
+
+<p>If you aren't familiar with the command-line options I used above, <code>-I</code> <b>i</b>ncludes directories in Ruby's <code>$LOAD_PATH</code> (or <code>$:</code>) and <code>-r</code> <b>r</b>equires a file from that path.  I'm using these to inject my library code because I don't want to worry about how I should be running tests yet.</p>
+
+<p>Now, don't underestimate what we have already achieved here.  Check out this test that I added as <code>example/compound_test.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">ok</span> <span class="p">{</span> <span class="mi">42</span> <span class="o">==</span> <span class="mi">40</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">&amp;&amp;</span> <span class="mi">42</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="nb">Integer</span><span class="p">)</span> <span class="p">}</span>
+</pre></div>
+
+<p>I didn't need <code>assert_instance_of()</code> or any other tricks for that.  I'm just writing Ruby here.  The same knowledge is useful to my code and tests and I love that.</p>
+
+<p>Also, I've already copied RSpec's <code>before(:all)</code> feature (<code>setup()</code> in Riot).  Did you see it sneak in there?  No?  Let me show you.  Here's my <code>example/setup_test.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">setup</span> <span class="o">=</span> <span class="mi">42</span>  <span class="c1"># or whatever</span>
+
+<span class="n">ok</span> <span class="p">{</span> <span class="n">setup</span> <span class="o">==</span> <span class="mi">40</span> <span class="o">+</span> <span class="mi">2</span>      <span class="p">}</span>
+<span class="n">ok</span> <span class="p">{</span> <span class="n">setup</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="nb">Integer</span><span class="p">)</span> <span class="p">}</span>
+</pre></div>
+
+<p>I'm not joking here.  It's almost silly that RSpec has <code>before(:all)</code>.  Ruby's blocks are closures, so we can do some work earlier in the file and use it later.  (Yes, I know RSpec's <code>before(:all)</code> is scoped to a set of examples, but mine can <em>almost</em> be the same if you consider a file a set of examples.  The goal is to bend our thinking in some new directions here.)</p>
+
+<p>Of course, I do miss <code>before(:each)</code> and <code>let()</code>.  But first, we should probably tackle better output for these tests.</p>
+
+<h5>Building a Printer</h5>
+
+<p>The message <code>"Failed."</code> is not too helpful.  What failed?  Where do I go to fix it?  This is information we need to have.</p>
+
+<p>It would also be nice to see counts of what passed and failed.</p>
+
+<p>It's sounding like this printer needs to track some state to do it's job right, so I think I'm ready to build a real object.  I opened up <code>lib/ok/printer.rb</code> and entered some code.  I also made two subclasses to cover the familiar cases:  <code>lib/ok/printer/dot_printer.rb</code> and <code>lib/ok/printer/spec_printer.rb</code>.  I bounced back and forth between those files, fleshing things out, until I had something I liked.  I'll walk you through the code now.  It's a lot, so we'll take it in pieces, but nothing in here is very complex.  Let's start with the base <code>Printer</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">class</span> <span class="nc">Printer</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">io</span> <span class="o">=</span> <span class="vg">$stdout</span><span class="p">)</span>
+      <span class="vi">@io</span>      <span class="o">=</span> <span class="n">io</span>
+      <span class="vi">@color</span>   <span class="o">=</span> <span class="o">!</span><span class="no">ENV</span><span class="o">[</span><span class="s2">"RUBY_OK_NO_COLOR"</span><span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="vi">@io</span><span class="o">.</span><span class="n">tty?</span>
+      <span class="vi">@passed</span>  <span class="o">=</span> <span class="mi">0</span>
+      <span class="vi">@failed</span>  <span class="o">=</span> <span class="mi">0</span>
+      <span class="vi">@errors</span>  <span class="o">=</span> <span class="mi">0</span>
+      <span class="vi">@started</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+      <span class="vi">@term</span>    <span class="o">=</span> <span class="ss">:test</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The constructor should be pretty straight forward.  I take in an optional <code>IO</code> object to print to, defaulting to the standard output.  This will make testing easier when I get there, since I can just pass a more convenient <code>IO</code> substitute.  Also note my that my <a href="http://blog.segment7.net/2006/08/17/stdout-vs-stdout">use of <code>$stdout</code> is preferable to <code>STDOUT</code></a>.  The <code>@color</code> variable just tracks whether or not it's OK to colorize our output.  We default to doing that if we are run interactively (from a TTY) and the choice wasn't overridden in the environment.  The rest of the constructor just initializes some counts, a start time, and configurable name.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">class</span> <span class="nc">Printer</span>
+    <span class="no">RED_COLOR</span>    <span class="o">=</span> <span class="s2">"</span><span class="se">\e</span><span class="s2">[31m"</span>
+    <span class="no">GREEN_COLOR</span>  <span class="o">=</span> <span class="s2">"</span><span class="se">\e</span><span class="s2">[32m"</span>
+    <span class="no">YELLOW_COLOR</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\e</span><span class="s2">[33m"</span>
+    <span class="no">CLEAR_COLOR</span>  <span class="o">=</span> <span class="s2">"</span><span class="se">\e</span><span class="s2">[0m"</span>
+
+    <span class="kp">attr_writer</span> <span class="ss">:color</span>
+
+    <span class="k">def</span> <span class="nf">color?</span>
+      <span class="vi">@color</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">colorize</span><span class="p">(</span><span class="nb">name</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+      <span class="k">return</span> <span class="n">content</span> <span class="k">unless</span> <span class="n">color?</span>
+      <span class="o">[</span> <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">const_get</span><span class="p">(</span><span class="s2">"</span><span class="si">#{</span><span class="nb">name</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">upcase</span><span class="si">}</span><span class="s2">_COLOR"</span><span class="p">),</span>
+        <span class="n">content</span><span class="p">,</span>
+        <span class="no">CLEAR_COLOR</span> <span class="o">].</span><span class="n">join</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>These methods allow you to enable or disable color programmatically and use the color constants that I stole from <a href="https://github.com/JEG2/highline">HighLine</a> to conveniently wrap some content in ANSI color escapes, when color is active.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">class</span> <span class="nc">Printer</span>
+    <span class="kp">attr_reader</span> <span class="ss">:passed</span><span class="p">,</span> <span class="ss">:failed</span><span class="p">,</span> <span class="ss">:errors</span>
+
+    <span class="k">def</span> <span class="nf">tests</span>
+      <span class="vi">@passed</span> <span class="o">+</span> <span class="vi">@failed</span> <span class="o">+</span> <span class="vi">@errors</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">count_passed</span><span class="p">;</span> <span class="vi">@passed</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">end</span>
+    <span class="k">def</span> <span class="nf">count_failed</span><span class="p">;</span> <span class="vi">@failed</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">end</span>
+    <span class="k">def</span> <span class="nf">count_error</span><span class="p">;</span>  <span class="vi">@errors</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">all_passed?</span>
+      <span class="vi">@failed</span> <span class="o">+</span> <span class="vi">@errors</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">record</span><span class="p">(</span><span class="nb">test</span><span class="p">)</span>
+      <span class="k">if</span> <span class="nb">test</span><span class="o">.</span><span class="n">passed?</span>
+        <span class="n">count_passed</span>
+        <span class="o">[</span><span class="ss">:green</span><span class="p">,</span> <span class="nb">test</span><span class="o">.</span><span class="n">description</span><span class="o">]</span>
+      <span class="k">else</span>
+        <span class="k">if</span> <span class="nb">test</span><span class="o">.</span><span class="n">failed?</span>
+          <span class="n">count_failed</span>
+        <span class="k">else</span>
+          <span class="n">count_error</span>
+        <span class="k">end</span>
+        <span class="o">[</span><span class="ss">:red</span><span class="p">,</span> <span class="nb">test</span><span class="o">.</span><span class="n">description</span><span class="o">]</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The reader methods and <code>tests()</code> give access to some counters and the <code>count_*()</code> methods give us a way to bump them.  I also added an <code>all_passed?()</code> utility for seeing if the entire run is green.  These methods probably indicate a need for a <code>Statistics</code> or at least a <code>TestSuite</code> object, but doing it in the <code>Printer</code> is good enough for this experiment.</p>
+
+<p>The big story in this section though is the <code>record()</code> method.  This method adds the passed <code>test</code> to our tracking.  It bumps the correct count based on the results of the test and then returns details for printing (a color and description).</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">class</span> <span class="nc">Printer</span>
+    <span class="k">def</span> <span class="nf">pluralize</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">singular</span><span class="p">)</span>
+      <span class="s2">"</span><span class="si">#{</span><span class="n">number</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">singular</span><span class="si">}#{</span><span class="s1">'s'</span> <span class="k">unless</span> <span class="n">number</span> <span class="o">==</span> <span class="mi">1</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_accessor</span> <span class="ss">:term</span>
+
+    <span class="k">def</span> <span class="nf">plural_term</span>
+      <span class="n">pluralize</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="vi">@term</span><span class="p">)</span><span class="o">[</span><span class="mi">2</span><span class="o">.</span><span class="n">.</span><span class="o">-</span><span class="mi">1</span><span class="o">]</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">elapsed</span>
+      <span class="no">Time</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="vi">@started</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Before we get to the good stuff, here are a few more utility methods.  My version of <code>pluralize()</code> isn't as fancy as the one in ActiveSupport, but it is <a href="/ruby-voodoo/interpolation-and-statements/">a clever use of Ruby features that I have explained before</a>.  I just added <code>term()</code> and <code>plural_term()</code> so I could please the "tests" and "specs" crowd.  Finally, <code>elapsed()</code> tells us how long this <code>Printer</code> has been running.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">class</span> <span class="nc">Printer</span>
+    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="vi">@io</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="k">end</span>
+    <span class="k">def</span> <span class="nf">puts</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>  <span class="vi">@io</span><span class="o">.</span><span class="n">puts</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>  <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">print_running</span>
+      <span class="c1"># do nothing:  optional</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">print_test</span><span class="p">(</span><span class="nb">test</span><span class="p">)</span>
+      <span class="nb">fail</span> <span class="no">NotImplementedError</span><span class="p">,</span>
+           <span class="s2">"Printer subclasses must provide print_test(test)"</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">print_summary</span>
+      <span class="nb">puts</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>                                           <span class="o">+</span> <span class="c1"># blank line</span>
+           <span class="s2">"Finished </span><span class="si">#{</span><span class="n">plural_term</span><span class="si">}</span><span class="s2"> in %.6fs</span><span class="se">\n</span><span class="s2">"</span> <span class="o">%</span> <span class="n">elapsed</span> <span class="o">+</span>
+           <span class="n">colorize</span><span class="p">(</span> <span class="n">all_passed?</span> <span class="p">?</span> <span class="ss">:green</span> <span class="p">:</span> <span class="ss">:red</span><span class="p">,</span>
+                     <span class="p">{</span> <span class="n">term</span>     <span class="o">=&gt;</span> <span class="n">tests</span><span class="p">,</span>
+                       <span class="ss">:failure</span> <span class="o">=&gt;</span> <span class="n">failed</span><span class="p">,</span>
+                       <span class="ss">:error</span>   <span class="o">=&gt;</span> <span class="n">errors</span> <span class="p">}</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="p">,</span> <span class="n">count</span><span class="o">|</span>
+                       <span class="n">pluralize</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="nb">name</span><span class="p">)</span>
+                     <span class="p">}</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">", "</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>These methods are the heart of the <code>Printer</code>.  My wrappers over <code>print()</code> and <code>puts()</code> just redirect output operations from this object to the stored <code>@io</code> instance.  I'll arrange for <code>print_running()</code> to be called as testing starts, but I don't think it needs to be required.  That's why I defined an empty version of it.  By the way, I do feel explaining why you chose to do nothing is a legitimate use for comments, which I am pretty sparing with.  Defining <code>print_test()</code> to <code>fail()</code> with an <code>Exception</code> isn't a common Ruby practice, but it helped me envision what I wanted my subclasses to look like, before I was ready to write them.  I like programming from high levels and working my way down like this.  That method will be called as each test is run, to output the results.  The third printing method, <code>print_summary()</code>, ends the output with a common summary format.</p>
+
+<h5>Having it Both Ways</h5>
+
+<p>We are ready for those subclasses now and they are pretty simple.  Let's build two common strategies.  Here's the code I stuck in <code>lib/ok/printer/dot_printer.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">class</span> <span class="nc">Printer</span>
+    <span class="k">class</span> <span class="nc">DotPrinter</span> <span class="o">&lt;</span> <span class="no">Printer</span>
+      <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">super</span>
+        <span class="vi">@issues</span> <span class="o">=</span> <span class="o">[</span> <span class="o">]</span>
+      <span class="k">end</span>
+
+      <span class="kp">attr_reader</span> <span class="ss">:issues</span>
+
+      <span class="k">def</span> <span class="nf">print_running</span>
+        <span class="nb">puts</span> <span class="s2">"Running </span><span class="si">#{</span><span class="n">plural_term</span><span class="si">}</span><span class="s2">:"</span>
+      <span class="k">end</span>
+
+      <span class="k">def</span> <span class="nf">print_test</span><span class="p">(</span><span class="nb">test</span><span class="p">)</span>
+        <span class="n">issues</span> <span class="o">&lt;&lt;</span> <span class="nb">test</span> <span class="k">unless</span> <span class="nb">test</span><span class="o">.</span><span class="n">passed?</span>
+        <span class="n">color</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="n">record</span><span class="p">(</span><span class="nb">test</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">colorize</span><span class="p">(</span><span class="n">color</span><span class="p">,</span> <span class="n">result</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="n">tr</span><span class="p">(</span><span class="s2">"S"</span><span class="p">,</span> <span class="s2">"."</span><span class="p">)))</span>
+      <span class="k">end</span>
+
+      <span class="k">def</span> <span class="nf">print_summary</span>
+        <span class="nb">puts</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span> <span class="o">+</span>  <span class="c1"># end dot line</span>
+             <span class="n">issues</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">with_index</span> <span class="p">{</span> <span class="o">|</span><span class="n">issue</span><span class="p">,</span> <span class="n">i</span><span class="o">|</span>
+               <span class="s2">"</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2">) </span><span class="si">#{</span><span class="n">issue</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">issue</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span>
+               <span class="n">issue</span><span class="o">.</span><span class="n">backtrace</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+             <span class="p">}</span><span class="o">.</span><span class="n">join</span>
+        <span class="k">super</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That should be pretty close to the traditional test/unit or MiniTest style output.  The <code>print_test()</code> method prints the <code>.</code> (Success), <code>F</code>(ailure), and <code>E</code>(rror) notifiers as things run.  It also remembers any tests that don't pass.  Those can then be summarized in <code>print_summary()</code>, before we hand-off to the overridden version of the method to add the traditional summary.</p>
+
+<p>Let's add a <code>lib/ok/printer/spec_printer.rb</code> for those who prefer an RSpec-like output:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">class</span> <span class="nc">Printer</span>
+    <span class="k">class</span> <span class="nc">SpecPrinter</span> <span class="o">&lt;</span> <span class="no">Printer</span>
+      <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">super</span>
+        <span class="nb">self</span><span class="o">.</span><span class="n">term</span> <span class="o">=</span> <span class="ss">:spec</span>
+        <span class="vi">@file</span>     <span class="o">=</span> <span class="kp">nil</span>
+      <span class="k">end</span>
+
+      <span class="k">def</span> <span class="nf">print_file</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="vi">@file</span><span class="o">.</span><span class="n">nil?</span> <span class="ow">or</span> <span class="vi">@file</span> <span class="o">!=</span> <span class="n">file</span>
+          <span class="vi">@file</span> <span class="o">=</span> <span class="n">file</span>
+          <span class="nb">puts</span> <span class="vi">@file</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+
+      <span class="k">def</span> <span class="nf">print_test</span><span class="p">(</span><span class="nb">test</span><span class="p">)</span>
+        <span class="n">print_file</span><span class="p">(</span><span class="nb">test</span><span class="o">.</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">color</span><span class="p">,</span> <span class="n">modifier</span> <span class="o">=</span> <span class="n">record</span><span class="p">(</span><span class="nb">test</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">modifier</span> <span class="o">==</span> <span class="s2">"Success"</span>
+          <span class="n">modifier</span> <span class="o">=</span> <span class="s2">""</span>
+        <span class="k">else</span>
+          <span class="n">modifier</span> <span class="o">&lt;&lt;</span> <span class="s2">": "</span>
+        <span class="k">end</span>
+        <span class="nb">puts</span> <span class="s2">"  </span><span class="si">#{</span><span class="n">colorize</span><span class="p">(</span><span class="n">color</span><span class="p">,</span> <span class="s2">"</span><span class="si">#{</span><span class="n">modifier</span><span class="si">}#{</span><span class="nb">test</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+        <span class="nb">puts</span> <span class="nb">test</span><span class="o">.</span><span class="n">backtrace</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="k">unless</span> <span class="nb">test</span><span class="o">.</span><span class="n">passed?</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>There's no real magic here.  I swap out the <code>term()</code>, invoke <code>print_file()</code> each time our context changes, and build up an indented spec format using test names in the rest of <code>print_test()</code>.  My tests were just blocks of code before and didn't have names, but these printers have made it clear that I need to make that change, so I can refer to them for the user.</p>
+
+<h5>If Wishes Were Classes</h5>
+
+<p>Of course, I was just pretending I had some mythical <code>Test</code> object while I wrote those printers.  I recently heard that called, "Programming by Wishful Thinking."  I love that description, because it explains exactly why you should do it.  When you are the middle of naturally writing code, don't stop to resolve some dependency.  Just keep programming as if you had it and it does exactly what you need.  You can make that true after the fact.  For me, that's now, so I added this code in <code>lib/ok/test.rb</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">OK</span>
+  <span class="k">class</span> <span class="nc">Test</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="nb">name</span><span class="p">,</span> <span class="nb">test</span><span class="p">)</span>
+      <span class="vi">@name</span>   <span class="o">=</span> <span class="nb">name</span>
+      <span class="vi">@test</span>   <span class="o">=</span> <span class="nb">test</span>
+      <span class="vi">@result</span> <span class="o">=</span> <span class="o">!!</span><span class="nb">test</span><span class="o">.</span><span class="n">call</span> <span class="k">rescue</span> <span class="vg">$!</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:name</span>
+
+    <span class="k">def</span> <span class="nf">passed?</span>
+      <span class="o">!</span><span class="p">(</span><span class="n">failed?</span> <span class="o">||</span> <span class="n">error?</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">failed?</span>
+      <span class="vi">@result</span> <span class="o">==</span> <span class="kp">false</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">error?</span>
+      <span class="vi">@result</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">Exception</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">description</span>
+      <span class="k">if</span>    <span class="n">passed?</span> <span class="k">then</span> <span class="s2">"Success"</span>
+      <span class="k">elsif</span> <span class="n">failed?</span> <span class="k">then</span> <span class="s2">"Failed"</span>
+      <span class="k">else</span>               <span class="s2">"Error"</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">file</span>
+      <span class="vi">@test</span><span class="o">.</span><span class="n">source_location</span><span class="o">.</span><span class="n">first</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">backtrace</span><span class="p">(</span><span class="n">indent</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+      <span class="n">backtrace</span> <span class="o">=</span> <span class="k">if</span>    <span class="n">failed?</span> <span class="k">then</span> <span class="vi">@test</span><span class="o">.</span><span class="n">binding</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">"caller(0)"</span><span class="p">)</span><span class="o">.</span><span class="n">reverse</span>
+                  <span class="k">elsif</span> <span class="n">error?</span>  <span class="k">then</span> <span class="vi">@result</span><span class="o">.</span><span class="n">backtrace</span>
+                  <span class="k">else</span>               <span class="o">[</span> <span class="o">]</span>
+                  <span class="k">end</span>
+      <span class="n">backtrace</span><span class="o">.</span><span class="n">reject</span> <span class="p">{</span> <span class="o">|</span><span class="n">line</span><span class="o">|</span> <span class="n">line</span> <span class="o">=~</span> <span class="sr">%r{\blib/ok\b}</span>     <span class="p">}</span>  <span class="c1"># scrub clean</span>
+               <span class="o">.</span><span class="n">map</span>    <span class="p">{</span> <span class="o">|</span><span class="n">line</span><span class="o">|</span> <span class="s2">"</span><span class="si">#{</span><span class="s1">' '</span> <span class="o">*</span> <span class="n">indent</span><span class="si">}#{</span><span class="n">line</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span> <span class="p">}</span>
+               <span class="o">.</span><span class="n">join</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Perfect.  My wishing came true!</p>
+
+<p>Probably the strangest line of code in this whole class is when I set <code>@result</code> in the constructor.  I realize the <code>!!</code> construct isn't too sexy, but that's how we can ensure a literal <code>true</code> or <code>false</code> result in Ruby.  But there's a third option:  <code>rescue $!</code> will catch and store the <code>Exception</code> object in the case of an error being trigger by the test code.  (I learned this and other awesome error handling tricks from <a href="http://exceptionalruby.com/">Exceptional Ruby</a>.)</p>
+
+<p>The majority of the rest of this code is pretty mundane.  It's mostly methods for querying status.  Similarly, <code>description()</code> returns the status in word form.  The final two methods track source file context with <code>file()</code> being a thin wrapper over Ruby's new <code>source_location()</code> and <code>backtrace()</code> returning an indented call stack for the test, scrubbed of references to our library.</p>
+
+<h5>Viewing Our Work</h5>
+
+<p>Alright, let's crudely touch up <code>lib/ok.rb</code> to handle these additions:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">require_relative</span> <span class="s2">"ok/printer"</span>
+<span class="n">require_relative</span> <span class="s2">"ok/printer/dot_printer"</span>
+<span class="n">require_relative</span> <span class="s2">"ok/printer/spec_printer"</span>
+<span class="n">require_relative</span> <span class="s2">"ok/test"</span>
+
+<span class="vg">$printer</span> <span class="o">=</span> <span class="no">OK</span><span class="o">::</span><span class="no">Printer</span><span class="o">::</span><span class="no">DotPrinter</span><span class="o">.</span><span class="n">new</span>
+<span class="vg">$printer</span><span class="o">.</span><span class="n">print_running</span>
+<span class="nb">at_exit</span> <span class="p">{</span> <span class="vg">$printer</span><span class="o">.</span><span class="n">print_summary</span> <span class="p">}</span>
+
+<span class="k">def</span> <span class="nf">ok</span><span class="p">(</span><span class="nb">name</span><span class="p">,</span> <span class="o">&amp;</span><span class="nb">test</span><span class="p">)</span>
+  <span class="vg">$printer</span><span class="o">.</span><span class="n">print_test</span><span class="p">(</span><span class="no">OK</span><span class="o">::</span><span class="no">Test</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">name</span><span class="p">,</span> <span class="nb">test</span><span class="p">))</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>You can see the requiring of the new pieces here.  Note the use of <code>require_relative()</code> to do this, since Ruby 1.9 no longer has the current directory in the load path.</p>
+
+<p>The middle chunk of code just throws a <code>Printer</code> in a global variable and sets up the print cycle.  We can call <code>print_running()</code> to start things off and arrange for the <code>print_summary()</code> method to be called <code>at_exit()</code>.  </p>
+
+<p>I also updated <code>ok()</code> to use the <code>Printer</code> and <code>Test</code> objects.</p>
+
+<p>To see the results of this work, I added names to my examples.  Here's the updated version of my basic tests:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">ok</span><span class="p">(</span><span class="s2">"Is true"</span><span class="p">)</span>  <span class="p">{</span> <span class="kp">true</span>        <span class="p">}</span>
+<span class="n">ok</span><span class="p">(</span><span class="s2">"Is false"</span><span class="p">)</span> <span class="p">{</span> <span class="kp">false</span>       <span class="p">}</span>
+<span class="n">ok</span><span class="p">(</span><span class="s2">"Is error"</span><span class="p">)</span> <span class="p">{</span> <span class="nb">fail</span> <span class="s2">"Oops"</span> <span class="p">}</span>
+</pre></div>
+
+<p>Then it was time to run them again:</p>
+
+<pre><code>$ ruby -I lib -r ok example/basic_test.rb 
+Running tests:
+.FE
+
+0) Failure: Is false
+  example/basic_test.rb:2:in `&lt;main&gt;'
+1) Error: Is error
+  example/basic_test.rb:3:in `block in &lt;main&gt;'
+  example/basic_test.rb:3:in `&lt;main&gt;'
+
+Finished tests in 0.000300s
+3 tests, 1 failure, 1 error
+</code></pre>
+
+<p>I can also swap the code to use the <code>SpecPrinter</code> and see how that looks:</p>
+
+<pre><code>$ ruby -I lib -r ok example/basic_test.rb 
+example/basic_test.rb
+  Is true
+  Failed: Is false
+    example/basic_test.rb:2:in `&lt;main&gt;'
+    example/basic_test.rb:2:in `&lt;main&gt;'
+  Error: Is error
+    example/basic_test.rb:3:in `block in &lt;main&gt;'
+    example/basic_test.rb:3:in `&lt;main&gt;'
+
+Finished specs in 0.000298s
+3 specs, 1 failure, 1 error
+</code></pre>
+
+<h4>We're Not Done</h4>
+
+<p>Obviously, this isn't done yet.  My solution still isn't ideal for multiple reasons:</p>
+
+<ul>
+<li>I haven't really addressed how to run tests</li>
+<li>The problem of test references remains to some extent</li>
+<li>There is the need for a global variable</li>
+<li>Using <code>at_exit()</code> is clunky</li>
+<li>I still need to manually switch printers</li>
+<li>It would be nice to get some helpers like <code>before(:each)</code> and <code>let()</code>
+</li>
+</ul><p>It may surprise you, but I believe all of those things are the same issue in disguise.  I'm going to try tackling all of them in the next article, so stay tuned…</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/rubies-in-the-rough/doing-it-wrong/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      <a href="/rubies-in-the-rough/dreamy-testing-part-2/">&rarr; Next Post</a>
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/dreamy-testing-part-1">
+  In: <a href="/rubies-in-the-rough/">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Test-Driven%20Development/">Test-Driven Development</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/dreamy-testing-part-1#comments">0 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (0)</span></h5>
+
+    <ol>
+      
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

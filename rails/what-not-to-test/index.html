@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rails / What Not to Test</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Even test junkies like me have some things we don&#39;t test.  Let me tell you about one that might just surprise you.">
+    <meta name="keywords"    content="Ruby on Rails, web applications, Test-Driven Development, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rails/what-not-to-test/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rails">Rails</a></h1>
+            <span>Stories from the trenches of my day job building Web applications.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>15</h4>
+    <span>
+      JAN<br>
+      2006
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">What Not to Test</h3>
+        
+        <p>I've now seen multiple claims amounting to something like, "I built this Rails application with just testing."  I think it's great that people can do that.  They are obviously smarter than me.  I need a browser to build a Web application.</p>
+
+<p>I do test my Rails projects, of course.  I'm a huge fan of testing and I'm always telling people how much it could help with their work.  However, I believe there's a time to test and a time not to, if you can imagine that.  Yes, you heard me right, there are things I <em>don't</em> test and I'm sure this next revelation will shock you even more:</p>
+
+<p><strong>I don't test Rails views.</strong></p>
+
+<p>Now before everyone fires up their mail client and pours on the hate mail, let's make sure we are very clear about what I just said.  I do write thorough unit tests for all of my model classes, of course.  I also test the controllers as much as possible.  I make sure the data I expect ends up in the right instance variables with the magic <code>assigns()</code>.  I also use the <code>session</code> <code>Hash</code> to validate what I am remembering about the user.  If a controller action is a complex logic branch that can end up in several different places, I will also make sure I add some assertions to verify that the right template handled the response.</p>
+
+<p>All I said is that I don't test the view layer.  I'm talking about the final HTML pages here.  Those are what I don't validate.</p>
+
+<p>Now that we are clear about what I don't test, let's cover why I don't.  I assure you this isn't some random choice or even an attempt to avoid work.  I have found that not testing the views works out better for me and I want to share my reasons with you.</p>
+
+<ol>
+<li> As I've already hinted at, I'm constantly viewing my Rails work in a Web browser.  If there's a problem, I'm going to see it pretty quickly.  In fact, I have a much better chance of seeing some browser oddities than I do of successfully coding a test to catch them, I think.</li>
+<li> If you are doing Rails correctly, the only programming logic in your templates is flow control, right?  (Helpers are a legitimate exception here, but you can test them normally.)  That makes your templates little more than data files in my eyes and I don't validate the contents of data files.</li>
+<li> HTML pages change rapidly.  Practically each time I look at a page, I will tweak something.  If that breaks a test, I just have to change two things instead of one.  To me, that's the whole point of data files, I can change them without worrying about the code that relies on them.</li>
+<li> The main tool for testing views, <code>assert_tag()</code>, is a clever but flawed helper.  Have you seen what it spits out when the test starts failing?  "I couldn't find tag xyz in this-giant-mess-of-unformatted-HTML."  To me, that's like saying, "I couldn't find this needle in this haystack.  You try."  Even a great tool like <code>unit_diff</code> can't fix that.</li>
+</ol><p>All of that adds up to the fact that I am already visually checking what view tests would be checking.  I feel I am more thorough and accurate than the tests I know how to write for this process.  It's also a low risk area, since I'm not hiding any important functionality in the templates.  Given all of the above, I feel I lose nothing and gain speed by not writing those tests.</p>
+
+<p>This is just my system, of course.  Obviously, others are doing things differently.  I just wanted to share what is working for me.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="rails/what-not-to-test">
+  In: <a href="/rails/">Rails</a>
+  <span>|</span>
+  Tags: <a href="/tags/Test-Driven%20Development/">Test-Driven Development</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rails/what-not-to-test#comments">6 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (6)</span></h5>
+
+    <ol>
+        <li id="comment_2">
+    <div class="avatar"><img alt="Gregory Brown" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="2">
+      <span class="c_name"><a href="http://stonecode.org/blog">Gregory Brown</a></span>
+      <span class="c_date">January 17th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/rails/what-not-to-test#comment_2">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I think the biggest issue here is that in most cases, unit testing will save you time and increase the reliability of your code. </p>
+
+<p>In the case of views, if they're done right they won't have much important logic in them, as you mentioned.  So the likelyhood is very high that it'll take me less time to refresh my browser and visually inspect the changes than it would to code a complete test ensuring my underlying output is EXACTLY what I wanted.</p>
+
+<p>Of course, there are people who are incredibly fast at writing HTML and can visualize it through code.  It doesn't hurt to have tests if they're increasing productivity and reliablity.</p>
+
+<p>However, for the rest of us, a little pragmatism about testing doesn't hurt ;)</p>
+
+<p>Nice article, James.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_5">
+    <div class="avatar"><img alt="Pat Maddox" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="5">
+      <span class="c_name"><a href="http://www.flpr.org">Pat Maddox</a></span>
+      <span class="c_date">January 30th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/rails/what-not-to-test#comment_5">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I've never tested a view in my life.  I just don't care enough, to be honest.  HTML code is something that for structure can be validated, and for logic be observed.</p>
+
+<p>I want to know when my code actually breaks.  The logic is what's important to me, and I in general could care less about the presentation.  If some bit of info isn't showing up in a view, I'll find out in about two seconds when I or someone else checks it out.  As long as the info is accessible, I'm happy.  Maybe this comes from being 100% hacker and 0% designer.</p>
+
+<p>Also, I've often laughed when I see people talking about testing the view.  I always think it's completely absurd, and I'd rather be coding real tests and real logic.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_9">
+    <div class="avatar"><img alt="Daniel Berger" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="9">
+      <span class="c_name">Daniel Berger</span>
+      <span class="c_date">February 5th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/rails/what-not-to-test#comment_9">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>With one Rails application under my belt now, I have to agree.  Of course, the trick is to resist the temptation of sticking code in the view that belongs in the controller. :)</p></div>
+    <ol>
+      
+        <li id="comment_12">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="12">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">February 6th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/rails/what-not-to-test#comment_12">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>That's a very good point.  Code in Rails views should be for flow control only.  Anything else belongs in controllers or helpers.  You do have to keep an eye on that and force yourself to refactor it back out when you find it.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_144">
+    <div class="avatar"><img alt="James O&#39;Kelly" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="144">
+      <span class="c_name"><a href="http://www.railsjitsu.com">James O&#39;Kelly</a></span>
+      <span class="c_date">December 5th, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/rails/what-not-to-test#comment_144">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I agree completely. We spend so much time doing regression testing through the front facing part of our application at every step, putting tests for views just adds extra un-needed complexity.</p>
+
+<p>I LOVE your TextMate book! Are you planning on doing some TM related posts?</p></div>
+    <ol>
+      
+        <li id="comment_145">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="145">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">December 5th, 2007</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/rails/what-not-to-test#comment_145">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>I do need to do some TextMate related posts.  I'll think on that and see what I come up with.</p>
+
+<p>I'm glad you liked the book.  Thanks for the support!</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

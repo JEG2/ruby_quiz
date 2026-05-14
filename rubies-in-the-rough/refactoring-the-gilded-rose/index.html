@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / Refactoring:  The Gilded Rose</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="In this article I try The Gilded Rose refactoring code kata to show how Ruby handles the restrictions it places on us.">
+    <meta name="keywords"    content="thinking about code, software design, Refactoring, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/refactoring-the-gilded-rose/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>22</h4>
+    <span>
+      FEB<br>
+      2012
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Refactoring:  The Gilded Rose</h3>
+        
+        <p>It's time for another refactoring challenge.  This time we will attempt a fun problem called <a href="http://iamnotmyself.com/2011/02/13/refactor-this-the-gilded-rose-kata/">The Gilded Rose Code Kata</a>.</p>
+
+<p>That original description of the problem was for C# developers and it didn't have things us Rubyists love, like tests.  Luckily for us though, Jim Weirich <a href="https://github.com/jimweirich/gilded_rose_kata">ported the code to Ruby</a> and added the tests as he did so.  Let's use that version of the challenge.</p>
+
+<p>As always, I recommend you try the refactoring before you read what I have to say about it.  Being familiar with the problem will help you understand what we are dealing with below.</p>
+
+<h4>Setup</h4>
+
+<p>The first step in this problem is to get the code running locally.  I started by pulling down Jim's code from GitHub:</p>
+
+<pre><code>$ git clone https://github.com/jimweirich/gilded_rose_kata.git
+Cloning into gilded_rose_kata...
+remote: Counting objects: 114, done.
+remote: Compressing objects: 100% (46/46), done.
+remote: Total 114 (delta 71), reused 109 (delta 66)
+Receiving objects: 100% (114/114), 15.38 KiB | 13 KiB/s, done.
+Resolving deltas: 100% (71/71), done.
+$ cd gilded_rose_kata
+</code></pre>
+
+<p>Then I needed to make sure the specs would run for me:</p>
+
+<pre><code>$ rake
+rspec .
+............................................*********....
+
+Pending:
+  #update_quality with a single conjured item before the sell date 
+    # No reason given
+    # ./gilded_rose_spec.rb:177
+  #update_quality with a single conjured item before the sell date 
+    # No reason given
+    # ./gilded_rose_spec.rb:178
+  #update_quality with a single conjured…
+    # No reason given
+    # ./gilded_rose_spec.rb:182
+  #update_quality with a single conjured item on sell date 
+    # No reason given
+    # ./gilded_rose_spec.rb:188
+  #update_quality with a single conjured item on sell date 
+    # No reason given
+    # ./gilded_rose_spec.rb:189
+  #update_quality with a single conjured…
+    # No reason given
+    # ./gilded_rose_spec.rb:193
+  #update_quality with a single conjured item after sell date 
+    # No reason given
+    # ./gilded_rose_spec.rb:199
+  #update_quality with a single conjured item after sell date 
+    # No reason given
+    # ./gilded_rose_spec.rb:200
+  #update_quality with a single conjured…
+    # No reason given
+    # ./gilded_rose_spec.rb:204
+
+Finished in 0.23681 seconds
+57 examples, 0 failures, 9 pending
+</code></pre>
+
+<p>The passing specs represent the functionality the old code already handles.  The pending specs are for the new feature that hasn't been added yet.  It's great to have these specs to lean on.  If I didn't, I would definitely feel the need to add some before I would be comfortable untangling that rat's nest of code.</p>
+
+<p>Now, these specs worked for me on the first try, most likely because I've experimented with this code before.  If they don't work for you right off the bat, it's probably because of missing dependencies.  You need both <a href="http://rspec.info/">RSpec</a> and Jim's <a href="https://github.com/jimweirich/rspec-given">rspec-given</a> enhancement.  You should be able to get everything you need with:</p>
+
+<pre><code>$ gem install rspec
+$ gem install rspec-given
+</code></pre>
+
+<p>Now we're ready to do some damage.</p>
+
+<h4>The Source of Truth</h4>
+
+<p>One of the most interesting aspects of this problem, in my opinion, is that you have two potential sources of truth.  One one hand, you have the <a href="https://github.com/jimweirich/gilded_rose_kata/blob/master/README.md">problem description</a>.  On the other, <a href="https://github.com/jimweirich/gilded_rose_kata/blob/master/gilded_rose.rb">the code in need of refactoring</a>.</p>
+
+<p>A refactoring is meant to be a process where you slowly improve some code using a set of careful steps.  If you follow a strict definition of that, we should begin with the code, clean it up, then add the requested new feature.</p>
+
+<p>But you probably know by now that I love to break rules.</p>
+
+<p>In my opinion, the problem description is a much better source of truth for this challenge.  It pretty clearly states all of the requirements for this code.  I can mostly just read down the list and code up those rules to end up at a solution.  It also includes the new feature, so satisfying that will be automatic.  If I run into questions along the way, I can try to answer them using the existing code.</p>
+
+<p>So, just to be crystal clear, what I'm going to show below isn't strictly a "refactoring."  That's kind of the point.  You have to pick your battles and I felt like I could do a faster and better job by just coding up the rules.  If you prefer to call this exercise coding to a specification, I'm fine with that.</p>
+
+<h4>Carving Out My Own Workspace</h4>
+
+<p>Since I want to keep the old code around for reference, I decided to make a copy of it and do my fixes in there:</p>
+
+<pre><code>$ cp gilded_rose.rb gilded_rose_clean.rb
+</code></pre>
+
+<p>I removed the body of <code>update_quality()</code> and the unneeded comment at the bottom of the file describing the hardcoded tests in the original code.  That got me down to looking at just this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">update_quality</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+
+<span class="k">end</span>
+
+<span class="c1"># DO NOT CHANGE THINGS BELOW -----------------------------------------</span>
+
+<span class="no">Item</span> <span class="o">=</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:name</span><span class="p">,</span> <span class="ss">:sell_in</span><span class="p">,</span> <span class="ss">:quality</span><span class="p">)</span>
+</pre></div>
+
+<p>I needed to point the specs at this new code and I also wanted to disable most of them for getting started.  Those two changes looked like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s1">'rspec/given'</span>
+<span class="nb">require</span> <span class="s1">'gilded_rose_clean'</span>  <span class="c1"># pointed at my code</span>
+
+<span class="n">describe</span> <span class="s2">"#update_quality"</span> <span class="k">do</span>
+
+  <span class="n">context</span> <span class="s2">"with a single"</span> <span class="k">do</span>
+    <span class="no">Given</span><span class="p">(</span><span class="ss">:initial_sell_in</span><span class="p">)</span> <span class="p">{</span> <span class="mi">5</span> <span class="p">}</span>
+    <span class="no">Given</span><span class="p">(</span><span class="ss">:initial_quality</span><span class="p">)</span> <span class="p">{</span> <span class="mi">10</span> <span class="p">}</span>
+    <span class="no">Given</span><span class="p">(</span><span class="ss">:item</span><span class="p">)</span> <span class="p">{</span> <span class="no">Item</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">name</span><span class="p">,</span> <span class="n">initial_sell_in</span><span class="p">,</span> <span class="n">initial_quality</span><span class="p">)</span> <span class="p">}</span>
+
+    <span class="no">When</span> <span class="p">{</span> <span class="n">update_quality</span><span class="p">(</span><span class="o">[</span><span class="n">item</span><span class="o">]</span><span class="p">)</span> <span class="p">}</span>
+
+    <span class="n">context</span> <span class="s2">"normal item"</span> <span class="k">do</span>
+      <span class="no">Given</span><span class="p">(</span><span class="ss">:name</span><span class="p">)</span> <span class="p">{</span> <span class="s2">"NORMAL ITEM"</span> <span class="p">}</span>
+
+      <span class="n">context</span> <span class="s2">"before sell date"</span> <span class="k">do</span>
+        <span class="no">Then</span> <span class="p">{</span> <span class="n">item</span><span class="o">.</span><span class="n">quality</span><span class="o">.</span><span class="n">should</span> <span class="o">==</span> <span class="n">initial_quality</span><span class="o">-</span><span class="mi">1</span> <span class="p">}</span>
+        <span class="no">Then</span> <span class="p">{</span> <span class="n">item</span><span class="o">.</span><span class="n">sell_in</span><span class="o">.</span><span class="n">should</span> <span class="o">==</span> <span class="n">initial_sell_in</span><span class="o">-</span><span class="mi">1</span> <span class="p">}</span>
+      <span class="k">end</span>
+
+      <span class="n">context</span> <span class="s2">"on sell date"</span> <span class="k">do</span>
+        <span class="no">Given</span><span class="p">(</span><span class="ss">:initial_sell_in</span><span class="p">)</span> <span class="p">{</span> <span class="mi">0</span> <span class="p">}</span>
+        <span class="no">Then</span> <span class="p">{</span> <span class="n">item</span><span class="o">.</span><span class="n">quality</span><span class="o">.</span><span class="n">should</span> <span class="o">==</span> <span class="n">initial_quality</span><span class="o">-</span><span class="mi">2</span> <span class="p">}</span>
+        <span class="no">Then</span> <span class="p">{</span> <span class="n">item</span><span class="o">.</span><span class="n">sell_in</span><span class="o">.</span><span class="n">should</span> <span class="o">==</span> <span class="n">initial_sell_in</span><span class="o">-</span><span class="mi">1</span> <span class="p">}</span>
+      <span class="k">end</span>
+
+      <span class="n">context</span> <span class="s2">"after sell date"</span> <span class="k">do</span>
+        <span class="no">Given</span><span class="p">(</span><span class="ss">:initial_sell_in</span><span class="p">)</span> <span class="p">{</span> <span class="o">-</span><span class="mi">10</span> <span class="p">}</span>
+        <span class="no">Then</span> <span class="p">{</span> <span class="n">item</span><span class="o">.</span><span class="n">quality</span><span class="o">.</span><span class="n">should</span> <span class="o">==</span> <span class="n">initial_quality</span><span class="o">-</span><span class="mi">2</span> <span class="p">}</span>
+        <span class="no">Then</span> <span class="p">{</span> <span class="n">item</span><span class="o">.</span><span class="n">sell_in</span><span class="o">.</span><span class="n">should</span> <span class="o">==</span> <span class="n">initial_sell_in</span><span class="o">-</span><span class="mi">1</span> <span class="p">}</span>
+      <span class="k">end</span>
+
+      <span class="n">context</span> <span class="s2">"of zero quality"</span> <span class="k">do</span>
+        <span class="no">Given</span><span class="p">(</span><span class="ss">:initial_quality</span><span class="p">)</span> <span class="p">{</span> <span class="mi">0</span> <span class="p">}</span>
+        <span class="no">Then</span> <span class="p">{</span> <span class="n">item</span><span class="o">.</span><span class="n">quality</span><span class="o">.</span><span class="n">should</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">}</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="c1"># The remaining "single item" contexts commented out, for now...</span>
+  <span class="k">end</span>
+
+  <span class="c1"># The "several objects" contexts commented out, for now...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Finally, I just verified that I had some failing specs to start with:</p>
+
+<pre><code>$ rake 
+rspec .
+FFFFFF.
+
+Failures:
+
+  1) #update_quality with a single normal item before sell date 
+     Failure/Error: Then { item.quality.should == initial_quality-1 }
+       expected: 9
+            got: 10 (using ==)
+     # ./gilded_rose_spec.rb:17:in `block (5 levels) in &lt;top (required)&gt;'
+
+  2) #update_quality with a single normal item before sell date 
+     Failure/Error: Then { item.sell_in.should == initial_sell_in-1 }
+       expected: 4
+            got: 5 (using ==)
+     # ./gilded_rose_spec.rb:18:in `block (5 levels) in &lt;top (required)&gt;'
+
+  3) #update_quality with a single normal item on sell date 
+     Failure/Error: Then { item.quality.should == initial_quality-2 }
+       expected: 8
+            got: 10 (using ==)
+     # ./gilded_rose_spec.rb:23:in `block (5 levels) in &lt;top (required)&gt;'
+
+  4) #update_quality with a single normal item on sell date 
+     Failure/Error: Then { item.sell_in.should == initial_sell_in-1 }
+       expected: -1
+            got: 0 (using ==)
+     # ./gilded_rose_spec.rb:24:in `block (5 levels) in &lt;top (required)&gt;'
+
+  5) #update_quality with a single normal item after sell date 
+     Failure/Error: Then { item.quality.should == initial_quality-2 }
+       expected: 8
+            got: 10 (using ==)
+     # ./gilded_rose_spec.rb:29:in `block (5 levels) in &lt;top (required)&gt;'
+
+  6) #update_quality with a single normal item after sell date 
+     Failure/Error: Then { item.sell_in.should == initial_sell_in-1 }
+       expected: -11
+            got: -10 (using ==)
+     # ./gilded_rose_spec.rb:30:in `block (5 levels) in &lt;top (required)&gt;'
+
+Finished in 0.00348 seconds
+7 examples, 6 failures
+
+Failed examples:
+
+rspec ./gilded_rose_spec.rb:17… 
+rspec ./gilded_rose_spec.rb:18… 
+rspec ./gilded_rose_spec.rb:23…
+rspec ./gilded_rose_spec.rb:24…
+rspec ./gilded_rose_spec.rb:29…
+rspec ./gilded_rose_spec.rb:30…
+rake aborted!
+Command failed with status (1): [rspec ....]
+
+Tasks: TOP =&gt; default =&gt; spec
+(See full trace by running task with --trace)
+</code></pre>
+
+<p>Perfect.  I'm ready to work.</p>
+
+<h4>My Fellow Cheater</h4>
+
+<p>You know I love to cheat.  Well, there's a reason I love Ruby:  she cheats too.</p>
+
+<p>My first instinct for building the kind of code we need here is to build an object hierarchy.  <code>Item</code> would be at the top of that tree and I could make subclasses like <code>LegendaryItem</code> to handle the specific cases.  Sadly, this is blocked by the rules:</p>
+
+<blockquote>
+<p>However, do not alter the Item class or Items property as those belong to the goblin in the corner who will insta-rage and one-shot you as he doesn't believe in shared code ownership (you can make the UpdateQuality method and Items property static if you like, we'll cover for you).</p>
+</blockquote>
+
+<p>If you overlook the C#-isms and World of Warcraft jokes in there, the heart of it is that it blocks us from fleshing out the <code>Item</code> class.  While it doesn't specifically address subclasses, the code sort of blocks it:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># DO NOT CHANGE THINGS BELOW -----------------------------------------</span>
+
+<span class="no">Item</span> <span class="o">=</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:name</span><span class="p">,</span> <span class="ss">:sell_in</span><span class="p">,</span> <span class="ss">:quality</span><span class="p">)</span>
+</pre></div>
+
+<p>It looks like I can't define any subclasses below the definition of <code>Item</code>.  I could get around that using an evil Ruby trick:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">END</span> <span class="p">{</span>
+  <span class="k">class</span> <span class="nc">MyItem</span> <span class="o">&lt;</span> <span class="no">Item</span><span class="p">;</span> <span class="k">end</span>
+  <span class="nb">p</span> <span class="no">MyItem</span><span class="o">.</span><span class="n">new</span>
+<span class="p">}</span>
+
+<span class="c1"># DO NOT CHANGE THINGS BELOW -----------------------------------------</span>
+
+<span class="no">Item</span> <span class="o">=</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:name</span><span class="p">,</span> <span class="ss">:sell_in</span><span class="p">,</span> <span class="ss">:quality</span><span class="p">)</span>
+</pre></div>
+
+<p><code>END { … }</code> allows me to run some Ruby code just before the interpreter is exiting.  <code>Item</code> will have been defined by then, so I can safely subclass it and do some work.  This gets me around the restriction, but it uglies up the code and that's counter to my goals.</p>
+
+<p>Also, it's not clear if the rules allow me to move <code>update_quality()</code> into an <code>END { … }</code> block and I would need to do that to make this work.  Finally, the <code>END { … }</code> blocks could interfere with running the specs, depending on how the ordering is handled.</p>
+
+<p>There's a lot of reasons not to do this, so it's clear I need another idea.</p>
+
+<p>I could still build the hierarchy, if those objects just wrapped the <code>Item</code>.  That code would look something like:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">ItemUpdater</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+    <span class="vi">@item</span> <span class="o">=</span> <span class="n">item</span>
+  <span class="k">end</span>
+
+  <span class="kp">attr_reader</span> <span class="ss">:item</span>
+
+  <span class="k">def</span> <span class="nf">update</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">class</span> <span class="nc">LegendaryItemUpdater</span> <span class="o">&lt;</span> <span class="no">ItemUpdater</span>
+  <span class="k">def</span> <span class="nf">update</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This approach would work fine.  The <code>update_quality()</code> method would just need to apply the correct wrapper for the <code>Item</code>, then trigger that specialized version of <code>update()</code>.</p>
+
+<p>This may be the best way to go overall, but it still bugs me a little that an <code>Item</code> can't just update itself.  I really want to rework the class hierarchy dynamically at runtime.  Well, it turns out Ruby can do that.</p>
+
+<p>First, we can just define some updating methods in a <code>Module</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Aging</span>
+  <span class="k">def</span> <span class="nf">update</span>
+    <span class="n">update_quality</span>
+    <span class="n">update_sell_in</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">update_sell_in</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">sell_in</span> <span class="o">-=</span> <span class="mi">1</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">update_quality</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">quality</span> <span class="o">-=</span> <span class="n">sell_in</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="mi">1</span> <span class="p">:</span> <span class="mi">2</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">quality</span>  <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">quality</span> <span class="o">&lt;</span> <span class="mi">0</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>These handle the <code>Aging</code> rules for normal items.</p>
+
+<p>Now, we can mix these methods into an <code>Item</code> as we process it, then let it <code>update()</code> itself:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">update_quality</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+  <span class="n">items</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">item</span><span class="o">|</span>
+    <span class="n">item</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">Aging</span><span class="p">)</span> <span class="k">unless</span> <span class="n">item</span><span class="o">.</span><span class="n">is_a?</span> <span class="no">Aging</span>
+    <span class="n">item</span><span class="o">.</span><span class="n">update</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That's all it takes to get those first set of specs passing:</p>
+
+<pre><code>$ rake
+rspec .
+.......
+
+Finished in 0.00316 seconds
+7 examples, 0 failures
+</code></pre>
+
+<p>The only question that remains is, "Is this legal under the rules?"  I think it's gray area.  I am modifying the <code>Item</code> dynamically at runtime.  The object will have some new methods after it is passed through <code>update_quality()</code>.  The rules don't seem to block that though as I read them.  I haven't modified the <code>Item</code> class definition or the code below the do-not-touch line.</p>
+
+<p>More importantly, this feels right and Rubyish to me.  If I was forced to correct some hostile code I couldn't change, I might try something just like this.  Plus it makes sense.  That object is both an <code>Item</code> and it is <code>Aging</code>.  That's exactly how the code handles it.</p>
+
+<p>It you weren't allowed to do even this, I would go with the wrapped approach.  For now, I'm going forward with my cheat.</p>
+
+<h4>Overriding Mix-ins</h4>
+
+<p>We've handled the normal items, but now we need variations on that basic theme.  I didn't go with classes, but we can still override the methods.  In Ruby, the last <code>Module</code> mixed-in wins, when it comes to method lookup.  That method can delegate up the chain normally though, hitting methods mixed-in from a <code>Module</code> before it.</p>
+
+<p>Knowing that, I created a <code>Module</code> for each of the cases I still needed to handle:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">BetterWithAge</span><span class="p">;</span> <span class="k">end</span>
+<span class="k">module</span> <span class="nn">Popular</span><span class="p">;</span>       <span class="k">end</span>
+<span class="k">module</span> <span class="nn">Legendary</span><span class="p">;</span>     <span class="k">end</span>
+<span class="k">module</span> <span class="nn">Conjured</span><span class="p">;</span>      <span class="k">end</span>
+</pre></div>
+
+<p>Then I tweaked <code>update_quality()</code> one last time to account for these subtypes:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">def</span> <span class="nf">update_quality</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+  <span class="n">items</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">item</span><span class="o">|</span>
+    <span class="n">item</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">Aging</span><span class="p">)</span> <span class="k">unless</span> <span class="n">item</span><span class="o">.</span><span class="n">is_a?</span> <span class="no">Aging</span>
+    <span class="n">subtype</span> <span class="o">=</span> <span class="k">case</span> <span class="n">item</span><span class="o">.</span><span class="n">name</span>
+              <span class="k">when</span> <span class="sr">/Aged/i</span>           <span class="k">then</span> <span class="no">BetterWithAge</span>
+              <span class="k">when</span> <span class="sr">/Backstage pass/i</span> <span class="k">then</span> <span class="no">Popular</span>
+              <span class="k">when</span> <span class="sr">/Sulfuras/i</span>       <span class="k">then</span> <span class="no">Legendary</span>
+              <span class="k">when</span> <span class="sr">/Conjured/i</span>       <span class="k">then</span> <span class="no">Conjured</span>
+              <span class="k">end</span>
+    <span class="n">item</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">subtype</span><span class="p">)</span> <span class="k">if</span> <span class="n">subtype</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">item</span><span class="o">.</span><span class="n">is_a?</span> <span class="n">subtype</span>
+    <span class="n">item</span><span class="o">.</span><span class="n">update</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Again, since those subtypes are always added after <code>Aging</code>, they can override the <code>Aging</code> methods as needed.</p>
+
+<p>It's worth noting that I always check for the <code>Module</code> before mixing it in.  The system sounds like it could be pretty long running and an <code>Item</code> should be updated each day.  If the same references are kept around, we only need to add in the <code>Module</code> the first time we see that <code>Item</code>.</p>
+
+<p>I tried to write the regular expressions here as generic as possible to support other names that might be in a similar category.  This could be good or bad, depending on how things play out.  It may be necessary to build more of an exact mapping in the future, but since we would only need to modify this one small chunk to do that I'm comfortable taking the risk.</p>
+
+<h4>Wait Until You're Sure</h4>
+
+<p>The rest is a simple matter of programming, as they say.</p>
+
+<p>One by one, I uncommented groups of specs and fleshed out the related <code>Module</code> to make them pass.  There weren't too many surprises there, but I'll point out a couple of things as we go.</p>
+
+<p>First, I handled the cheese:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">BetterWithAge</span>
+  <span class="k">def</span> <span class="nf">update_quality</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">quality</span> <span class="o">+=</span> <span class="n">sell_in</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="mi">1</span> <span class="p">:</span> <span class="mi">2</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">quality</span>  <span class="o">=</span> <span class="mi">50</span> <span class="k">if</span> <span class="n">quality</span> <span class="o">&gt;</span> <span class="mi">50</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>It did occur to me that there's some minor duplication in this code.  I could perhaps make it possible to change the sign of the amount that gets applied to <code>quality()</code>.  This is only the second time I've seen this pattern though.  I cringe a little, but choose to let it ride for now.</p>
+
+<p>On to the backstage passes:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Popular</span>
+  <span class="k">def</span> <span class="nf">update_quality</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">quality</span> <span class="o">+=</span> <span class="k">case</span> <span class="n">sell_in</span>
+                    <span class="k">when</span> <span class="o">-</span><span class="nb">Float</span><span class="o">::</span><span class="no">INFINITY</span><span class="o">.</span><span class="n">.</span><span class="mi">0</span> <span class="k">then</span> <span class="o">-</span><span class="n">quality</span>
+                    <span class="k">when</span> <span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">5</span>                <span class="k">then</span> <span class="mi">3</span>
+                    <span class="k">when</span> <span class="mi">6</span><span class="o">.</span><span class="n">.</span><span class="mi">10</span>               <span class="k">then</span> <span class="mi">2</span>
+                    <span class="k">else</span>                          <span class="mi">1</span>
+                    <span class="k">end</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">quality</span>  <span class="o">=</span> <span class="mi">50</span> <span class="k">if</span> <span class="n">quality</span> <span class="o">&gt;</span> <span class="mi">50</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>There are two tricks here.  First, I built an infinite <code>Range</code> to catch all of the negative numbers.  I love it that Ruby can handle this because it just checks if values are between the bounds.</p>
+
+<p>The other trick is that I adjust the <code>quality()</code> by the opposite of its current value when I want to zero it out.  Together, these two tricks allowed me to get the rules into one clean <code>case</code> statement and avoid a lot of special rules.</p>
+
+<p>That code got the tests passing, but it introduced another bit of duplication.  I find myself adjusting <code>quality()</code> again by yet another amount.  I also had to duplicate the upper bound check here.  This is the third time now, so it's time to admit I have a problem and fix it.</p>
+
+<p>This is an actual refactoring, so let's handle it step by step.  My tests are green.  It's safe to take action.</p>
+
+<p>First, let's add the upper bound check to <code>Aging</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Aging</span>
+  <span class="c1"># ...</span>
+
+  <span class="k">def</span> <span class="nf">update_quality</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">quality</span> <span class="o">-=</span> <span class="n">sell_in</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="mi">1</span> <span class="p">:</span> <span class="mi">2</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">quality</span>  <span class="o">=</span> <span class="mi">0</span>  <span class="k">if</span> <span class="n">quality</span> <span class="o">&lt;</span> <span class="mi">0</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">quality</span>  <span class="o">=</span> <span class="mi">50</span> <span class="k">if</span> <span class="n">quality</span> <span class="o">&gt;</span> <span class="mi">50</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I rechecked the tests and that's a fine change.</p>
+
+<p>Now, I would like to remove the upper bound check from the other two methods, but that won't work.  They don't hand up to <code>Aging</code>'s <code>update_quality()</code>, so the checks wouldn't be run.  Unfortunately, they can't make that handoff, because they would then modify <code>quality()</code> twice.  That gives me a hint about what I should do.</p>
+
+<p>The only difference between the three methods at this point is that they adjust <code>quality()</code> by different amounts.  Extract that amount and we're all set for the later <code>Module</code>'s to override that instead.  That led me to this code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Aging</span>
+  <span class="c1"># ...</span>
+
+  <span class="k">def</span> <span class="nf">update_quality</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">quality</span> <span class="o">+=</span> <span class="n">quality_adjustment</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">quality</span>  <span class="o">=</span> <span class="mi">0</span>  <span class="k">if</span> <span class="n">quality</span> <span class="o">&lt;</span> <span class="mi">0</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">quality</span>  <span class="o">=</span> <span class="mi">50</span> <span class="k">if</span> <span class="n">quality</span> <span class="o">&gt;</span> <span class="mi">50</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">quality_adjustment</span>
+    <span class="n">sell_in</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="o">-</span><span class="mi">1</span> <span class="p">:</span> <span class="o">-</span><span class="mi">2</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The tests are still passing, so I haven't broke anything yet.</p>
+
+<p>Now I can revise the cheese updating code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">BetterWithAge</span>
+  <span class="k">def</span> <span class="nf">quality_adjustment</span>
+    <span class="o">-</span><span class="k">super</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That was easier, the tests still pass, and I think it reads better.  It's the same process, it just has the opposite effect.  The code now reflects that.</p>
+
+<p>Let's also fix the backstage passes:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Popular</span>
+  <span class="k">def</span> <span class="nf">quality_adjustment</span>
+    <span class="k">case</span> <span class="n">sell_in</span>
+    <span class="k">when</span> <span class="o">-</span><span class="nb">Float</span><span class="o">::</span><span class="no">INFINITY</span><span class="o">.</span><span class="n">.</span><span class="mi">0</span> <span class="k">then</span> <span class="o">-</span><span class="n">quality</span>
+    <span class="k">when</span> <span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">5</span>                <span class="k">then</span> <span class="mi">3</span>
+    <span class="k">when</span> <span class="mi">6</span><span class="o">.</span><span class="n">.</span><span class="mi">10</span>               <span class="k">then</span> <span class="mi">2</span>
+    <span class="k">else</span>                          <span class="mi">1</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Again, the tests are passing so this works.</p>
+
+<p>I hope you saw how it was easier to DRY (Don't Repeat Yourself) this code up once I had that third data point.  It showed me that the bounds checks were also shared.  I didn't know that with just the first two.  Sometimes, being over anxious to fix code cheats you out of having better data.</p>
+
+<p>Besides, the first two instances weren't a gross violation of the rule.  If that code became production code, we weren't going to be seriously hurting.  It's more important to apply the right amount of paranoia than it is to unfailingly follow some system.</p>
+
+<h4>The Last Two Subtypes</h4>
+
+<p>The other two item types are almost trivial.  For a <code>Legendary</code> <code>Item</code>, we just need to shut the changes off:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Legendary</span>
+  <span class="k">def</span> <span class="nf">update</span>
+    <span class="c1"># do nothing:  doesn't need to be sold and doesn't degrade</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>That gets another set of specs passing.  At this point we've replaced the functionality of the old code and we didn't even need to wade into that mess.  Hooray!</p>
+
+<p>This is one of the few cases where I do like to use a comment.  If some code does nothing, it's nice to know why.  Otherwise, I might think I could safely remove the method.  In this case, that would break things.</p>
+
+<p>It's worth noting that I pretty much ignored the <code>quality()</code> should always be <code>80</code> for these items rule.  Since I never adjust the <code>quality()</code> of these items, it won't be my fault if that's not the case.  I decided that meant it didn't apply to me.  If you are concerned about it though, I would just override the getter here to return the fixed value.</p>
+
+<p>A <code>Conjured</code> <code>Item</code> is just about as easy:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Conjured</span>
+  <span class="k">def</span> <span class="nf">quality_adjustment</span>
+    <span class="k">super</span> <span class="o">*</span> <span class="mi">2</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I feel like this just shows again how helpful getting that earlier refactoring right was.  It's still paying dividends.</p>
+
+<p>That added the desired new feature, and removing the <code>pending()</code> call shows that all of the tests now pass.</p>
+
+<h4>Further Reading</h4>
+
+<p>Here are some links for those who want to dig further into these topics:</p>
+
+<ul>
+<li>Jim provided <a href="https://github.com/jimweirich/gilded_rose_kata/blob/solution1/gilded_rose.rb">his own solution</a> to the refactoring in a branch of his repository.  His code is sort of a cross between my own and the wrapper approach.  It's worth a look.</li>
+<li>If you want to dig more into the true refactoring process, like the steps I took in the middle article, <a href="http://martinfowler.com/books.html#refactoring">the Refactoring book</a> can't be beat.  Even though it's not Ruby, it applies to all of programming.</li>
+<li>If you want more practice programming to a specification, I have a <a href="https://github.com/JEG2/sim_frost">favorite problem</a> that's a lot of fun to play with.  Give it a shot.</li>
+</ul>
+        
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/refactoring-the-gilded-rose">
+  In: <a href="/rubies-in-the-rough/">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Refactoring/">Refactoring</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/refactoring-the-gilded-rose#comments">0 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (0)</span></h5>
+
+    <ol>
+      
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

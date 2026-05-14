@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / Let&#39;s Patch Rails</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="In this article I walk through the entire process of preparing and submitting a patch for an open source project, using Rails as my example.">
+    <meta name="keywords"    content="thinking about code, software design, Open Source, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/lets-patch-rails/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      APR<br>
+      2012
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Let&#39;s Patch Rails</h3>
+        
+        <p>In celebration of my first ever trip to <a href="http://railsconf2012.com/">RailsConf</a> next week I wanted to be a good open source citizen and contribute a patch.</p>
+
+<p>I'm giving <a href="https://www.youtube.com/watch?v=GRfJ9lni4QA">a presentation</a> at the conference on various random features that the framework provides.  I selected features from many places like blog posts, books, and some that I just remembered from years of working with the software.</p>
+
+<p>One of the features I decided to show was an old feature that I never see anyone use.  It turns out that there's a good reason for that.  When I tried it on a modern Rails, it didn't work anymore.  Rails has undergone some changes under the hood and this feature was likely removed in that process.  I figured out a workaround so I could still show it in my presentation, but it would be nice if I contributed the fix back to Rails so others could use it.</p>
+
+<p>In this article, I will walk through the entire process of doing that.</p>
+
+<h4>What's Missing?</h4>
+
+<p>ERb has always had an under appreciated syntax tweak.  Everyone knows you can write code like this:</p>
+
+<pre><code>$ erb
+&lt;% %w[This is ERb].each do |w| %&gt;
+* &lt;%= w %&gt;
+&lt;% end %&gt;
+^D
+* This
+
+* is
+
+* ERb
+</code></pre>
+
+<p>If you pass the proper flag though, ERb can also understand this shorthand syntax:</p>
+
+<pre><code>$ erb -T -
+% %w[This is ERb].each do |w|
+* &lt;%= w %&gt;
+% end
+* This
+* is
+* ERb
+</code></pre>
+
+<p>As you can see, just starting a line with <code>%</code> is enough to put the entire line in Ruby mode (with the result not inserted into the document).  This makes for very clean iterators and <code>if</code> statements, in my opinion.</p>
+
+<p>Rails supported this syntax in the past.  You could set <code>config.action_view.erb_trim_mode</code> to a <code>String</code> containing a <code>%</code> to enable it.  Rails still supports the <em>trim mode</em> setting, but now it only supports the <code>-</code> mode for trimming whitespace around ERb tags.  (Confusingly, the <code>-</code> argument to the command-line program I used above does both <code>%</code> and <code>-</code>, but ERb doesn't behave that way internally.)</p>
+
+<p>I believe the main reason this feature got dropped is that Rails has switched over to using Erubis on the backend.  Erubis is ERb compatible, but it looks like the Rails team only managed to support the <code>-</code> trim mode in the change and dropped the support for <code>%</code>.</p>
+
+<p>That's what I intend to restore.</p>
+
+<h4>Getting a Working Install</h4>
+
+<p>I have contributed to Rails some in the past, but that was years ago now.  Because it has been so long, I don't even have a checkout of the code anymore. That seems like a good place to start.</p>
+
+<p>I know <a href="https://github.com/rails/rails">where Rails lives on GitHub</a>, but if I didn't I would have tried to find it by Googling <em>Rails GitHub</em>.  I'll begin by visiting the Rails repository, forking a copy of my own to mess around with, grabbing the URL for my copy, and cloning it locally.  That last step amounts to running this command:</p>
+
+<pre><code>$ git clone git@github.com:JEG2/rails.git
+Cloning into rails...
+remote: Counting objects: 296204, done.
+remote: Compressing objects: 100% (74450/74450), done.
+hooks/post-upload-pack:5:in `require': no such file to load --
+        /data/repositories/3/nw/39/14/config/basic (LoadError)
+        from hooks/post-upload-pack:5
+remote: Total 296204 (delta 230167), reused 283494 (delta 218965)
+Receiving objects: 100% (296204/296204), 40.50 MiB | 1.75 MiB/s, done.
+Resolving deltas: 100% (230167/230167), done.
+</code></pre>
+
+<p>I seem to have a copy now, but notice that there was an error reported in the process.</p>
+
+<h5>Sidetracked</h5>
+
+<p>I debated whether or not I should let this distract me from my goal, but it does seem worth a quick look since it seems to affect cloning the project and a lot of programmers do that.  My goal is to be good citizen and fixing broken windows is a great way to do that.</p>
+
+<p>So I peaked inside of that hook file… well, I tried.  I assumed the hook would be in the <code>.git/hooks</code> directory, but it wasn't:</p>
+
+<pre><code>$ cat .git/hooks/post-upload-pack
+cat: .git/hooks/post-upload-pack: No such file or directory
+</code></pre>
+
+<p>When it wasn't where I expected it to be, I Googled for the error:  <em>from hooks/post-upload-pack</em>.  <a href="https://gist.github.com/2377785">The first link</a> showed me that others have this issue with non-Rails repositories.  <a href="https://github.com/mxcl/homebrew/issues/11101">The second link</a> confirmed my suspicion that this isn't related to Rails.  It's actually a GitHub issue in this case.</p>
+
+<p>Good to know.  I'll let that go and get back to patching now.</p>
+
+<h5>Getting it to Run</h5>
+
+<p>Now that I have the Rails source, I need to get it setup for development.  Many projects include some information about how to contribute, often in their README, and that usually gives you some steps for getting started.  Sure enough, the Rails README did have a section for that and it actually linked me to <a href="http://edgeguides.rubyonrails.org/contributing_to_ruby_on_rails.html">a detailed guide on how to contribute</a>.</p>
+
+<p>Though it takes a little time, you really should read through this content.  It sucks to dump a bunch of effort into a patch only to have it rejected because you didn't do it the way the maintainers for that project like things done.  That usually ends up wasting even more time than just reading the documentation.</p>
+
+<p>So I read it.  It reminded me to search for my issue in their tracker, to make sure it wasn't there already.  I tried searches for <em>erb_trim_mode</em> and just <em>erb</em> but none of the results seemed relevant.</p>
+
+<p>Next, the guide told me to get the test suite running.  That sounded like a great idea to me.  I started working through those steps.</p>
+
+<p>I already had Git installed and I had checked out the Rails source, so I skipped over those steps.</p>
+
+<p>The next step talks about installing some dependencies, but only gave instructions for an operating system I don't use.  I thought I had some of them anyway, maybe even all though I wasn't sure.  Given that, I decided to just make sure I had the latest version of Bundler, as the guide recommends, <code>bundle</code>, and try the tests to see what happens:</p>
+
+<pre><code>$ gem install bundler
+Successfully installed bundler-1.1.3
+1 gem installed
+Installing ri documentation for bundler-1.1.3...
+Building YARD (yri) index for bundler-1.1.3...
+Installing RDoc documentation for bundler-1.1.3...
+$ gem update bundler
+Updating installed gems
+Nothing to update
+$ bundle install --without db
+…
+Your bundle is complete! Use `bundle show [gemname]` to see
+where a bundled gem is installed.
+…
+$ bundle exec rake test
+…
+</code></pre>
+
+<p>That last command dumped a metric ton of output.  I saw a lot of tests flow by, some errors, and plenty of warnings.  I had to decide how I should handle this.</p>
+
+<p>One option would be to start addressing these issues until I can cleanly run the entire test suite.  That could take quite a bit of time though.  The truth is that I only need to touch one small part of Rails and I know that part isn't the database (a complex portion of the Rails test suite that gets its own section in the guide).  Because of that, I decide to focus in on the subsection of Rails I want to manipulate and try to get that section running cleanly.</p>
+
+<p>First, I need to find the right spot.  I searched through the code for the broken setting:</p>
+
+<pre><code>$ ack erb_trim_mode
+actionpack/lib/action_view/base.rb
+155:  delegate :erb_trim_mode=, :to =&gt; 'ActionView::Template::Handlers::ERB'
+
+actionpack/lib/action_view/template/handlers/erb.rb
+44:   class_attribute :erb_trim_mode
+45:   self.erb_trim_mode = '-'
+82:       :trim =&gt; (self.class.erb_trim_mode == "-")
+</code></pre>
+
+<p>OK, it looks like the code I care about is in ActionPack, so I'll focus in on that.  That went better, though still not perfect:</p>
+
+<pre><code>$ cd actionpack/
+$ bundle exec rake test
+…
+… warning: loading in progress, circular require considered harmful - …
+…
+… warning: method redefined; discarding old blank?
+… warning: previous definition of blank? was here
+…
+Skipping MemCacheStoreTest tests. Start memcached and try again.
+…
+Finished tests in 22.599275s, 160.8459 tests/s, 723.3418 assertions/s.
+
+  1) Error:
+test_parameters(RequestTest):
+ArgumentError: wrong number of arguments (1 for 0)
+…
+
+3635 tests, 16347 assertions, 0 failures, 1 errors, 0 skips
+rake aborted!
+…
+</code></pre>
+
+<p>There are a few things happening here.  First, I'm seeing some warnings.  I wish they weren't there, but they don't really apply to what I am doing here and I'm going to ignore them for now.</p>
+
+<p>I also noticed that some tests were skipped because I didn't have <code>memcached</code> running.  That's fine.  I'm not going to touch anything related to that, so skip away.</p>
+
+<p>Finally the test suite does seem to have a single error.  If it were several errors I might be concerned that I don't have something setup right, but this is just one error that looks like a Ruby issue nowhere near the code I'm going to work on.  I note that it's there, but try not to worry about it for now.</p>
+
+<p>I'll want to check this full suite again before I'm done to make sure I haven't made anything worse, but it would be nice if I could zero in even more on just the part I care about.  The guide told me about a feature to run just one directory of tests.  It also told me how to silence the warnings.  I would like to try combining both of those tricks to see if I can get down to a small clean run of tests I can experiment with.</p>
+
+<p>My previous search showed that the code I need to modify is the <code>ActionView::Template::Handlers::ERB</code>.  I didn't match any code in the tests though, so I think we can assume that this feature is probably untested.  That would explain how it got removed in the first place.  Still, I hope the handler itself is tested and I hunt for that:</p>
+
+<pre><code>$ ls test
+abstract              assertions            lib           ts_isolated.rb
+abstract_unit.rb      controller            routing
+active_record_unit.rb dispatch              template
+activerecord          fixtures              tmp
+</code></pre>
+
+<p>That <code>template</code> directory looks promising.  I wanted to see if it was possible to get a clean run of just those tests.  Unfortunately, it didn't go as well as I hoped.  I was able to silence the warnings, but Rails seemed to ignore the <code>TEST_DIR</code> feature mentioned in the guide.</p>
+
+<p>I poked around some more.  I couldn't find any tests for the specific feature I am interested in.  I did find some semi-related tests for ERb functionality in the <code>erb</code> subdirectory.  With a little fiddling around I figured out how to run one of those files individually:</p>
+
+<pre><code>$ bundle exec ruby -I test test/template/erb/tag_helper_test.rb
+Run options: --seed 6234
+
+# Running tests:
+
+.....
+
+Finished tests in 0.011093s, 450.7347 tests/s, 540.8816 assertions/s.
+
+5 tests, 6 assertions, 0 failures, 0 errors, 0 skips
+</code></pre>
+
+<p>I plan to add a file in this directory for testing the handlers.  I can run just that file as I work to see how things are going, then close with a full run of the of the ActionPack suite to confirm that I haven't made anything worse.</p>
+
+<h4>The Boy Scout Rule</h4>
+
+<p>I want to add another possible trim mode, but it looks like what's there isn't even tested.  That's problematic because I won't know if I break that feature.</p>
+
+<p>Given that, I would like to add a super trivial set of tests just to verify the current behavior.  Next, I'll add some tests for the behavior I want and then add the feature.</p>
+
+<p>This means I'll be leaving things in slightly better shape than I found them.  There will be a new feature, it will be tested, and the existing feature will gain some coverage.</p>
+
+<p>To me, this is the ideal strategy for approaching any open source contribution.  If we all did this, things would always improve with every commit.</p>
+
+<p>I start by adding the new test file I need as <code>test/template/erb/handlers_test.rb</code> and ape a little of the setup code I saw from other files in that directory:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"abstract_unit"</span>
+
+<span class="k">class</span> <span class="nc">HandlersTest</span> <span class="o">&lt;</span> <span class="no">ActiveSupport</span><span class="o">::</span><span class="no">TestCase</span>
+  <span class="kp">extend</span> <span class="no">ActiveSupport</span><span class="o">::</span><span class="no">Testing</span><span class="o">::</span><span class="no">Declarative</span>
+
+<span class="k">end</span>
+</pre></div>
+
+<p>Then I added a little code to make it easy to temporarily change the trim mode and to render some content using a handler:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"abstract_unit"</span>
+
+<span class="k">class</span> <span class="nc">HandlersTest</span> <span class="o">&lt;</span> <span class="no">ActiveSupport</span><span class="o">::</span><span class="no">TestCase</span>
+  <span class="no">HANDLER</span>  <span class="o">=</span> <span class="no">ActionView</span><span class="o">::</span><span class="no">Template</span><span class="o">::</span><span class="no">Handlers</span><span class="o">::</span><span class="no">ERB</span>
+  <span class="no">Template</span> <span class="o">=</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:source</span><span class="p">)</span>
+
+  <span class="kp">extend</span> <span class="no">ActiveSupport</span><span class="o">::</span><span class="no">Testing</span><span class="o">::</span><span class="no">Declarative</span>
+
+  <span class="kp">private</span>
+
+  <span class="k">def</span> <span class="nf">with_erb_trim_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+    <span class="vi">@old_erb_trim_mode</span>    <span class="o">=</span> <span class="no">HANDLER</span><span class="o">.</span><span class="n">erb_trim_mode</span>
+    <span class="no">HANDLER</span><span class="o">.</span><span class="n">erb_trim_mode</span> <span class="o">=</span> <span class="n">mode</span>
+    <span class="k">yield</span>
+  <span class="k">ensure</span>
+    <span class="no">HANDLER</span><span class="o">.</span><span class="n">erb_trim_mode</span> <span class="o">=</span> <span class="vi">@old_erb_trim_mode</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+    <span class="nb">eval</span><span class="p">(</span><span class="s2">"output_buffer = nil; "</span> <span class="o">+</span> <span class="no">HANDLER</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="no">Template</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">template</span><span class="p">)))</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The <code>with_erb_trim_mode()</code> helper just sets the mode for me then runs a block of code.  It wraps that block in some code to save and restore the old setting.  We need to do that because this is effectively a global variable that affects all of Rails.  It could break other tests if we left it on the wrong setting.</p>
+
+<p>It took me a bit to puzzle out a proper <code>render()</code> for these handlers.  You can see that I had to add a <code>Template</code> just so I could put the ERb content in an expected <code>source()</code> method.  I also had to set a variable before the <code>eval()</code> because the template code expects to have that from the context it gets run in.  I figured these quirks out by reading the handler source and noodling with the code until I had figured out how to make it happy.</p>
+
+<p>Next I added two simple tests for the existing functionality:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"abstract_unit"</span>
+
+<span class="k">class</span> <span class="nc">HandlersTest</span> <span class="o">&lt;</span> <span class="no">ActiveSupport</span><span class="o">::</span><span class="no">TestCase</span>
+  <span class="c1"># ...</span>
+  <span class="nb">test</span> <span class="s2">"content is not trimmed without a trim mode"</span> <span class="k">do</span>
+    <span class="n">with_erb_trim_mode</span> <span class="kp">nil</span> <span class="k">do</span>
+      <span class="n">assert_equal</span><span class="p">(</span><span class="s2">"   </span><span class="se">\n</span><span class="s2">test"</span><span class="p">,</span> <span class="n">render</span><span class="p">(</span><span class="s2">" &lt;% 'IGNORED' %&gt;  </span><span class="se">\n</span><span class="s2">test"</span><span class="p">))</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="nb">test</span> <span class="s2">"content around tags is trimmed if the trim mode includes a dash"</span> <span class="k">do</span>
+    <span class="n">with_erb_trim_mode</span> <span class="s1">'-'</span> <span class="k">do</span>
+      <span class="n">assert_equal</span><span class="p">(</span><span class="s2">"test"</span><span class="p">,</span> <span class="n">render</span><span class="p">(</span><span class="s2">" &lt;% 'IGNORED' %&gt;  </span><span class="se">\n</span><span class="s2">test"</span><span class="p">))</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Those are passing:</p>
+
+<pre><code>$ bundle exec ruby -I test test/template/erb/handlers_test.rb
+Run options: --seed 9634
+
+# Running tests:
+
+..
+
+Finished tests in 0.009449s, 211.6626 tests/s, 211.6626 assertions/s.
+
+2 tests, 2 assertions, 0 failures, 0 errors, 0 skips
+</code></pre>
+
+<p>That gives me a touch more confidence for adding some new code, so I add some more tests for the functionality I want:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"abstract_unit"</span>
+
+<span class="k">class</span> <span class="nc">HandlersTest</span> <span class="o">&lt;</span> <span class="no">ActiveSupport</span><span class="o">::</span><span class="no">TestCase</span>
+  <span class="c1"># ...</span>
+
+  <span class="nb">test</span> <span class="s2">"percent lines are normal content without a trim mode"</span> <span class="k">do</span>
+    <span class="n">with_erb_trim_mode</span> <span class="kp">nil</span> <span class="k">do</span>
+      <span class="n">assert_equal</span><span class="p">(</span> <span class="s2">"% if false</span><span class="se">\n</span><span class="s2">oops</span><span class="se">\n</span><span class="s2">% end</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span>
+                    <span class="n">render</span><span class="p">(</span><span class="s2">"% if false</span><span class="se">\n</span><span class="s2">oops</span><span class="se">\n</span><span class="s2">% end</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="nb">test</span> <span class="s2">"percent lines count as ruby if trim mode includes a percent"</span> <span class="k">do</span>
+    <span class="n">with_erb_trim_mode</span> <span class="s2">"%"</span> <span class="k">do</span>
+      <span class="n">assert_equal</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="n">render</span><span class="p">(</span><span class="s2">"% if false</span><span class="se">\n</span><span class="s2">oops</span><span class="se">\n</span><span class="s2">% end</span><span class="se">\n</span><span class="s2">"</span><span class="p">))</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="nb">test</span> <span class="s2">"both trim modes can be used at the same time"</span> <span class="k">do</span>
+    <span class="n">with_erb_trim_mode</span> <span class="s2">"%-"</span> <span class="k">do</span>
+      <span class="n">assert_equal</span><span class="p">(</span> <span class="s2">"test"</span><span class="p">,</span> <span class="n">render</span><span class="p">(</span> <span class="s2">"% if false</span><span class="se">\n</span><span class="s2">oops</span><span class="se">\n</span><span class="s2">% end</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span>
+                                    <span class="s2">" &lt;% 'IGNORED' %&gt;  </span><span class="se">\n</span><span class="s2">test"</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I now have a couple of failing tests to fix:</p>
+
+<pre><code>$ bundle exec ruby -I test test/template/erb/handlers_test.rb
+Run options: --seed 15711
+
+# Running tests:
+
+F...F
+
+Finished tests in 0.027155s, 184.1282 tests/s, 184.1282 assertions/s.
+
+  1) Failure:
+test_both…(HandlersTest) [test/template/erb/handlers_test.rb:36]:
+--- expected
++++ actual
+@@ -1 +1,4 @@
+-"test"
++"% if false
++oops
++% end
++test"
+
+
+  2) Failure:
+test_percent…(HandlersTest) [test/template/erb/handlers_test.rb:30]:
+--- expected
++++ actual
+@@ -1 +1,4 @@
+-""
++"% if false
++oops
++% end
++"
+
+
+5 tests, 5 assertions, 2 failures, 0 errors, 0 skips
+</code></pre>
+
+<h4>The Big Finish</h4>
+
+<p>The setup and tests were definitely the hard part.  The actual code needed is tiny.  First, I introduce a new handler:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s1">'action_dispatch/http/mime_type'</span>
+<span class="nb">require</span> <span class="s1">'active_support/core_ext/class/attribute'</span>
+<span class="nb">require</span> <span class="s1">'erubis'</span>
+
+<span class="k">module</span> <span class="nn">ActionView</span>
+  <span class="k">class</span> <span class="nc">Template</span>
+    <span class="k">module</span> <span class="nn">Handlers</span>
+      <span class="k">class</span> <span class="nc">Erubis</span> <span class="o">&lt;</span> <span class="o">::</span><span class="no">Erubis</span><span class="o">::</span><span class="no">Eruby</span>
+        <span class="c1"># ...</span>
+      <span class="k">end</span>
+
+      <span class="k">class</span> <span class="nc">ErubisWithPercentLine</span> <span class="o">&lt;</span> <span class="no">Erubis</span>
+        <span class="kp">include</span> <span class="o">::</span><span class="no">Erubis</span><span class="o">::</span><span class="no">PercentLineEnhancer</span>
+      <span class="k">end</span>
+
+      <span class="c1"># ...</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The old ERb code took its setting from a parameter to the constructor, but Erubis tells you to mix in a module that handles this feature.  To do that, I just subclass the existing handler and add the module.  Now we can have it either way, depending on which handler we delegate to.</p>
+
+<p>Next I edit a small chunk of implementation code for the <code>ERB</code> handler to take it from this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s1">'action_dispatch/http/mime_type'</span>
+<span class="nb">require</span> <span class="s1">'active_support/core_ext/class/attribute'</span>
+<span class="nb">require</span> <span class="s1">'erubis'</span>
+
+<span class="k">module</span> <span class="nn">ActionView</span>
+  <span class="k">class</span> <span class="nc">Template</span>
+    <span class="k">module</span> <span class="nn">Handlers</span>
+      <span class="c1"># ...</span>
+
+      <span class="k">class</span> <span class="nc">ERB</span>
+        <span class="c1"># ...</span>
+
+        <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+          <span class="c1"># ...</span>
+
+          <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">erb_implementation</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
+            <span class="n">erb</span><span class="p">,</span>
+            <span class="ss">:trim</span> <span class="o">=&gt;</span> <span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">erb_trim_mode</span> <span class="o">==</span> <span class="s2">"-"</span><span class="p">)</span>
+          <span class="p">)</span><span class="o">.</span><span class="n">src</span>
+        <span class="k">end</span>
+
+        <span class="c1"># ...</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>to:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s1">'action_dispatch/http/mime_type'</span>
+<span class="nb">require</span> <span class="s1">'active_support/core_ext/class/attribute'</span>
+<span class="nb">require</span> <span class="s1">'erubis'</span>
+
+<span class="k">module</span> <span class="nn">ActionView</span>
+  <span class="k">class</span> <span class="nc">Template</span>
+    <span class="k">module</span> <span class="nn">Handlers</span>
+      <span class="c1"># ...</span>
+
+      <span class="k">class</span> <span class="nc">ERB</span>
+        <span class="c1"># ...</span>
+
+        <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+          <span class="c1"># ...</span>
+
+          <span class="n">mode</span>           <span class="o">=</span> <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">erb_trim_mode</span><span class="o">.</span><span class="n">to_s</span>
+          <span class="n">implementation</span> <span class="o">=</span> <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">erb_implementation</span>
+          <span class="k">if</span> <span class="n">mode</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="s2">"%"</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">implementation</span> <span class="o">==</span> <span class="no">Erubis</span>
+            <span class="n">implementation</span> <span class="o">=</span> <span class="no">ErubisWithPercentLine</span>
+          <span class="k">end</span>
+          <span class="n">implementation</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">erb</span><span class="p">,</span> <span class="ss">:trim</span> <span class="o">=&gt;</span> <span class="n">mode</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="s2">"-"</span><span class="p">))</span><span class="o">.</span><span class="n">src</span>
+        <span class="k">end</span>
+
+        <span class="c1"># ...</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Really all I do here is to trade out the handler if it is set to the normal <code>Erubis</code> and the trim mode includes <code>%</code>.  In that case I switch to the handler that includes the extra behavior.</p>
+
+<p>I was a little worried I might be slowing down the Rails rendering pipeline with this change.  That would be bad, because we know it's rare and I would hate to impact the common case to support it.  However, I checked around a bit for the code that invokes this handler and it turns out that templates are only compiled once, under normal usage.  That's perfect.  Even if I did add a tiny penalty, we won't be paying it with every render.  That's what I was worried about.</p>
+
+<p>I rerun my tests to ensure that change does the trick, then rerun the full ActionPack suite to verify that there's still just one failure.  That's exactly how it goes, so the feature is restored.</p>
+
+<h4>The Polish</h4>
+
+<p>I assume this feature is never used because no one knows it exists.  To increase the chances of people finding it I decide to add a CHANGELOG entry:</p>
+
+<pre><code>## Rails 4.0.0 (unreleased) ##
+
+*   Restored support for the "%" ERb/Erubis _trim mode_.  This can be
+    activated with:
+
+        config.action_view.erb_trim_mode = "%"  # or "%-" whitespace trim
+
+    With that mode active, you can use a single percent sign at the
+    beginning of a line to engage Ruby mode (without inserting results).
+    It allows for template code like this:
+
+        % if current_user.try(:admin?)
+          &lt;%= render "edit_links" %&gt;
+        % end
+
+    *James Edward Gray II*
+</code></pre>
+
+<p>There's other documentation that should be updated too.  For example, I noticed that one of the Rails guides mentions this feature but gives the wrong default for it and claims that it supports a lot more modes than it does.  I'll wait to see if the core team accepts my patch, then offer to fix that documentation to bring it inline.</p>
+
+<p>Take note that most of my work on this patch was not about adding the feature.  I invested a lot of time in the tests, I worried about whether or not I was slowing Rails down, and I took time to add some documentation.  A patch is more politics than code and I'm trying to make it easy for the core team to say, "Yes."</p>
+
+<h4>Sending it Up</h4>
+
+<p>The work is done, so it's time to push it up to GitHub and send a pull request.  The first part is a few simple commands:</p>
+
+<pre><code>$ git add --all
+$ git commit -m "Restoring the '%' trim mode for ERb templates, …"
+[master c734294] Restoring…
+ 3 files changed, 76 insertions(+), 4 deletions(-)
+ create mode 100644 actionpack/test/template/erb/handlers_test.rb
+$ git push origin master
+Counting objects: 24, done.
+Delta compression using up to 8 threads.
+Compressing objects: 100% (13/13), done.
+Writing objects: 100% (13/13), 2.00 KiB, done.
+Total 13 (delta 10), reused 0 (delta 0)
+To git@github.com:JEG2/rails.git
+   99eae3f..c734294  master -&gt; master
+</code></pre>
+
+<p>I went to GitHub and filled out the <a href="https://github.com/rails/rails/pull/5915">pull request</a>.  Now I'll just have to wait and see if it gets accepted…</p>
+
+<h4>Get Involved</h4>
+
+<p>We should all remember to do our part.  You can, and should, help out.  Here are some ideas for things you could do:</p>
+
+<ul>
+<li>Try my patch.  Whip up a little Rails application, point it at <a href="https://github.com/JEG2/rails">my fork</a> and try the new feature.  If it works for you, go add a comment saying so to my pull request.  This encourages the Rails team to accept the patch.</li>
+<li>Work on those warnings in the tests.  You know I love running with warnings mode on, so it really bugs me that Rails doesn't run clean in that mode.  These are usually quite easy to fix too.  The message generally sends you to the exact line and you usually just need to add some parentheses, initialize a variable, or switch away from a deprecated method.  If you make any pull request fixing these, drop me an email.  I'm happy to advocate for you.</li>
+<li>If you are feeling adventurous and want to be a real hero, take a look at <a href="https://github.com/rails/rails/issues">the open Rails issues</a> and see if you can help out with any of them.  There's usually some in there that aren't too much trouble if you dig a little and it's an excellent way to get comfortable with the Rails source.</li>
+</ul>
+        
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/lets-patch-rails">
+  In: <a href="/rubies-in-the-rough/">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Open%20Source/">Open Source</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/lets-patch-rails#comments">0 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (0)</span></h5>
+
+    <ol>
+      
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

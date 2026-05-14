@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Rubies in the Rough / Even More Eloquent Ruby</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="This article takes a look at some of the specific examples in the the popular Ruby textbook Eloquent Ruby and what can be learned from them.">
+    <meta name="keywords"    content="thinking about code, software design, Iterators, Syntax, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/rubies-in-the-rough/even-more-eloquent-ruby/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/rubies-in-the-rough">Rubies in the Rough</a></h1>
+            <span>This is where I try to teach how I think about programming.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>11</h4>
+    <span>
+      DEC<br>
+      2011
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">Even More Eloquent Ruby</h3>
+        
+        <p>I recently read <a href="http://www.amazon.com/gp/product/0321584104/ref=as_li_ss_tl?ie=UTF8&amp;tag=eloqruby-20&amp;linkCode=as2&amp;camp=217145&amp;creative=399349&amp;creativeASIN=0321584104">Eloquent Ruby</a> so we can discuss it on an upcoming <a href="http://rubyrogues.com/">Ruby Rogues</a> episode with author Russ Olsen.  In short, the book is fantastic.  You should definitely read it.</p>
+
+<p>I, on the other hand, am cranky.  When you have read Ruby books since the first one was published (literally!), you can always find something to complain about.  There are a handful of examples in Eloquent Ruby that could be better, in my opinion.  I thought I would show you some of those.  If you've read the book, this should make a nice supplement.  Don't worry if you haven't though, you will still be able to follow these ideas just fine.  I also won't spoil the ending, but you all know that the Rubyist saves the day.</p>
+
+<p>Before I start, let me stress one more time that this is a terrific book.  It has so many clear discussions of real issues Rubyists must face when writing code like class variables, the differences between <code>lambda()</code>, <code>proc()</code>, and <code>Proc.new()</code>, how to use blocks and modules, why people think Ruby leaks memory and how you can avoid those problems, plus more.  Don't let any fun I poke at the examples below change your view of this book.  If I didn't love it, I wouldn't have bothered to write this article.</p>
+
+<h4>My Personal Reasoning</h4>
+
+<p>In Eloquent Ruby, reasoning is given for when to use certain constructs. For example, when should you define a block using <code>do … end</code> and when should you use braces <code>{ … }</code>?  The book says to use words for multiline blocks and braces for one-liners.  That's a decent strategy, but I prefer another.</p>
+
+<p>I believe Jim Weirich invented this strategy, but here's what I use:</p>
+
+<ul>
+<li>Use braces for blocks when you care about the return value</li>
+<li>Use words for blocks when you are running the code for its side effects</li>
+</ul><p>Let's look at a couple of examples for that.  First, an example where the return value matters:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="n">n</span><span class="o">.</span><span class="n">even?</span> <span class="p">}</span>
+</pre></div>
+
+<p>Here the result of the block determines which values are kept and which are discarded.  So it matters.  That means we use braces.</p>
+
+<p>Now let's look at the other side of the equation:</p>
+
+<div class="highlight highlight-ruby"><pre>    <span class="mi">10</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span>
+      <span class="nb">puts</span> <span class="n">n</span>
+    <span class="k">end</span>
+</pre></div>
+
+<p>In this case, I'm just running a block multiple times.  The results of it are discarded.  That means we are doing it for the side effects (printing some content, in this case).  That calls for words.</p>
+
+<p>It's worth noting that I did switch to multiple lines here, using the book's strategy as well.  Ruby would allow it on one line, but I do prefer to split a <code>do … end</code> block across multiple lines.</p>
+
+<p>I'll keep braces (<code>{ … }</code>) on one line if it fits, but I'm not married to this point.  If I need multiple lines, I take them.  I don't switch to <code>do … end</code> though, if the return value matters.</p>
+
+<h5>Magic Defined</h5>
+
+<p>The book also gives some advice on when you might want to use the <code>||=</code> operator.  All of the advice given is great, but it misses one of my favorite reasons to use it.</p>
+
+<p>I've recommended before that you should be using warnings and <a href="http://avdi.org/devblog/2011/06/23/how-ruby-helps-you-fix-your-broken-code/">that's still true</a>.  If you have warnings active, Ruby will complain when you use an instance variable before it has been set:</p>
+
+<pre><code>$ ruby -we 'p @var'
+-e:1: warning: instance variable @var not initialized
+nil
+</code></pre>
+
+<p>That's good, because it can help you find bugs.  Who hates free bug finding?</p>
+
+<p>The best way to address this issue is to provide a default value for the variable when it is accessed:</p>
+
+<pre><code>$ ruby -we '@var ||= 42'
+</code></pre>
+
+<p>Ah, the warning is gone.  Perfect.</p>
+
+<p>It's interesting to look at exactly why the warning leaves though.  It might not be for the reason you think.</p>
+
+<p>Often we teach that compound assignment operations, like <code>a ||= b</code>, are just a shortcut form of <code>a = a || b</code>.  Is that really true though?</p>
+
+<pre><code>$ ruby -we '@var = @var || 42'
+-e:1: warning: instance variable @var not initialized
+</code></pre>
+
+<p>I guess not, because our warning came back.  It kind of makes sense, if you think about it.  Even though the line above is an assignment, it has to access <code>@var</code> first (the second reference) before it can complete the assignment.  That access triggers the warning, because it hasn't been initialized at that point.</p>
+
+<p>That leaves us wondering, what does <code>||=</code> really expand to?  The answer is that it's something closer to this:</p>
+
+<pre><code>$ ruby -we '@var = (defined?(@var) &amp;&amp; @var) || 42'
+</code></pre>
+
+<p>The warning is gone again.  So what is this <code>defined?()</code> thing?  Let's fire up <a href="http://pry.github.com/">Pry</a> (my favorite IRb replacement) and try it out:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">defined?</span> <span class="vi">@var</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="vi">@var</span> <span class="o">=</span> <span class="mi">42</span>
+<span class="o">=&gt;</span> <span class="mi">42</span>
+<span class="o">&gt;&gt;</span> <span class="n">defined?</span> <span class="vi">@var</span>
+<span class="o">=&gt;</span> <span class="s2">"instance-variable"</span>
+</pre></div>
+
+<p><code>defined?</code> is one of the few magic keywords in Ruby.  It's not a method, because it has special powers.  It will basically answer the question, "Do you know what this is?"</p>
+
+<p>You can see above that Ruby didn't know about the variable, before I set it.  Then it did.</p>
+
+<p><code>defined?</code> takes advantage of the fact that a <code>String</code> is a <code>true</code> value in Ruby and returns what exactly the thing is.  This means you can use it in a conditional statement check or to gain more information.</p>
+
+<p>We can also ask it about methods:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">defined?</span> <span class="nb">puts</span>
+<span class="o">=&gt;</span> <span class="s2">"method"</span>
+</pre></div>
+
+<p>Note that I didn't say <code>:puts</code>.  Again, it's magic.  Whatever follows <code>defined?</code> loses its normal meaning and becomes a simple question.  That's why it can dodge warnings.  It doesn't have to access the thing (which could trigger a warning).  Instead it just tells you if it knows what it is.</p>
+
+<p>That can be pretty handy.  Consider this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">defined?</span> <span class="nb">puts</span>
+<span class="o">=&gt;</span> <span class="s2">"method"</span>
+<span class="o">&gt;&gt;</span> <span class="nb">puts</span> <span class="o">=</span> <span class="s2">"Yikes!"</span>
+<span class="o">=&gt;</span> <span class="s2">"Yikes!"</span>
+<span class="o">&gt;&gt;</span> <span class="n">defined?</span> <span class="nb">puts</span>
+<span class="o">=&gt;</span> <span class="s2">"local-variable"</span>
+<span class="o">&gt;&gt;</span> <span class="n">defined?</span> <span class="nb">puts</span><span class="p">()</span>
+<span class="o">=&gt;</span> <span class="s2">"method"</span>
+</pre></div>
+
+<p>Notice how I hid the method from my current scope by creating a local variable with the same name?  <code>defined?</code> helped us see what was going on there and that I would now need to use parentheses if I wanted the method.</p>
+
+<p>Aside from the uses mentioned above, and obvious uses like checking constants, <code>defined?</code> has one more killer trick up its sleeve:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="k">class</span> <span class="nc">Dog</span>
+ <span class="o">|</span>   <span class="k">def</span> <span class="nf">bark</span>
+ <span class="o">|</span>     <span class="s2">"Woof!"</span>
+ <span class="o">|</span>   <span class="k">end</span>  
+ <span class="o">|</span> <span class="k">end</span>  
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="k">class</span> <span class="nc">Cat</span>
+ <span class="o">|</span>   <span class="k">def</span> <span class="nf">meow</span>
+ <span class="o">|</span>     <span class="s2">"Meow!"</span>
+ <span class="o">|</span>   <span class="k">end</span>  
+ <span class="o">|</span> <span class="k">end</span>  
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="k">module</span> <span class="nn">BarkDetector</span>
+ <span class="o">|</span>   <span class="k">def</span> <span class="nf">bark</span>
+ <span class="o">|</span>     <span class="n">defined?</span><span class="p">(</span><span class="k">super</span><span class="p">)</span> <span class="p">?</span> <span class="k">super</span> <span class="p">:</span> <span class="s2">"I can't bark."</span>
+ <span class="o">|</span>   <span class="k">end</span>
+ <span class="o">|</span> <span class="k">end</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="no">Dog</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">BarkDetector</span><span class="p">)</span><span class="o">.</span><span class="n">bark</span>
+<span class="o">=&gt;</span> <span class="s2">"Woof!"</span>
+<span class="o">&gt;&gt;</span> <span class="no">Cat</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">BarkDetector</span><span class="p">)</span><span class="o">.</span><span class="n">bark</span>
+<span class="o">=&gt;</span> <span class="s2">"I can't bark."</span>
+</pre></div>
+
+<p>As you can see, I used <code>defined?(super)</code> to tell me if I had a method higher up in the call chain to delegate to.  It returns <code>"super"</code> if I do and the usual <code>nil</code> if I don't.  This allows me to check if a handoff is safe, before I make it.</p>
+
+<p>Those are just a couple of reasons I wanted to add, to those provided in the book, for how you might make use of certain Ruby constructs.</p>
+
+<h4>Setting a Bad Example for Ruby</h4>
+
+<p>For chess nuts like me, going to the movies is a mixed bag.  On one hand, chess enjoys a blessed status in the movies.  The go-to method for telling you that character is brilliant or calculating, without coming right out and saying it, is to place a chess board in their home.  Awesome!</p>
+
+<p>Unfortunately, if you get a good look at that board, you'll be sad to see that it's not setup properly about 50% of the time.  Doh!  I wish I was exaggerating, but it's true.  Look for two bishops of the same color on identical color squares (not impossible, but incredibly unlikely), a reversed king and queen in the initial setup, or the absence of a white square in the lower right hand corner of the board.  Now this can drive you crazy too.  You're welcome.</p>
+
+<p>Ruby books use a similar trick that causes me the same amount of pain.  Most of them, including Eloquent Ruby, have an example very similar to the following early on:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">array</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">item</span><span class="o">|</span> <span class="nb">puts</span> <span class="n">item</span> <span class="p">}</span>
+</pre></div>
+
+<p>At this point some books ask, "Isn't that beautiful?"  It's hard to say just why they think that.  Perhaps the question is meant to be something like, "Isn't it nice that I didn't need a <code>for</code> loop, I didn't have to track an index variable, and I didn't have to add a newline to the output?"  Well sure, but I always think, "What a dumb use of smart-ole <code>puts()</code>."  (Plus, you already know that I believe the block should be <code>do … end</code>.)</p>
+
+<p>In case you don't know, this code is equivalent to the above:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">puts</span> <span class="n">array</span>
+</pre></div>
+
+<p>Now I'm not showing you that just to show that I know more about <code>puts()</code> than a lot of Ruby authors.  Instead, I'm trying to make you aware of a common Ruby pattern:  we like our methods smart.  <code>puts()</code> is designed just that way, to be quite smart.</p>
+
+<p>This method does a ton of things, when you think about it.  Let's examine some of them to see how smart it really is.</p>
+
+<p>First, <code>puts()</code> doesn't just blindly push data somewhere.  Instead it honors the <code>$stdout</code> variable.  We can use that to spy on what it is really doing.  Let's wrap <code>puts()</code> to force it to return the <code>String</code> it would have written:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="nb">require</span> <span class="s2">"stringio"</span>
+<span class="o">=&gt;</span> <span class="kp">false</span>
+<span class="o">&gt;&gt;</span> <span class="k">def</span> <span class="nf">capture_puts</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+ <span class="o">|</span>   <span class="vg">$stdout</span> <span class="o">=</span> <span class="no">StringIO</span><span class="o">.</span><span class="n">new</span>
+ <span class="o">|</span>   <span class="nb">puts</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+ <span class="o">|</span>   <span class="vg">$stdout</span><span class="o">.</span><span class="n">string</span>
+ <span class="o">|</span> <span class="k">ensure</span>
+ <span class="o">|</span>   <span class="vg">$stdout</span> <span class="o">=</span> <span class="no">STDOUT</span>
+ <span class="o">|</span> <span class="k">end</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">capture_puts</span><span class="p">(</span><span class="s2">"test"</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="s2">"test</span><span class="se">\n</span><span class="s2">"</span>
+</pre></div>
+
+<p>What did I do here?  Simple, I just defined a new method, <code>capture_puts()</code>, that forwards exactly the arguments you send it to <code>puts()</code>.  Before it does that though, is switches out <code>$stdout</code> to allow me to capture output into a <code>String</code>.  That's what the standard <code>stringio</code> library is for, to create a <code>String</code> that pretends to be an <code>IO</code> object.  After the call to <code>puts()</code> I return the captured output.  Finally, the ensure clause restores <code>$stdout</code> to the original <code>STDOUT</code> before leaving this method, to undo my fiddling.  (Confused by the two different references to the standard output device?  <a href="http://blog.segment7.net/2006/08/17/stdout-vs-stdout">Read this</a>.)  If I hadn't done that, I might have broken Pry's ability to show me what's happening.</p>
+
+<p>After I wrapped the method, you can see that I put it to work.  The result tells us about the first special behavior of <code>puts()</code>, which is that it will add a newline (<code>"\n"</code>) to a <code>String</code> before writing it out.</p>
+
+<p>That naturally leads to the second question, "What if the <code>String</code> already had a newline character at the end?"  Let's ask:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">capture_puts</span><span class="p">(</span><span class="s2">"test</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="s2">"test</span><span class="se">\n</span><span class="s2">"</span>
+</pre></div>
+
+<p>Sweet.  <code>puts()</code> is smart enough to just skip adding it in this case.  That's handy.</p>
+
+<p>I have more questions.  What if we pass it multiple items?</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">capture_puts</span><span class="p">(</span><span class="s2">"one"</span><span class="p">,</span> <span class="s2">"two"</span><span class="p">,</span> <span class="s2">"three"</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="s2">"one</span><span class="se">\n</span><span class="s2">two</span><span class="se">\n</span><span class="s2">three</span><span class="se">\n</span><span class="s2">"</span>
+</pre></div>
+
+<p>Ah, so it's each item on its own line.  Nice.</p>
+
+<p>Of course, we know from how I started this discussion that it treats an <code>Array</code> the same way:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">capture_puts</span><span class="p">(</span><span class="sx">%w[one two three]</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="s2">"one</span><span class="se">\n</span><span class="s2">two</span><span class="se">\n</span><span class="s2">three</span><span class="se">\n</span><span class="s2">"</span>
+</pre></div>
+
+<p>What if we mix the two?</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">capture_puts</span><span class="p">(</span><span class="s2">"one"</span><span class="p">,</span> <span class="sx">%w[two three four]</span><span class="p">,</span> <span class="s2">"five"</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="s2">"one</span><span class="se">\n</span><span class="s2">two</span><span class="se">\n</span><span class="s2">three</span><span class="se">\n</span><span class="s2">four</span><span class="se">\n</span><span class="s2">five</span><span class="se">\n</span><span class="s2">"</span>
+</pre></div>
+
+<p>Yep, it's definitely each item on its own line.</p>
+
+<p>What if we pass it nothing?</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">capture_puts</span>
+<span class="o">=&gt;</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>
+</pre></div>
+
+<p>A blank line.  Makes sense.</p>
+
+<p>Can we break it?  What if I don't give it a <code>String</code>?</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">capture_puts</span><span class="p">(</span><span class="no">Object</span><span class="o">.</span><span class="n">new</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="s2">"#&lt;Object:0x00000101107a50&gt;</span><span class="se">\n</span><span class="s2">"</span>
+</pre></div>
+
+<p>Woah, what did it do there?  It did something to my <code>Object</code>, but I may not know exactly what it did.  We could find out though.  Let's pass it a snitch object that will tell us what happens:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="k">class</span> <span class="nc">Snitch</span> <span class="o">&lt;</span> <span class="no">BasicObject</span>
+ <span class="o">|</span>   <span class="k">def</span> <span class="nf">method_missing</span><span class="p">(</span><span class="nb">method</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+ <span class="o">|</span>     <span class="o">::</span><span class="no">Kernel</span><span class="o">.</span><span class="n">warn</span> <span class="s2">"</span><span class="si">#{</span><span class="nb">method</span><span class="si">}</span><span class="s2"> called."</span>
+ <span class="o">|</span>   <span class="k">end</span>
+ <span class="o">|</span> <span class="k">end</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">capture_puts</span><span class="p">(</span><span class="no">Snitch</span><span class="o">.</span><span class="n">new</span><span class="p">)</span>
+<span class="n">to_ary</span> <span class="n">called</span><span class="o">.</span>
+<span class="nb">to_s</span> <span class="n">called</span><span class="o">.</span>
+<span class="o">=&gt;</span> <span class="s2">"#&lt;Snitch:0x000001009c66d8&gt;</span><span class="se">\n</span><span class="s2">"</span>
+</pre></div>
+
+<p>Now that's interesting!  Before we get to what happened though, let's talk about how I did that.  I made a new kind of object called a <code>Snitch</code>, but note that it inherits from <code>BasicObject</code>.</p>
+
+<p><code>BasicObject</code> is the new superclass of <code>Object</code> in Ruby 1.9.  It is purposely very barebones in the list of methods it supports.  That's for cases just like this, where you would like everything to hit <code>method_missing()</code> so you can handle it dynamically.</p>
+
+<p>Once I had all the traffic going through <code>method_missing()</code>, I had to find a way to tell myself what had happened.  That's harder than you might think with <code>BasicObject</code>.  First, all of the handy output methods we are use to from <code>Kernel</code> are mixed into <code>Object</code>, not <code>BasicObject</code>.  So we can't access those directly.  Luckily, <code>Kernel</code>'s method are defined using <code>module_function()</code>, so you can also call them as module methods on <code>Kernel</code> itself.  But that leads to another problem:  constant lookup happens from <code>Object</code>, not <code>BasicObject</code>.  That's why I had to use the funny looking <code>::Kernel</code> to force the lookup into the top-level scope.  Finally, I called <code>warn()</code> to write some output to <code>$stderr</code>, since we are currently messing with <code>$stdout</code>.  OK, that was a pain in the butt, but it tells a cool story.</p>
+
+<p>Note that Ruby first tried to call <code>to_ary()</code>.  That's the conversion method for objects that are so close to an <code>Array</code> that it is OK for Ruby to just treat them as if they were an <code>Array</code>.  In other words, this is <code>puts()</code> asking our argument, "Are you an <code>Array</code>?"  I'm sure it won't surprise you to hear that <code>Array</code> implements <code>to_ary()</code> to just return <code>self</code>.  It's OK to treat an <code>Array</code> like an <code>Array</code>, so that makes sense.  This means we now see how the special handling of <code>Array</code> arguments is handled.  If <code>puts()</code> can treat the argument as an <code>Array</code>, it will walk the items and output each on a line.</p>
+
+<p>That didn't work here, because we didn't return an <code>Array</code>, so <code>puts()</code> switched strategies.  It said, "OK, convert yourself to a <code>String</code>."  This isn't the polite kind of a conversion we saw earlier that would ask, "Can I treat you as a <code>String</code>?"  That would be <code>to_str()</code>.  This is the more demanding version that says, "Turn yourself into a <code>String</code>."  Almost every thing in Ruby can do that, because they inherit a <code>to_s()</code> method from <code>Object</code>.  Not <code>BasicObject</code> though, which is why it was able to show us this secret.</p>
+
+<p>It's probably worth saying that I'm not sure where the actual output came from in this case.  We didn't provide an <code>Array</code> or a <code>String</code>.  I assume it's a special case inside <code>puts()</code> that kicks in when everything else fails.  I'm just guessing though.  I haven't checked the source to see if that's correct.</p>
+
+<p>Given all of the above, we now understand what happened to our <code>Object</code> and can prove it:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">obj</span> <span class="o">=</span> <span class="no">Object</span><span class="o">.</span><span class="n">new</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;Object:0x00000100a2c898&gt;</span>
+<span class="o">&gt;&gt;</span> <span class="n">obj</span><span class="o">.</span><span class="n">to_s</span>
+<span class="o">=&gt;</span> <span class="s2">"#&lt;Object:0x00000100a2c898&gt;"</span>
+<span class="o">&gt;&gt;</span> <span class="n">capture_puts</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="s2">"#&lt;Object:0x00000100a2c898&gt;</span><span class="se">\n</span><span class="s2">"</span>
+</pre></div>
+
+<p>We can actually make use of that knowledge now that we have it:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="k">module</span> <span class="nn">Markdown</span>
+ <span class="o">|</span>   <span class="k">class</span> <span class="nc">Bold</span>
+ <span class="o">|</span>     <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+ <span class="o">|</span>       <span class="vi">@content</span> <span class="o">=</span> <span class="n">content</span>
+ <span class="o">|</span>     <span class="k">end</span>
+ <span class="o">|</span>     
+ <span class="o">|</span>     <span class="k">def</span> <span class="nf">to_s</span>
+ <span class="o">|</span>       <span class="s2">"**</span><span class="si">#{</span><span class="vi">@content</span><span class="si">}</span><span class="s2">**"</span>
+ <span class="o">|</span>     <span class="k">end</span>
+ <span class="o">|</span>   <span class="k">end</span>
+ <span class="o">|</span> <span class="k">end</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">capture_puts</span><span class="p">(</span><span class="no">Markdown</span><span class="o">::</span><span class="no">Bold</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"I am bold!"</span><span class="p">))</span>
+<span class="o">=&gt;</span> <span class="s2">"**I am bold!**</span><span class="se">\n</span><span class="s2">"</span>
+</pre></div>
+
+<p>By defining <code>to_s()</code> we can control what <code>puts()</code> converts our objects to before writing them out.  That's good to know.</p>
+
+<p><code>puts()</code> has a lot of behavior.  This is to make it serve you better.  It's designed to intelligently handle the content you pass to it.  That's how we prefer our Ruby methods to work.  Keep this in mind as you learn to use core methods, but also as you write methods of your own.</p>
+
+<h4>Show Me the Match</h4>
+
+<p>Here's a surprisingly simple thing I'm surprised the books never seem to use.</p>
+
+<p>Most books, including Eloquent Ruby, explain a little bit about regular expressions and then say, "You can tell if a regex matches using the match operator (<code>=~</code>):"</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="s2">"one two"</span> <span class="o">=~</span> <span class="sr">/missing/</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="s2">"one two"</span> <span class="o">=~</span> <span class="sr">/\w+\z/</span>
+<span class="o">=&gt;</span> <span class="mi">4</span>
+</pre></div>
+
+<p>OK, so if it doesn't match it's <code>nil</code>.  We're pretty use to that.  And if it does match it's <code>4</code>.  To quote Liz Lemon, "What the what?"  We know that <code>4</code> is <code>true</code> so that's an affirmative response, but <code>4</code> really?  Why not <code>42</code>?</p>
+
+<p>The reason is that Ruby is returning the index of where the match occurred.  I think most people figure that out a lot faster than I did, but even after knowing it I still don't find it all that helpful.  I just never seem to need the index and if I did, well, I would call <code>String#index()</code>.</p>
+
+<p>The problem is actually the question.  We are instructed to ask, "Does this match?"  However, when you are dealing with expressions like <code>/\w+\z/</code> the far more interesting question is, "<em>What</em> does this match?"  It turns out that Ruby has an operator for that too:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="s2">"one two"</span><span class="o">[</span><span class="sr">/missing/</span><span class="o">]</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="s2">"one two"</span><span class="o">[</span><span class="sr">/\w+\z/</span><span class="o">]</span>
+<span class="o">=&gt;</span> <span class="s2">"two"</span>
+</pre></div>
+
+<p>Isn't that way more helpful?  That just makes me think, "Oh, it matches the last word."  It's far easier to understand and teach, if you ask me.</p>
+
+<p>It gets better though.  When we index into a <code>String</code> with a regular expression as I just did, we can even request a part of the match:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="s2">"Gray, James"</span><span class="o">[</span><span class="sr">/\A(\w+),\s*(\w+)\z/</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span>
+<span class="o">=&gt;</span> <span class="s2">"James"</span>
+</pre></div>
+
+<p>Or we can use Oniguruma's (the regex engine in Ruby 1.9) named captures this way:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="s2">"Gray, James"</span><span class="o">[</span><span class="sr">/\A(?&lt;last&gt;\w+),\s*(?&lt;first&gt;\w+)\z/</span><span class="p">,</span> <span class="ss">:first</span><span class="o">]</span>
+<span class="o">=&gt;</span> <span class="s2">"James"</span>
+</pre></div>
+
+<p>Why is this so great?  Well think about what happens if it doesn't match.  Using this strategy, we still just get <code>nil</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="s2">"not a name"</span><span class="o">[</span><span class="sr">/\A(?&lt;last&gt;\w+),\s*(?&lt;first&gt;\w+)\z/</span><span class="p">,</span> <span class="ss">:first</span><span class="o">]</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+</pre></div>
+
+<p>But how would we do that with the match operator?  The answer is that it isn't pretty.  One possible way is:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="s2">"not a name"</span> <span class="o">=~</span> <span class="sr">/\A(?&lt;last&gt;\w+),\s*(?&lt;first&gt;\w+)\z/</span> <span class="o">&amp;&amp;</span> <span class="vg">$~</span><span class="o">[</span><span class="ss">:first</span><span class="o">]</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+</pre></div>
+
+<p>Again, the index just doesn't end up being very helpful, so I had to resort to another means of accessing the data I wanted.  In this case, I pulled the <code>MatchData</code> object for the last match, hidden in <code>$~</code>.  Yuck.</p>
+
+<p>Or you can just index the <code>String</code> with an expression.  I'll let you decide.</p>
+
+<h4>Have Some Class</h4>
+
+<p>Eloquent Ruby doesn't really get into why, but it sometimes shows class methods like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">MyClass</span>
+  <span class="k">def</span> <span class="nc">MyClass</span><span class="o">.</span><span class="nf">whatever</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Other times, it shows them like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">MyClass</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">whatever</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>And I think it pretty much always shows class methods accessed through the instance like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Renderer</span>
+  <span class="k">def</span> <span class="nc">Renderer</span><span class="o">.</span><span class="nf">render</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">render</span>
+    <span class="no">Renderer</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="nb">self</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>But we could also write that as:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">class</span> <span class="nc">Renderer</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">render</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">render</span>
+    <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="nb">self</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>My advice is to prefer the latter.  It's a small thing, but this makes it much easier to change the name of your class (the same would apply to modules).  You just need to change that one name at the top and all the <code>self</code> references will do the right thing.  You won't need to hunt down all of the extra references.</p>
+
+<p>This is just a good general practice to follow.  Let Ruby find the things it knows how to find for you.</p>
+
+<p>For example, I had to guide Ruby to the <code>warn()</code> method with a <code>::Kernel</code> prefix earlier, but that was a special case.  Usually, we should just call <code>warn()</code> and let Ruby do its thing.  This is more flexible in the long run, since methods can be inserted where they are needed in the call chain.</p>
+
+<p>Handle classes the same way using <code>self</code> as a prefix for class methods and <code>self.class</code> when you need to get at them from within an instance.  Ruby will find them for you.</p>
+
+<h4>Too Much Love</h4>
+
+<p>I love <code>inject()</code>.  It's probably my favorite iterator.  I guess it's that I really had to work to gain a deep understanding of it, so it's special to me now that I have that.</p>
+
+<p>Given that, I'm loath to point out a bad use of it.  But, a spade is a spade as they say and Eloquent Ruby includes this gem of a line:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="vi">@paragraphs</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="s1">''</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">text</span><span class="p">,</span> <span class="n">para</span><span class="o">|</span> <span class="s2">"</span><span class="si">#{</span><span class="n">text</span><span class="si">}</span><span class="se">\n</span><span class="si">#{</span><span class="n">para</span><span class="si">}</span><span class="s2">"</span> <span class="p">}</span>
+</pre></div>
+
+<p>In Ruby, we spell that J-O-I-N:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="vi">@paragraphs</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+
+<p>To be fair, those aren't totally identical.  The version in the book starts with a blank line, which I assume is a just a bug.</p>
+
+<p>Silly mistake aside, I want to look at the real difference between these two lines.  It actually represents a flaw in thinking about the operation we are doing.  We can start with the question, "Does it even matter which one I use?"  It might.  Let's check the speed difference by benchmarking some code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s2">"benchmark"</span>
+
+<span class="no">LOREM</span> <span class="o">=</span> <span class="o">&lt;&lt;</span><span class="no">END_LOREM</span>
+<span class="sh">Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod</span>
+<span class="sh">tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim</span>
+<span class="sh">veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea</span>
+<span class="sh">commodo consequat. Duis aute irure dolor in reprehenderit in voluptate</span>
+<span class="sh">velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint</span>
+<span class="sh">occaecat cupidatat non proident, sunt in culpa qui officia deserunt</span>
+<span class="sh">mollit anim id est laborum.</span>
+<span class="no">END_LOREM</span>
+<span class="no">PARAGRAPHS</span> <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="no">LOREM</span><span class="p">)</span>
+<span class="no">TESTS</span>      <span class="o">=</span> <span class="mi">10_000</span>
+
+<span class="no">Benchmark</span><span class="o">.</span><span class="n">bmbm</span> <span class="k">do</span> <span class="o">|</span><span class="n">results</span><span class="o">|</span>
+  <span class="n">results</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="s2">"inject:"</span><span class="p">)</span> <span class="k">do</span>
+    <span class="no">TESTS</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+      <span class="no">PARAGRAPHS</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">text</span><span class="p">,</span> <span class="n">para</span><span class="o">|</span> <span class="s2">"</span><span class="si">#{</span><span class="n">text</span><span class="si">}</span><span class="se">\n</span><span class="si">#{</span><span class="n">para</span><span class="si">}</span><span class="s2">"</span> <span class="p">}</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="n">results</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="s2">"join:"</span><span class="p">)</span> <span class="k">do</span>
+    <span class="no">TESTS</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+      <span class="no">PARAGRAPHS</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>I get these results:</p>
+
+<pre><code>Rehearsal -------------------------------------------
+inject:   3.880000   0.010000   3.890000 (  3.890657)
+join:     0.140000   0.040000   0.180000 (  0.186126)
+---------------------------------- total: 4.070000sec
+
+              user     system      total        real
+inject:   3.440000   0.010000   3.450000 (  3.437444)
+join:     0.130000   0.040000   0.170000 (  0.182338)
+</code></pre>
+
+<p>OK, so the <code>join()</code> call is about 19 times faster.  But why is it faster?  What is <code>inject()</code> doing so much work on?</p>
+
+<p>Let's walk it through for a few steps.  First the <code>join()</code> model goes something like this:</p>
+
+<ul>
+<li>Prepare an empty result <code>String</code>
+</li>
+<li>Add paragraph one onto the result <code>String</code>
+</li>
+<li>Add the separator onto the result <code>String</code>
+</li>
+<li>Add paragraph two onto the result <code>String</code>
+</li>
+<li>Add the separator onto the result <code>String</code>
+</li>
+<li>Add paragraph three onto the result <code>String</code>
+</li>
+<li>Add the separator onto the result <code>String</code>
+</li>
+<li>Add paragraph four onto the result <code>String</code>
+</li>
+<li>Add the separator onto the result <code>String</code>
+</li>
+<li>Add paragraph five onto the result <code>String</code>
+</li>
+<li>Return the result <code>String</code>
+</li>
+</ul><p>That's just for five paragraphs, but you get the idea.</p>
+
+<p>Now, you may be surprised to hear that the <code>inject()</code> version can be less steps, depending on how we describe it:</p>
+
+<ul>
+<li>Begin with an empty <code>String</code>
+</li>
+<li>Replace that with the previous content plus a newline and the first paragraph</li>
+<li>Replace that with the previous content plus a newline and the second paragraph</li>
+<li>Replace that with the previous content plus a newline and the third paragraph</li>
+<li>Replace that with the previous content plus a newline and the fourth paragraph</li>
+<li>Replace that with the previous content plus a newline and the fifth paragraph</li>
+<li>Return the final version</li>
+</ul><p>The main difference is the number of <code>String</code> objects that get constructed.  In the <code>join()</code> version we make one:  the result.  It gets modified several times as we push content onto it, but we already had all of that content (the paragraphs are in the <code>Array</code> and the separator was passed as an argument).  We're just building up one new <code>String</code> which ends up being the result.</p>
+
+<p>The <code>inject()</code> version is not like that.  It begins with an empty <code>String</code>.  Then it constructs a new <code>String</code> that is the empty <code>String</code>, plus a separator, plus paragraph one.  Then it constructs yet another <code>String</code> that is the second <code>String</code> (empty, plus a separator, plus first paragraph), plus a separator, plus paragraph two.  At each step, the previous <code>String</code> becomes junk that must be garbage collected and that's just more work for Ruby.</p>
+
+<p>Knowing that, could we speed up the <code>inject()</code> version?  Probably.  Here's the test I added to the previous benchmarks:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">results</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="s2">"inject with &lt;&lt;:"</span><span class="p">)</span> <span class="k">do</span>
+  <span class="no">TESTS</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+    <span class="n">separator</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>
+    <span class="no">PARAGRAPHS</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">text</span><span class="p">,</span> <span class="n">para</span><span class="o">|</span> <span class="n">text</span> <span class="o">&lt;&lt;</span> <span class="n">separator</span> <span class="o">&lt;&lt;</span> <span class="n">para</span> <span class="p">}</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The changes are:</p>
+
+<ul>
+<li>
+<code>separator</code> is defined just once and reused</li>
+<li>I've switched to the <code>&lt;&lt;</code> operator which adds to the <code>String</code> on the left</li>
+</ul><p>This means that the empty <code>String</code> passed as an argument to <code>inject()</code> actually ends up being the end result of the expression.  It's just modified each time the block is called.  This is very similar to what <code>join()</code> is doing.</p>
+
+<p>As you would expect, that gets a lot closer to <code>join()</code>:</p>
+
+<pre><code>Rehearsal ---------------------------------------------------
+inject:           3.880000   0.000000   3.880000 (  3.890008)
+join:             0.140000   0.050000   0.190000 (  0.188791)
+inject with &lt;&lt;:   0.320000   0.000000   0.320000 (  0.317442)
+------------------------------------------ total: 4.390000sec
+
+                      user     system      total        real
+inject:           3.610000   0.010000   3.620000 (  3.618957)
+join:             0.140000   0.030000   0.170000 (  0.172145)
+inject with &lt;&lt;:   0.300000   0.000000   0.300000 (  0.304058)
+</code></pre>
+
+<p><code>inject()</code> still adds a little overhead, but at least we're in the neighborhood now.</p>
+
+<p>Am I saying this is a good change?  No way!  We've missed the point of <code>inject()</code>.  See <code>inject()</code> is for incrementally building up a result, piece by piece.  We aren't doing that.  We're just mutating one <code>String</code> over and over.</p>
+
+<p>You see this all the time in Ruby.  For example, say we had some text and wanted to count word usage in it.  I often see this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">text</span> <span class="o">=</span> <span class="s2">"one two two three three three"</span>
+<span class="o">=&gt;</span> <span class="s2">"one two two three three three"</span>
+<span class="o">&gt;&gt;</span> <span class="n">text</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/\w+/</span><span class="p">)</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="no">Hash</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span> <span class="p">{</span> <span class="o">|</span><span class="n">ws</span><span class="p">,</span> <span class="n">w</span><span class="o">|</span> <span class="n">ws</span><span class="o">[</span><span class="n">w</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">ws</span> <span class="p">}</span>
+<span class="o">=&gt;</span> <span class="p">{</span><span class="s2">"one"</span><span class="o">=&gt;</span><span class="mi">1</span><span class="p">,</span> <span class="s2">"two"</span><span class="o">=&gt;</span><span class="mi">2</span><span class="p">,</span> <span class="s2">"three"</span><span class="o">=&gt;</span><span class="mi">3</span><span class="p">}</span>
+</pre></div>
+
+<p>The use of a <code>Hash</code> to track the counts is fine, but notice how <code>inject()</code> isn't being allowed to do its thing anymore?  You can tell because we had to tack an ugly <code>; ws</code> onto the end of the block to carry the <code>Hash</code> forward with each pass.  Otherwise, the block would return some number and we would error out the next time we tried to index into that.</p>
+
+<p>We could fix that by building a new <code>Hash</code> each time:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">text</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/\w+/</span><span class="p">)</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="no">Hash</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span> <span class="p">{</span> <span class="o">|</span><span class="n">ws</span><span class="p">,</span> <span class="n">w</span><span class="o">|</span> <span class="n">ws</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">w</span> <span class="o">=&gt;</span> <span class="n">ws</span><span class="o">[</span><span class="n">w</span><span class="o">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="p">}</span>
+<span class="o">=&gt;</span> <span class="p">{</span><span class="s2">"one"</span><span class="o">=&gt;</span><span class="mi">1</span><span class="p">,</span> <span class="s2">"two"</span><span class="o">=&gt;</span><span class="mi">2</span><span class="p">,</span> <span class="s2">"three"</span><span class="o">=&gt;</span><span class="mi">3</span><span class="p">}</span>
+</pre></div>
+
+<p>This brings us full circle though. We are back to burning through unwanted objects.</p>
+
+<p>It's worth noting that Ruby 1.9 adds an iterator for this purpose.  If you want to iterate but use some secondary object, say for tracking statistics, try <code>each_with_object()</code>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">text</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/\w+/</span><span class="p">)</span><span class="o">.</span><span class="n">each_with_object</span><span class="p">(</span><span class="no">Hash</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span> <span class="p">{</span> <span class="o">|</span><span class="n">w</span><span class="p">,</span> <span class="n">ws</span><span class="o">|</span> <span class="n">ws</span><span class="o">[</span><span class="n">w</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span> <span class="p">}</span>
+<span class="o">=&gt;</span> <span class="p">{</span><span class="s2">"one"</span><span class="o">=&gt;</span><span class="mi">1</span><span class="p">,</span> <span class="s2">"two"</span><span class="o">=&gt;</span><span class="mi">2</span><span class="p">,</span> <span class="s2">"three"</span><span class="o">=&gt;</span><span class="mi">3</span><span class="p">}</span>
+</pre></div>
+
+<p>This ignores the result of the block each time and always carries the object forward, including making it the final result.</p>
+
+<p>In the end, this just boils down to a case of using the wrong tool for the job.  As much as I love <code>inject()</code> and do recommend you spend the effort to learn it, it doesn't properly model the process we are using here.  Because that, it just ends up getting in our way.</p>
+
+<p>I hope you have enjoyed this look into some example from the book.  Remember, as is always the case, it's not the specific code we saw that matters.  It's just what we managed to learn from it.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="rubies-in-the-rough/even-more-eloquent-ruby">
+  In: <a href="/rubies-in-the-rough/">Rubies in the Rough</a>
+  <span>|</span>
+  Tags: <a href="/tags/Iterators/">Iterators</a> &amp; <a href="/tags/Syntax/">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/rubies-in-the-rough/even-more-eloquent-ruby#comments">0 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (0)</span></h5>
+
+    <ol>
+      
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

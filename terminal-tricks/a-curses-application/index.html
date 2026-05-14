@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Terminal Tricks / A Curses Application</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="A breakdown of an example curses application that shows how the various pieces fit together.">
+    <meta name="keywords"    content="Curses, Terminal I/O, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/terminal-tricks/a-curses-application/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/terminal-tricks">Terminal Tricks</a></h1>
+            <span>A deep dive into the ways we can get fancy output out of our terminals.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>20</h4>
+    <span>
+      MAR<br>
+      2015
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">A Curses Application</h3>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/terminal-tricks/curses-windows-pads-and-panels/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      &nbsp;
+  </div>
+</div>
+
+        <p>I've now written two articles covering <a href="http://graysoftinc.com/terminal-tricks/basic-curses">low-level <code>curses</code></a> and <a href="http://graysoftinc.com/terminal-tricks/curses-windows-pads-and-panels">some higher abstractions</a>.  We know what <code>curses</code> can do at this point, but we haven't really seen how to put everything together and build a full application.  Let's do that today by examining an example of moderate size.</p>
+
+<p>I have written the beginnings of <a href="https://github.com/JEG2/bird_of_paradise">a command-line Twitter client</a> using <code>curses</code>.  To make this easier, I developed <a href="https://github.com/JEG2/rurses">a super simple wrapper over the raw <code>curses</code> API, called Rurses</a>.  Rurses, for Ruby <code>curses</code>, provides more Ruby-like abstractions over the clunky C API.  Here's how the Twitter client looks in action:</p>
+
+<pre><code>┌─JEG2─────────────────────────────────┐  @
+│                                     ↑│
+│Alex Harms @onealexh… 20/03/2015 14:57│ Clayton Flesher @Cal… 19/03/2015 20:52
+│RT @postsecret: http://t.co/LrV0IIYgUM│ @TrevorBramble its inspired by, as in
+│                                      │ I played it once for about ten minutes
+│SimKlabnik 2000 @ste… 20/03/2015 14:57│ and then @JEG2 said 'go make your
+│the closure docs are finally flowing  │ version of that'.
+│from my fingertips, it seems          │
+│                                      │ Mandy Moore @theruby… 19/03/2015 18:31
+│ashe dryden @ashedry… 20/03/2015 14:57│ Thanks to @JEG2 I now want a MiP robot
+│Can anyone recommend  an interestingly│ in the worst kind of way!!!
+│written (not dry) history of Haiti?   │
+│Preferably written by a Haitian.      │ Sam Livingston-Gray … 19/03/2015 14:23
+│                                      │ @avdi @JEG2 hush! Keep this up and
+│Jessica Lord @jllord  20/03/2015 14:57│ EVERYONE WILL KNOW
+│RT @PDX44: Welcome to Portland, where │ https://t.co/deJBBjoOTV
+│the old airport carpet is dressed up  │
+│as a human and named Grand Marshal of │ Josh Susser @joshsus… 19/03/2015 14:06
+│a parade. http://t.co/aTCicqSzEI      │ @geeksam @jeg2 @avdi POLS issue. No
+│                                      │ standard == no way to avoid surprising
+│Garann Means @garannm 20/03/2015 14:56│ many developers
+│RT @verge: Robyn launches tech        │
+│                                     ↓│                                      ↓
+└──────────────────────────────────────┘
+</code></pre>
+
+<p>I don't want to take you through every line of code that I wrote.  A lot of it doesn't really relate to <code>curses</code> anyway.  The curious can dig into GitHub and fiddle with the code as much as they like, but let me give you the dime tour.</p>
+
+<h4>Curses Programs</h4>
+
+<p>If you've read the previous articles in this series, you know there's always a fair bit of boilerplate in any <code>curses</code> example that I show.  Step one was make this feel more Rubyish.  Here's the <code>curses</code> invocation in my Twitter client, Bird of Paradise, thanks to the helper library Rurses:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">BirdOfParadise</span>
+  <span class="k">class</span> <span class="nc">UI</span>
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="n">screen_name</span><span class="p">:</span> <span class="p">,</span> <span class="ss">timeline</span><span class="p">:</span> <span class="p">,</span> <span class="ss">mentions</span><span class="p">:</span> <span class="p">)</span>
+      <span class="no">Rurses</span><span class="o">.</span><span class="n">program</span><span class="p">(</span>
+        <span class="ss">modes</span><span class="p">:</span> <span class="o">%</span><span class="n">i</span><span class="o">[</span><span class="n">c_break</span> <span class="n">no_echo</span> <span class="n">keypad</span> <span class="n">non_blocking</span> <span class="n">hide_cursor</span><span class="o">]</span>
+      <span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">screen</span><span class="o">|</span>
+        <span class="vi">@screen</span> <span class="o">=</span> <span class="no">Screen</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">event_q</span><span class="p">,</span> <span class="n">screen_name</span><span class="p">,</span> <span class="n">timeline</span><span class="p">,</span> <span class="n">mentions</span><span class="p">)</span>
+
+        <span class="n">listen_for_events</span>
+        <span class="n">keyboard</span><span class="o">.</span><span class="n">read</span>
+
+        <span class="n">wait_for_exit</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The most obvious change here is the use of the block.  Rurses will setup <code>curses</code>, call the block, and clean up afterwords.  This greatly reduces the amount of boilerplate code we have to use.</p>
+
+<p>The other notable change in this code is the invocation of the various modes that <code>curses</code> provides.  They are now passed as simple arguments to <code>Rurses.program()</code>.  I've also cleaned up the mode names a tiny bit.</p>
+
+<p>The code that provides these niceties isn't very complex.  Here's the main entry point of the Rurses library:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Rurses</span>
+  <span class="c1"># ...</span>
+
+  <span class="kp">module_function</span>
+
+  <span class="k">def</span> <span class="nf">curses</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">program</span><span class="p">(</span><span class="ss">modes</span><span class="p">:</span> <span class="o">[</span> <span class="o">]</span><span class="p">)</span>
+    <span class="vi">@stdscr</span> <span class="o">=</span> <span class="no">Window</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">curses_ref</span><span class="p">:</span> <span class="n">curses</span><span class="o">.</span><span class="n">initscr</span><span class="p">,</span> <span class="n">standard_screen</span><span class="p">:</span> <span class="kp">true</span><span class="p">)</span>
+    <span class="vi">@stdscr</span><span class="o">.</span><span class="n">change_modes</span><span class="p">(</span><span class="n">modes</span><span class="p">)</span>
+    <span class="k">yield</span><span class="p">(</span><span class="vi">@stdscr</span><span class="p">)</span>
+  <span class="k">ensure</span>
+    <span class="n">curses</span><span class="o">.</span><span class="n">endwin</span>
+  <span class="k">end</span>
+
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>You should recognize a couple of <code>curses</code> calls in here:  <code>initscr()</code> and <code>endwin()</code>.  We'll take more about the <code>Window</code> object that I wrapped <code>stdscr</code> in later, but know that I wanted this new API to favor the use of objects where it makes sense.</p>
+
+<p>You can see here that the <code>modes</code> are passed into a <code>change_modes()</code> method of <code>Window</code>.  This is a judgment call that I made while building this new API.  Some modes are window specific, some aren't, and at least one takes a window parameter that is ignored.  I didn't want to build three different systems for changing modes and force users to remember which to use where.  Because of that, I've pushed all modes into the <code>Window</code> objects.  If you want to set global modes, just make the call on <code>stdscr</code> as I do here.  Or better yet, don't make any calls to <code>change_modes()</code> manually and just pass what you want as arguments to <code>program()</code>.</p>
+
+<p>Here's the actual mode changing code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Rurses</span>
+  <span class="k">class</span> <span class="nc">Window</span>
+    <span class="no">MODE_NAMES</span> <span class="o">=</span> <span class="p">{</span>
+      <span class="n">c_break</span><span class="p">:</span>      <span class="ss">:cbreak</span><span class="p">,</span>
+      <span class="n">no_echo</span><span class="p">:</span>      <span class="ss">:noecho</span><span class="p">,</span>
+      <span class="ss">keypad</span><span class="p">:</span>       <span class="o">[</span><span class="ss">:keypad</span><span class="p">,</span> <span class="ss">:window</span><span class="p">,</span> <span class="kp">true</span><span class="o">]</span><span class="p">,</span>
+      <span class="n">hide_cursor</span><span class="p">:</span>  <span class="o">[</span><span class="ss">:curs_set</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span><span class="p">,</span>
+      <span class="n">non_blocking</span><span class="p">:</span> <span class="o">[</span><span class="ss">:timeout</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
+    <span class="p">}</span>
+
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">change_modes</span><span class="p">(</span><span class="n">modes</span><span class="p">)</span>
+      <span class="n">modes</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="nb">Array</span><span class="p">(</span><span class="no">MODE_NAMES</span><span class="o">[</span><span class="nb">name</span><span class="o">]</span> <span class="o">||</span> <span class="nb">name</span><span class="p">)</span>
+        <span class="no">Rurses</span><span class="o">.</span><span class="n">curses</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="o">*</span><span class="n">mode</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">arg</span><span class="o">|</span> <span class="n">arg</span> <span class="o">==</span> <span class="ss">:window</span> <span class="p">?</span> <span class="n">curses_ref</span> <span class="p">:</span> <span class="n">arg</span> <span class="p">})</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The <code>MODE_NAMES</code> mapping links my slightly more readable aliases with the details for invoking that mode.  Obviously, this doesn't handle all of <code>curses</code> modes yet.  I've only mapped what I needed so far.</p>
+
+<p>I've decided to prefer descriptive names (<code>:non_blocking</code>) to magic arguments (<code>timeout(0)</code>), but this doesn't handle the full range of <code>curses</code> capabilities.  It's totally viable to call <code>timeout(100)</code> or <code>timeout(500)</code> and I can't make up sensible names for all possible combinations.  Eventually, some exceptions would need to be made for these modes.</p>
+
+<p>The <code>:window</code> flag is special.  It gets replaced with the <code>curses</code> pointer as the mode is invoked.  Again, not all modes need this, but we have to support those that do.</p>
+
+<h4>Do Several Things At Once</h4>
+
+<p>I chose my example project carefully.  One of the primary reasons to work with a library like <code>curses</code> is that you can't afford to wait on keyboard input.  A Twitter client is a good example of this.  Twitter offers streaming APIs that you can connect to.  As new tweets come in, they will be pushed down to your connection.  This means tweets can come in at any time and you need to be ready for them.  Twitter will close the connection if you don't keep up.</p>
+
+<p>But we also need to watch the keyboard so the user can press keys to navigate the content we have already displayed.  The user doesn't want to wait for the next tweet to come in before some instruction from the keyboard is honored.  We must pay attention to both needs at the same time.</p>
+
+<p>Let's dig into the code that waits for each of these data sources.  First, the streaming code for Twitter:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">BirdOfParadise</span>
+  <span class="k">class</span> <span class="nc">Stream</span>
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">read</span>
+      <span class="vi">@thread</span> <span class="o">=</span> <span class="no">Thread</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">streaming_client</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">stream</span><span class="o">|</span>
+        <span class="n">stream</span><span class="o">.</span><span class="n">user</span> <span class="k">do</span> <span class="o">|</span><span class="n">message</span><span class="o">|</span>
+          <span class="k">case</span> <span class="n">message</span>
+          <span class="k">when</span> <span class="no">Twitter</span><span class="o">::</span><span class="no">Streaming</span><span class="o">::</span><span class="no">FriendList</span>
+            <span class="n">update_followings</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+          <span class="k">when</span> <span class="no">Twitter</span><span class="o">::</span><span class="no">Tweet</span>
+            <span class="n">queue_tweet</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="kp">private</span>
+
+    <span class="k">def</span> <span class="nf">update_followings</span><span class="p">(</span><span class="n">list</span><span class="p">)</span>
+      <span class="vi">@followings</span> <span class="o">=</span> <span class="n">list</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">queue_tweet</span><span class="p">(</span><span class="n">tweet</span><span class="p">)</span>
+      <span class="n">q</span> <span class="o">&lt;&lt;</span> <span class="no">Event</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">name</span><span class="p">:</span> <span class="ss">:add_tweet</span><span class="p">,</span> <span class="ss">details</span><span class="p">:</span> <span class="n">build_tweet</span><span class="p">(</span><span class="n">tweet</span><span class="p">))</span>
+    <span class="k">end</span>
+
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p><code>Stream.read()</code> could block regularly, waiting on the next call of the block passed to <code>user()</code> (for a <em>user's</em> tweets).  We sidestep this issue by wrapping the procedure in a <code>Thread</code>.  We don't care how much time it spends waiting since it will just tie up that <code>Thread</code> and the rest of our code can keep running.</p>
+
+<p>I should mention that this Twitter streaming code is incomplete.  Twitter can send other events, like instructions to delete a tweet, that a full client does need to handle.</p>
+
+<p>Notice that incoming tweets are just pushed onto an event queue.  Whenever you have multiple incoming events, it's usually best to funnel them into the same pipeline and have some other chunk of code work through making the needed changes.  This means several channels of execution won't be manipulating shared resources like the screen at the same time.</p>
+
+<p>The keyboard code looks quite similar:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">BirdOfParadise</span>
+  <span class="k">class</span> <span class="nc">Keyboard</span>
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">read</span>
+      <span class="vi">@thread</span> <span class="o">=</span> <span class="no">Thread</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">key_reader</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">events</span><span class="p">,</span> <span class="n">keys</span><span class="o">|</span>
+        <span class="kp">loop</span> <span class="k">do</span>
+          <span class="k">case</span> <span class="n">keys</span><span class="o">.</span><span class="n">call</span>
+          <span class="k">when</span> <span class="s2">"</span><span class="se">\t</span><span class="s2">"</span>
+            <span class="n">events</span> <span class="o">&lt;&lt;</span> <span class="no">Event</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">name</span><span class="p">:</span> <span class="ss">:switch_column</span><span class="p">)</span>
+          <span class="k">when</span> <span class="ss">:UP_ARROW</span><span class="p">,</span> <span class="s2">"k"</span><span class="p">,</span> <span class="s2">"p"</span><span class="p">,</span> <span class="s2">"w"</span>
+            <span class="n">events</span> <span class="o">&lt;&lt;</span> <span class="no">Event</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">name</span><span class="p">:</span> <span class="ss">:move_up</span><span class="p">)</span>
+          <span class="k">when</span> <span class="ss">:DOWN_ARROW</span><span class="p">,</span> <span class="s2">"j"</span><span class="p">,</span> <span class="s2">"n"</span><span class="p">,</span> <span class="s2">"s"</span>
+            <span class="n">events</span> <span class="o">&lt;&lt;</span> <span class="no">Event</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">name</span><span class="p">:</span> <span class="ss">:move_down</span><span class="p">)</span>
+          <span class="k">when</span> <span class="s2">"q"</span>
+            <span class="n">events</span> <span class="o">&lt;&lt;</span> <span class="no">Event</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">name</span><span class="p">:</span> <span class="ss">:exit</span><span class="p">)</span>
+          <span class="k">end</span>
+          <span class="nb">sleep</span> <span class="mi">0</span><span class="o">.</span><span class="mi">1</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Again, we tuck some code in a <code>Thread</code> that just loops over incoming keys and turns them into events in a queue.  It's not shown here, but the <code>key_reader</code> is a tiny wrapper over <code>Rurses.get_key()</code>.</p>
+
+<p>Before we look at that code, let's talk about the gotcha in the code above.  See how my <code>Thread</code> includes a call to <code>sleep()</code>?  Earlier, I turned on <code>:non_blocking</code> (<code>timeout(0)</code>) mode, so the <code>key_reader</code> doesn't block.  Here I add the small pause to keep this loop from pegging a CPU core.  However, you may be wondering, who cares if we block inside that <code>Thread</code>?  Won't the rest of the code keep running?  In this case, no, it won't.</p>
+
+<p>As you may have heard, Ruby has a <a href="http://en.wikipedia.org/wiki/Global_Interpreter_Lock">Global Interpreter Lock (GIL)</a>.  This means only one <code>Thread</code> can truly execute at once.  This protects us from some problems we could run into, especially with C extensions.  If the <code>Thread</code> above pauses, waiting on a key, the GIL will prevent other code from running while we wait.</p>
+
+<p>However, Twitter's <code>Thread</code> didn't hit this limitation, did it?  If you dug down into Twitter's client code, you would find that somewhere deep in the stack it's based on Ruby's <code>IO</code> primitives.  Those tools are aware of the GIL and they know a few tricks to avoid it.  For example, when they are about to block waiting on input, they release the GIL so that other code may run.  When some input finally arrives, they politely wait their turn to reacquire the GIL and only then return the input to your code.</p>
+
+<p><code>curses</code> is different.  Remember that we're using <code>ffi-ncurses</code> to make calls into a C API at the lowest levels.  FFI doesn't know which calls it could safely release the GIL for, so it never does.  That's why we need <code>:non_blocking</code> mode and some pauses.  We're giving other code some time to run before we make another C call.</p>
+
+<p>Enough about tricky threading details.  Here's the <code>Rurses.get_key()</code> code that's indirectly used above:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Rurses</span>
+  <span class="no">SPECIAL_KEYS</span> <span class="o">=</span> <span class="no">Hash</span><span class="o">[</span>
+    <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">KeyDefs</span>
+      <span class="o">.</span><span class="n">constants</span>
+      <span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="nb">name</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">start_with?</span><span class="p">(</span><span class="s2">"KEY_"</span><span class="p">)</span> <span class="p">}</span>
+      <span class="o">.</span><span class="n">map</span>    <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span>
+        <span class="o">[</span> <span class="no">FFI</span><span class="o">::</span><span class="no">NCurses</span><span class="o">::</span><span class="no">KeyDefs</span><span class="o">.</span><span class="n">const_get</span><span class="p">(</span><span class="nb">name</span><span class="p">),</span>
+          <span class="nb">name</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sr">/\AKEY_/</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">to_sym</span> <span class="o">]</span>
+      <span class="p">}</span>
+  <span class="o">]</span>
+
+  <span class="kp">module_function</span>
+
+  <span class="c1"># ...</span>
+
+  <span class="k">def</span> <span class="nf">get_key</span>
+    <span class="k">case</span> <span class="p">(</span><span class="n">char</span> <span class="o">=</span> <span class="n">curses</span><span class="o">.</span><span class="n">getch</span><span class="p">)</span>
+    <span class="k">when</span> <span class="n">curses</span><span class="o">::</span><span class="no">KeyDefs</span><span class="o">::</span><span class="no">KEY_CODE_YES</span><span class="o">.</span><span class="n">.curses</span><span class="o">::</span><span class="no">KeyDefs</span><span class="o">::</span><span class="no">KEY_MAX</span>
+      <span class="no">SPECIAL_KEYS</span><span class="o">[</span><span class="n">char</span><span class="o">]</span>
+    <span class="k">when</span> <span class="n">curses</span><span class="o">::</span><span class="no">ERR</span>
+      <span class="kp">nil</span>
+    <span class="k">else</span>
+      <span class="n">char</span><span class="o">.</span><span class="n">chr</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>The <code>getch()</code> function from <code>curses</code> can only return integers, so it uses different numbers to mean different things.  Some are ASCII codes for keys on the keyboard, others are special constants for things like arrow keys, and one even means there's no available input right now (when you're in <code>:non_blocking</code> mode and don't wish to wait).</p>
+
+<p>In Ruby, I can return different objects for the different cases and still sort out the comparisons with a simple <code>case</code> statement.  Given that, I premap all of the <code>SPECIAL_KEYS</code> to <code>Symbol</code> names, use <code>nil</code> for no input, and transform the ASCII codes into actual <code>String</code> characters.  You can scroll back up to see how each type is handled, if you need a reminder.</p>
+
+<h4>Controlling Where Output Goes</h4>
+
+<p>Rurses encourages code to work with <code>Window</code> objects, which wrap <code>curses</code> windows.  The idea behind Ruby's version of the <code>Window</code> is straightforward: keep a reference to the <code>curses</code> window pointer and pass it to functions called as needed.  Here's how that looks in practice:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Rurses</span>
+  <span class="k">class</span> <span class="nc">Window</span>
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="o">**</span><span class="n">details</span><span class="p">)</span>
+      <span class="vi">@curses_ref</span>      <span class="o">=</span> <span class="n">details</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="ss">:curses_ref</span><span class="p">)</span> <span class="p">{</span>
+        <span class="no">Rurses</span><span class="o">.</span><span class="n">curses</span><span class="o">.</span><span class="n">newwin</span><span class="p">(</span>
+          <span class="n">details</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="ss">:lines</span><span class="p">),</span>
+          <span class="n">details</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="ss">:columns</span><span class="p">),</span>
+          <span class="n">details</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="ss">:y</span><span class="p">),</span>
+          <span class="n">details</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="ss">:x</span><span class="p">)</span>
+        <span class="p">)</span>
+      <span class="p">}</span>
+      <span class="vi">@standard_screen</span> <span class="o">=</span> <span class="n">details</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="ss">:standard_screen</span><span class="p">)</span> <span class="p">{</span> <span class="kp">false</span> <span class="p">}</span>
+      <span class="vi">@subwindows</span>      <span class="o">=</span> <span class="p">{</span> <span class="p">}</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:curses_ref</span><span class="p">,</span> <span class="ss">:subwindows</span>
+
+    <span class="k">def</span> <span class="nf">standard_screen?</span>
+      <span class="vi">@standard_screen</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">cursor_x</span>
+      <span class="no">Rurses</span><span class="o">.</span><span class="n">curses</span><span class="o">.</span><span class="n">getcurx</span><span class="p">(</span><span class="n">curses_ref</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">cursor_y</span>
+      <span class="no">Rurses</span><span class="o">.</span><span class="n">curses</span><span class="o">.</span><span class="n">getcury</span><span class="p">(</span><span class="n">curses_ref</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">cursor_xy</span>
+      <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="no">Rurses</span><span class="o">.</span><span class="n">curses</span><span class="o">.</span><span class="n">getyx</span><span class="p">(</span><span class="n">curses_ref</span><span class="p">)</span>
+      <span class="p">{</span><span class="ss">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="ss">y</span><span class="p">:</span> <span class="n">y</span><span class="p">}</span>
+    <span class="k">end</span>
+
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>You get the idea.  You can either pass a <code>curses_ref</code> when you create the <code>Window</code> (as <code>Rurses.program()</code> does for <code>stdscr</code>) or just pass dimensions and coordinates to have the underlying structure created for you.  Have a look at the <code>cursor_*()</code> methods to see how the reference is used.</p>
+
+<p>Now, I also want to have an easy way to manage <code>curses</code> subwindows.  You can see that the code above allocates a <code>Hash</code> for them and sets up a reader.  Here's a couple more methods in <code>Window</code> for managing subwindows:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Rurses</span>
+  <span class="k">class</span> <span class="nc">Window</span>
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">create_subwindow</span><span class="p">(</span> <span class="nb">name</span><span class="p">:</span> <span class="p">,</span> <span class="n">top_padding</span><span class="p">:</span>   <span class="mi">0</span><span class="p">,</span> <span class="n">left_padding</span><span class="p">:</span>   <span class="mi">0</span><span class="p">,</span>
+                                  <span class="n">right_padding</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">bottom_padding</span><span class="p">:</span> <span class="mi">0</span> <span class="p">)</span>
+      <span class="n">s</span>                <span class="o">=</span> <span class="n">size</span>
+      <span class="n">xy</span>               <span class="o">=</span> <span class="n">cursor_xy</span>
+      <span class="n">subwindows</span><span class="o">[</span><span class="nb">name</span><span class="o">]</span> <span class="o">=</span>
+        <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
+          <span class="n">curses_ref</span><span class="p">:</span> <span class="no">Rurses</span><span class="o">.</span><span class="n">curses</span><span class="o">.</span><span class="n">derwin</span><span class="p">(</span>
+            <span class="n">curses_ref</span><span class="p">,</span>
+            <span class="n">s</span><span class="o">[</span><span class="ss">:lines</span><span class="o">]</span>   <span class="o">-</span> <span class="p">(</span><span class="n">top_padding</span>  <span class="o">+</span> <span class="n">bottom_padding</span><span class="p">),</span>
+            <span class="n">s</span><span class="o">[</span><span class="ss">:columns</span><span class="o">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">left_padding</span> <span class="o">+</span> <span class="n">right_padding</span><span class="p">),</span>
+            <span class="n">xy</span><span class="o">[</span><span class="ss">:y</span><span class="o">]</span>      <span class="o">+</span> <span class="n">top_padding</span><span class="p">,</span>
+            <span class="n">xy</span><span class="o">[</span><span class="ss">:x</span><span class="o">]</span>      <span class="o">+</span> <span class="n">left_padding</span>
+          <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">subwindow</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+      <span class="n">subwindows</span><span class="o">[</span><span class="nb">name</span><span class="o">]</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p><code>create_subwindow()</code> constructs another <code>Window</code> object, using some relative coordinate math, and adds it to the <code>Hash</code> by name.  You can then later access any subwindow by name using the <code>subwindow()</code> method.</p>
+
+<p>My Twitter client uses this combination of <code>Window</code> objects and their attached subwindows to divide the screen into columns.  It also separates content from bordered regions to avoid any overwriting.  Here's the code that arranges the screen, called on start and in the event of a terminal resize operation:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">BirdOfParadise</span>
+  <span class="k">class</span> <span class="nc">Screen</span>
+    <span class="c1"># ...</span>
+
+    <span class="kp">private</span>
+
+    <span class="k">def</span> <span class="nf">layout</span>
+      <span class="n">timeline_width</span><span class="p">,</span> <span class="n">mentions_width</span><span class="p">,</span> <span class="n">lines</span> <span class="o">=</span> <span class="n">calculate_column_sizes</span>
+      <span class="o">[</span>
+        <span class="p">{</span> <span class="ss">x</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>              <span class="ss">columns</span><span class="p">:</span> <span class="n">timeline_width</span><span class="p">,</span> <span class="ss">feed</span><span class="p">:</span> <span class="n">timeline</span> <span class="p">},</span>
+        <span class="p">{</span> <span class="ss">x</span><span class="p">:</span> <span class="n">timeline_width</span><span class="p">,</span> <span class="ss">columns</span><span class="p">:</span> <span class="n">mentions_width</span><span class="p">,</span> <span class="ss">feed</span><span class="p">:</span> <span class="n">mentions</span> <span class="p">}</span>
+      <span class="o">].</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">details</span><span class="o">|</span>
+        <span class="n">window</span> <span class="o">=</span> <span class="no">Rurses</span><span class="o">::</span><span class="no">Window</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
+          <span class="ss">lines</span><span class="p">:</span>   <span class="n">lines</span><span class="p">,</span>
+          <span class="ss">columns</span><span class="p">:</span> <span class="n">details</span><span class="o">[</span><span class="ss">:columns</span><span class="o">]</span><span class="p">,</span>
+          <span class="ss">x</span><span class="p">:</span>       <span class="n">details</span><span class="o">[</span><span class="ss">:x</span><span class="o">]</span><span class="p">,</span>
+          <span class="ss">y</span><span class="p">:</span>       <span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="n">window</span><span class="o">.</span><span class="n">create_subwindow</span><span class="p">(</span>
+          <span class="nb">name</span><span class="p">:</span>           <span class="ss">:content</span><span class="p">,</span>
+          <span class="n">top_padding</span><span class="p">:</span>    <span class="mi">1</span><span class="p">,</span>
+          <span class="n">left_padding</span><span class="p">:</span>   <span class="mi">1</span><span class="p">,</span>
+          <span class="n">right_padding</span><span class="p">:</span>  <span class="mi">1</span><span class="p">,</span>
+          <span class="n">bottom_padding</span><span class="p">:</span> <span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">panels</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+        <span class="n">details</span><span class="o">[</span><span class="ss">:feed</span><span class="o">].</span><span class="n">window</span> <span class="o">=</span> <span class="n">window</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This method builds two <code>Window</code> objects, adds a <code>:content</code> subwindow to each, and adds them as the canvas that a couple of not-yet-shown <code>Feed</code> objects will draw their output on.  Let's have a look at that drawing code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">BirdOfParadise</span>
+  <span class="k">class</span> <span class="nc">Feed</span>
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">redraw</span>
+      <span class="k">if</span> <span class="n">changed?</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">window</span><span class="o">.</span><span class="n">subwindow</span><span class="p">(</span><span class="ss">:content</span><span class="p">)</span>
+        <span class="n">size</span>    <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">content</span><span class="o">.</span><span class="n">clear</span>
+        <span class="n">tweets</span>
+          <span class="o">.</span><span class="n">lines</span><span class="p">(</span><span class="ss">count</span><span class="p">:</span> <span class="n">size</span><span class="o">[</span><span class="ss">:lines</span><span class="o">]</span><span class="p">,</span> <span class="ss">width</span><span class="p">:</span> <span class="n">size</span><span class="o">[</span><span class="ss">:columns</span><span class="o">]</span><span class="p">)</span>
+          <span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">line</span><span class="p">,</span> <span class="n">cursor_location</span><span class="o">|</span>
+            <span class="k">if</span> <span class="n">line</span>
+              <span class="n">attributes</span> <span class="o">=</span> <span class="n">selected?</span> <span class="o">&amp;&amp;</span> <span class="n">cursor_location</span> <span class="p">?</span> <span class="o">%</span><span class="n">i</span><span class="o">[</span><span class="n">bold</span><span class="o">]</span> <span class="p">:</span> <span class="o">[</span> <span class="o">]</span>
+              <span class="n">content</span><span class="o">.</span><span class="n">style</span><span class="p">(</span><span class="o">*</span><span class="n">attributes</span><span class="p">)</span> <span class="k">do</span>
+                <span class="n">content</span><span class="o">.</span><span class="n">draw_string_on_a_line</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+              <span class="k">end</span>
+            <span class="k">else</span>
+              <span class="n">content</span><span class="o">.</span><span class="n">skip_line</span>
+            <span class="k">end</span>
+          <span class="k">end</span>
+      <span class="k">end</span>
+
+      <span class="vi">@changed</span> <span class="o">=</span> <span class="kp">false</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This process is pretty basic.  The <code>:content</code> area is cleared, the visible chunk of tweets is rendered as some lines, and the lines are added to the <code>:content</code> area one by one.  I realize that I haven't show you all of the methods used here, but I bet you can guess what most of them do.</p>
+
+<p>What you don't see here is any cursor moving code.  The reason for that is that I'm using some methods in <code>Window</code> that add some sensible cursor management to standard operations.  Have a look:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Rurses</span>
+  <span class="k">class</span> <span class="nc">Window</span>
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">move_cursor</span><span class="p">(</span><span class="ss">x</span><span class="p">:</span> <span class="p">,</span> <span class="ss">y</span><span class="p">:</span> <span class="p">)</span>
+      <span class="no">Rurses</span><span class="o">.</span><span class="n">curses</span><span class="o">.</span><span class="n">wmove</span><span class="p">(</span><span class="n">curses_ref</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">draw_string</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+      <span class="no">Rurses</span><span class="o">.</span><span class="n">curses</span><span class="o">.</span><span class="n">waddstr</span><span class="p">(</span><span class="n">curses_ref</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">draw_string_on_a_line</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+      <span class="n">old_y</span> <span class="o">=</span> <span class="n">cursor_y</span>
+      <span class="n">draw_string</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+      <span class="n">new_y</span> <span class="o">=</span> <span class="n">cursor_y</span>
+      <span class="n">move_cursor</span><span class="p">(</span><span class="ss">x</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="ss">y</span><span class="p">:</span> <span class="n">new_y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">new_y</span> <span class="o">==</span> <span class="n">old_y</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">skip_line</span>
+      <span class="n">move_cursor</span><span class="p">(</span><span class="ss">x</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="ss">y</span><span class="p">:</span> <span class="n">cursor_y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="n">reset_cursor</span><span class="p">:</span> <span class="kp">true</span><span class="p">)</span>
+      <span class="no">Rurses</span><span class="o">.</span><span class="n">curses</span><span class="o">.</span><span class="n">wclear</span><span class="p">(</span><span class="n">curses_ref</span><span class="p">)</span>
+      <span class="n">move_cursor</span><span class="p">(</span><span class="ss">x</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="ss">y</span><span class="p">:</span> <span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">reset_cursor</span>
+    <span class="k">end</span>
+
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>See how <code>draw_string_on_a_line()</code> bumps the cursor down (assuming it didn't wrap) after each add?  <code>clear()</code> also restores the cursor to the top left corner by default.  This can save user code from needing to do a lot of manual move commands, in some cases.</p>
+
+<h4>Managing Redraw</h4>
+
+<p>If you were paying close attention earlier, you may have caught this line that I never explained:</p>
+
+<div class="highlight highlight-ruby"><pre>        <span class="c1"># ...</span>
+
+        <span class="n">panels</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+
+        <span class="c1"># ...</span>
+</pre></div>
+
+<p>As each <code>Window</code> is constructed in the Twitter client, it is added to a <code>Rurses::PanelStack</code>.  This wraps <code>curses</code> panels much like <code>Rurses::Window</code> wraps windows.  However, there's just this one call, even with subwindows involved.  That's because <code>PanelStack</code> also has some added niceties:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">Rurses</span>
+  <span class="k">class</span> <span class="nc">PanelStack</span>
+    <span class="k">def</span> <span class="nf">initialize</span>
+      <span class="vi">@window_to_panel_map</span> <span class="o">=</span> <span class="p">{</span> <span class="p">}</span>
+    <span class="k">end</span>
+
+    <span class="kp">attr_reader</span> <span class="ss">:window_to_panel_map</span>
+    <span class="kp">private</span>     <span class="ss">:window_to_panel_map</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="n">add_subwindows</span><span class="p">:</span> <span class="kp">true</span><span class="p">)</span>
+      <span class="n">window_to_panel_map</span><span class="o">[</span><span class="n">window</span><span class="o">]</span> <span class="o">=</span> <span class="no">Rurses</span><span class="o">.</span><span class="n">curses</span><span class="o">.</span><span class="n">new_panel</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">curses_ref</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">add_subwindows</span>
+        <span class="n">window</span><span class="o">.</span><span class="n">subwindows</span><span class="o">.</span><span class="n">each_value</span> <span class="k">do</span> <span class="o">|</span><span class="n">subwindow</span><span class="o">|</span>
+          <span class="n">add</span><span class="p">(</span><span class="n">subwindow</span><span class="p">,</span> <span class="n">add_subwindows</span><span class="p">:</span> <span class="n">add_subwindows</span><span class="p">)</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+    <span class="n">alias_method</span> <span class="ss">:&lt;&lt;</span><span class="p">,</span> <span class="ss">:add</span>
+
+    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="n">remove_subwindows</span><span class="p">:</span> <span class="kp">true</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">remove_subwindows</span>
+        <span class="n">window</span><span class="o">.</span><span class="n">subwindows</span><span class="o">.</span><span class="n">each_value</span> <span class="k">do</span> <span class="o">|</span><span class="n">subwindow</span><span class="o">|</span>
+          <span class="n">remove</span><span class="p">(</span><span class="n">subwindow</span><span class="p">,</span> <span class="n">remove_subwindows</span><span class="p">:</span> <span class="n">remove_subwindows</span><span class="p">)</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+      <span class="n">window</span><span class="o">.</span><span class="n">clear</span>
+      <span class="no">Rurses</span><span class="o">.</span><span class="n">curses</span><span class="o">.</span><span class="n">del_panel</span><span class="p">(</span><span class="n">window_to_panel_map</span><span class="o">[</span><span class="n">window</span><span class="o">]</span><span class="p">)</span>
+      <span class="no">Rurses</span><span class="o">.</span><span class="n">curses</span><span class="o">.</span><span class="n">delwin</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">curses_ref</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">refresh_in_memory</span>
+      <span class="no">Rurses</span><span class="o">.</span><span class="n">curses</span><span class="o">.</span><span class="n">update_panels</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Both <code>add()</code> and <code>remove()</code> handle any subwindows by default.  This object also keeps a mapping of Ruby <code>Window</code> objects to <code>curses</code> panels, so user code doesn't need to worry about tracking another set of references.  I've found that just this much support makes panel management all but invisible.</p>
+
+<p>The final piece of the puzzle is the method that updates the screen.  It is called after each event is pulled from the queue and processed.  Here's the code:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">module</span> <span class="nn">BirdOfParadise</span>
+  <span class="k">class</span> <span class="nc">Screen</span>
+    <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">update</span>
+      <span class="n">timeline</span><span class="o">.</span><span class="n">redraw</span>
+      <span class="n">mentions</span><span class="o">.</span><span class="n">redraw</span>
+      <span class="n">panels</span><span class="o">.</span><span class="n">refresh_in_memory</span>
+      <span class="no">Rurses</span><span class="o">.</span><span class="n">update_screen</span>
+    <span class="k">end</span>
+
+    <span class="c1"># ...</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>We have now looked at every call in there except the very last one and it just wraps <code>doupdate()</code> from <code>curses</code>.</p>
+
+<p>This completes our tour of the primary <code>curses</code> interactions, but, as I said before, <a href="https://github.com/JEG2/bird_of_paradise">the full application is on GitHub</a>.  Interested parties are encourages to explore the code further.</p>
+        <div class="series_links">
+  <div class="series_message">
+    This post is part of a series.
+  </div>
+  <div class="series_link previous_series_link">
+      <a href="/terminal-tricks/curses-windows-pads-and-panels/">&larr; Previous Post</a>
+  </div>
+  <div class="series_link toc_series_link">
+      &nbsp;
+  </div>
+  <div class="series_link next_series_link">
+      &nbsp;
+  </div>
+</div>
+
+      </div>
+      <div class="meta-info" data-slug="terminal-tricks/a-curses-application">
+  In: <a href="/terminal-tricks/">Terminal Tricks</a>
+  <span>|</span>
+  Tags: <a href="/tags/Curses/">Curses</a> &amp; <a href="/tags/Terminal%20I%2FO/">Terminal I/O</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/terminal-tricks/a-curses-application#comments">2 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (2)</span></h5>
+
+    <ol>
+        <li id="comment_604">
+    <div class="avatar"><img alt="Jonathan Hartley" height="70" src="http://www.gravatar.com/avatar/b2507d479af955f05ee995b8d5daa6ac?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="604">
+      <span class="c_name"><a href="http://tartley.com">Jonathan Hartley</a></span>
+      <span class="c_date">January 4th, 2016</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/terminal-tricks/a-curses-application#comment_604">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Thanks for the posts, I've really enjoyed them, they answer a lot of questions I've had about how terminals work.</p>
+
+<p>In Python, 'curses' has been superceded by a library called 'blessings', which has a MUCH nicer API to do the same sort of things. Perhaps there is a similar thing in Ruby?</p></div>
+    <ol>
+      
+        <li id="comment_605">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="https://avatars.githubusercontent.com/u/5639?v=4" width="70" /></div>
+    <div class="comment-info" data-comment-id="605">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">January 4th, 2016</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/terminal-tricks/a-curses-application#comment_605">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>There are some libraries that wrap the curses interface in different API's, yes.  I mention a simple choice that I created, in this article.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

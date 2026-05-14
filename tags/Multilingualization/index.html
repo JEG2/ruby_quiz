@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Tags / Multilingualization</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Posts tagged with Multilingualization.">
+    <meta name="keywords"    content="Multilingualization, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/tags/Multilingualization/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="/tags/Multilingualization/">Multilingualization</a></h1>
+            <span>Posts tagged with &quot;Multilingualization.&quot;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+            <ul class="blog-list">
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>2</h4>
+    <span>
+      JUL<br>
+      2009
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/screencasts/getting-ready-for-ruby-19/"><h3 class="blog-title">Getting Ready for Ruby 1.9</h3></a>
+          <p>We've all been waiting for Ruby 1.9 to reach maturity for some time now.  We've complained about things like Ruby's speed and weak character encoding support.  We knew 1.9 could improve things, but it brings pretty big changes and a lot of Ruby 1.8 code needs updating before it can really be used there.  For these and other reasons, the official production release came and went while most of us have stuck with 1.8 for our day to day needs.</p>
+
+<p>I think we're reaching the tipping point though.  Rails runs on 1.9 now and many other libraries are beginning to become compatible.  We may not yet have the full range of 1.8 goodies available on the new platform, but many of the staples are moving over and it's looking like we can now do some serious work there.</p>
+
+<p>Which means it's finally time for us to learn this 1.9 stuff.</p>
+
+<p>There are several good sources of Ruby 1.9 information now, so you have choices.  I'm going to tell you about three I like.  Be warned, this is a super biased list, but I really hope it will be helpful to others.</p><p><a href="/screencasts/getting-ready-for-ruby-19/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="screencasts/getting-ready-for-ruby-19">
+  In: <a href="/screencasts/">Screencasts</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Syntax/">Syntax</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/screencasts/getting-ready-for-ruby-19#comments">6 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>18</h4>
+    <span>
+      JUN<br>
+      2009
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/what-ruby-19-gives-us/"><h3 class="blog-title">What Ruby 1.9 Gives Us</h3></a>
+          <p>In this final post of the series, I want to revisit our earlier discussion on encoding strategies.  Ruby 1.9 adds a lot of power to the handling of character encodings as you have now seen.  We should talk a little about how that can change the game.</p>
+
+<h4>UTF-8 is Still King</h4>
+
+<p>The most important thing to take note of is what hasn't changed with Ruby 1.9.  I said a good while back that <a href="/character-encodings/general-encoding-strategies/">the best <code>Encoding</code> for general use is UTF-8</a>.  That's still very true.</p>
+
+<p>I still strongly recommend that we favor UTF-8 as the one-size-almost-fits-all <code>Encoding</code>.  I really believe that we can and should use it exclusively inside our code, transcode data to it on the way in, and transcode output when we absolutely must.  The more of us that do this, the better things will get.</p>
+
+<p>As we've discussed earlier in the series, Ruby 1.9 does add some new features that help our UTF-8 only strategies.  For example, you could use things like the <code>Encoding</code> command-line switches (<code>-E</code> and <code>-U</code>) to setup auto translation for all input you read.  These shortcuts are great for simple scripting, but I'm going to recommend you just be explicit about your <code>Encoding</code>s in any serious code.</p><p><a href="/character-encodings/what-ruby-19-gives-us/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/what-ruby-19-gives-us">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/what-ruby-19-gives-us#comments">2 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>15</h4>
+    <span>
+      APR<br>
+      2009
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/miscellaneous-m17n-details/"><h3 class="blog-title">Miscellaneous M17n Details</h3></a>
+          <p>We've now discussed the core of Ruby 1.9's m17n (multilingualization) engine.  <code>String</code> and <code>IO</code> are where you will see the big changes.  The new m17n system is a big beast though with a lot of little details.  Let's talk a little about some side topics that also relate to how we work with character encodings in Ruby 1.9.</p>
+
+<h4>More Features of the Encoding Class</h4>
+
+<p>You've seen me using <code>Encoding</code> objects all over the place in my explanations of m17n, but we haven't talked much about them.  They are very simple, mainly just being a named representation of each <code>Encoding</code> inside Ruby.  As such, <code>Encoding</code> is a storage place for some tools you may find handy when working with them.</p>
+
+<p>First, you can receive a <code>list()</code> of all <code>Encoding</code> objects Ruby has loaded in the form of an <code>Array</code>:</p>
+
+<pre><code>$ ruby -e 'puts Encoding.list.first(3), "..."'
+ASCII-8BIT
+UTF-8
+US-ASCII
+...
+</code></pre>
+
+<p>If you're just interested in a specific <code>Encoding</code>, you can <code>find()</code> it by name:</p>
+
+<pre><code>$ ruby -e 'p Encoding.find("UTF-8")'
+#&lt;Encoding:UTF-8&gt;
+$ ruby -e 'p Encoding.find("No-Such-Encoding")'
+-e:1:in `find': unknown encoding name - No-Such-Encoding (ArgumentError)
+    from -e:1:in `&lt;main&gt;'
+</code></pre><p><a href="/character-encodings/miscellaneous-m17n-details/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/miscellaneous-m17n-details">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/miscellaneous-m17n-details#comments">4 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>5</h4>
+    <span>
+      APR<br>
+      2009
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/ruby-19s-three-default-encodings/"><h3 class="blog-title">Ruby 1.9&#39;s Three Default Encodings</h3></a>
+          <p>I suspect early contact with the new m17n (multilingualization) engine is going to come to Rubyists in the form of this error message:</p>
+
+<pre><code>invalid multibyte char (US-ASCII)
+</code></pre>
+
+<p>Ruby 1.8 didn't care what you stuck in a random <code>String</code> literal, but 1.9 is a touch pickier.  I think you'll see that the change is for the better, but we do need to spend some time learning to play by Ruby's new rules.</p>
+
+<p>That takes us to the first of Ruby's three default <code>Encoding</code>s.</p>
+
+<h4>The Source Encoding</h4>
+
+<p>In Ruby's new grown up world of all encoded data, each and every <code>String</code> needs an <code>Encoding</code>.  That means an <code>Encoding</code> must be selected for a <code>String</code> as soon as it is created.  One way that a <code>String</code> can be created is for Ruby to execute some code with a <code>String</code> literal in it, like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">str</span> <span class="o">=</span> <span class="s2">"A new String"</span>
+</pre></div>
+
+<p>That's a pretty simple <code>String</code>, but what if I use a literal like the following instead?</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">str</span> <span class="o">=</span> <span class="s2">"Résumé"</span>
+</pre></div>
+
+<p>What <code>Encoding</code> is that in?  That fundamental question is probably the main reason we all struggle a bit with character encodings.  You can't tell just from looking at that data what <code>Encoding</code> it is in.  Now, if I showed you the bytes you may be able to make an educated guess, but the data just isn't wearing an <code>Encoding</code> name tag.</p><p><a href="/character-encodings/ruby-19s-three-default-encodings/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/ruby-19s-three-default-encodings">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/ruby-19s-three-default-encodings#comments">41 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>30</h4>
+    <span>
+      MAR<br>
+      2009
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/ruby-19s-string/"><h3 class="blog-title">Ruby 1.9&#39;s String</h3></a>
+          <p>Ruby 1.9 has an all new encoding engine called m17n (for multilingualization, with 17 letters between the m and n).  This new engine may not be what you are use to from many other modern languages.</p>
+
+<p>It's common to pick one versatile encoding, likely a Unicode encoding, and work with all data in that one format.  Ruby 1.9 goes a different way.  Instead of favoring one encoding, Ruby 1.9 makes it possible to work with data in over 80 encodings.</p>
+
+<p>To accomplish this, changes had to be made in several places where Ruby works with character data.  You're going to notice those changes the most in Ruby's <code>String</code> though, so let's begin by talking about what's changed there.</p>
+
+<h4>All Strings are now Encoded</h4>
+
+<p>In Ruby 1.8 a <code>String</code> was a collection of bytes.  You sometimes treated those bytes as other things, like characters when you hit it with a <code>Regexp</code> or lines when you called <code>each()</code>.  At it's core though, it was just some bytes.  You indexed the data by byte counts, sizes where in bytes, and so on.</p>
+
+<p>In Ruby 1.9 a <code>String</code> is now a collection of encoded data.  That means it is both the raw bytes and the attached <code>Encoding</code> information about how to interpret those bytes.</p><p><a href="/character-encodings/ruby-19s-string/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/ruby-19s-string">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/ruby-19s-string#comments">15 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>11</h4>
+    <span>
+      DEC<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/ruby-18-character-encoding-flaws/"><h3 class="blog-title">Ruby 1.8 Character Encoding Flaws</h3></a>
+          <p>Now that we have toured the entire landscape of Ruby 1.8's encoding support, we need to discuss the problems the system has.  These long standing issues are what pushed the core team to build the m17n (multilingualization) implementation for Ruby 1.9.</p>
+
+<p>The main problems are:</p>
+
+<ul>
+<li>Not enough encodings supported</li>
+<li>
+<code>Regexp</code>-only support just isn't comprehensive enough</li>
+<li>
+<code>$KCODE</code> is a global setting for all encodings</li>
+</ul><p>I imagine most of those are pretty straightforward, but let's talk through them just to make sure we learn from the mistakes of the past.  I'm pretty sure this will make it easier to understand why things are the way they are in Ruby 1.9.</p>
+
+<p>The "not enough encodings" complaint should be the most obvious of all.  Ruby 1.8 supports four and one is just no encoding.  That means you really only get UTF-8 and two Asian encodings.  The UTF-8 support is how we've managed to make it this far, but there are a ton of common encodings that just aren't covered.</p>
+
+<p>The most important thing to realize here though is that we can't just keep adding encodings to Ruby 1.8.  The system wasn't designed with that in mind.  We will run out of letters to tack onto the end of a <code>Regexp</code> very fast.  It's just not practical.</p><p><a href="/character-encodings/ruby-18-character-encoding-flaws/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/ruby-18-character-encoding-flaws">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/ruby-18-character-encoding-flaws#comments">0 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>8</h4>
+    <span>
+      DEC<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/encoding-conversion-with-iconv/"><h3 class="blog-title">Encoding Conversion With iconv</h3></a>
+          <p>There's one last standard library we need to discuss for us to have completely covered Ruby 1.8's support for character encodings.  The <code>iconv</code> library ships with Ruby and it can handle an impressive set of character encoding conversions.</p>
+
+<p>This is an important piece of the puzzle.  You may have accepted my advice that it's OK to just work with UTF-8 data whenever you have the choice, but the fact is that there's a lot of non-UTF-8 data in the world.  Legacy systems may have produced data before UTF-8 was popular, some services may work in different encodings for any number of reasons, and not quite everyone has embraced Unicode fully yet.  If you run into data like this, you will need a way to convert it to UTF-8 as you import it and possibly a way to convert it back when you export it. That's exactly what <code>iconv</code> does.</p>
+
+<p>Instead of jumping right into Ruby's <code>iconv</code> library, let's come at it with a slightly different approach.  <code>iconv</code> is actually a C library that performs these conversions and on most systems where it is installed you will have a command-line interface for it.</p><p><a href="/character-encodings/encoding-conversion-with-iconv/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/encoding-conversion-with-iconv">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/encoding-conversion-with-iconv#comments">22 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>5</h4>
+    <span>
+      NOV<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/the-kcode-variable-and-jcode-library/"><h3 class="blog-title">The $KCODE Variable and jcode Library</h3></a>
+          <p>All of the Ruby files I create start with the same <a href="http://en.wikipedia.org/wiki/Shebang_(Unix)">Shebang line</a>:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -wKU</span>
+</pre></div>
+
+<p>It's not really needed for every file since it generally only matters if the file is executed.  However, I tend to go ahead and add it to all Ruby files I build for several reasons:</p>
+
+<ul>
+<li>You never know when a file may be executed (<code>if __FILE__ == $PROGRAM_NAME; end</code> sections are often added to libraries, for example) </li>
+<li>It makes it obvious the file is Ruby code</li>
+<li>It shows the rules this code expects <code>-w</code> and <code>-KU</code>
+</li>
+</ul><p>The rules I mention here, specified by command-line switches, are the main point of interest.  <code>-w</code> turns on Ruby's warnings which are very handy.  I recommend doing that whenever you can.  But that doesn't have anything to do with character encodings.  <code>-KU</code> does.</p>
+
+<p><code>-KU</code> sets a magic Ruby variable:  <code>$-K</code> or <code>$KCODE</code>.  You can do the same in your code if you aren't in a position to control the command-line arguments:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="vg">$KCODE</span> <span class="o">=</span> <span class="s2">"U"</span>
+</pre></div>
+
+<p>You probably recognize the <code>U</code> as a name for Ruby 1.8's UTF-8 encoding, from my earlier <a href="/character-encodings/bytes-and-characters-in-ruby-18/">list of encodings</a>.  It can also be set to <code>N</code> (the default), <code>E</code>, or <code>S</code>.  Modern versions of Rails do set <code>$KCODE = "U"</code> for you.</p><p><a href="/character-encodings/the-kcode-variable-and-jcode-library/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/the-kcode-variable-and-jcode-library">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/the-kcode-variable-and-jcode-library#comments">8 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>30</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/bytes-and-characters-in-ruby-18/"><h3 class="blog-title">Bytes and Characters in Ruby 1.8</h3></a>
+          <p>Gregory Brown said, in a training session at the Lone Star Rubyconf, "Ruby 1.8 works in bytes.  Ruby 1.9 works in characters."  The truth of Ruby 1.9 is maybe a little more complicated and we will discuss all of that eventually, but Greg is dead right about Ruby 1.8.</p>
+
+<p>In Ruby 1.8, a <code>String</code> is always just a collection of bytes.</p>
+
+<p>The important question is, how does that one golden rule relate to all that we've learned about character encodings?  Essentially, it puts all the responsibility on you as the developer.  Ruby 1.8 leaves it to you to determine what to do with those bytes and it doesn't provide a lot of encoding savvy help.  That's why knowing at least the basics of encodings is so important when working with Ruby 1.8.</p>
+
+<p>There are plusses and minuses to every system and this one is no exception.  On the side of plusses, Ruby 1.8 can pretty much support any encoding you can imagine.  After all, a character encoding is just some bytes that somehow map to a set of characters and all Ruby 1.8 <code>String</code>s are just some bytes.  If you say a <code>String</code> holds Latin-1 data and treat it as such, that's fine by Ruby.</p><p><a href="/character-encodings/bytes-and-characters-in-ruby-18/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/bytes-and-characters-in-ruby-18">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/bytes-and-characters-in-ruby-18#comments">11 Comments</a>
+</div>
+
+      </li>
+      <li>
+        <div class="info">
+  <div class="date">
+    <h4>21</h4>
+    <span>
+      OCT<br>
+      2008
+    </span>
+  </div>
+</div>
+
+        <div class="preview">
+          <a href="/character-encodings/general-encoding-strategies/"><h3 class="blog-title">General Encoding Strategies</h3></a>
+          <p>Before we get into specifics, let's try to distill a few best practices for working with encodings.  I'm sure you can tell that there's a lot that needs to be considered with encodings, so let's try to focus in on a few key points that will help us the most.</p>
+
+<h4>Use UTF-8 Everywhere You Can</h4>
+
+<p>We know UTF-8 isn't perfect, but it's pretty darn close to perfect.  There is no other single encoding you could pick that has the potential to satisfy such a wide audience.  It's our best bet.  For these reasons, <a href="ftp://ftp.isi.edu/in-notes/rfc2277.txt">UTF-8 is quickly becoming the preferred encoding for the Web, email, and more</a>.</p>
+
+<p>If you have a say over what encoding or encodings your software will accept, support, and deliver, choose UTF-8 whenever you can.  This is absolutely the best default.</p>
+
+<h4>Get in the Habit of Documenting Your Encodings</h4>
+
+<p>We learned that you must know a data's encoding to properly work with it.  While there are tools to help you guess an encoding, you really want to try and avoid being in this position.  Part of how to make that happen is to be a good citizen and make sure you are documenting your encodings at every step.</p><p><a href="/character-encodings/general-encoding-strategies/">Read more…</a></p>
+        </div>
+        <div class="meta-info" data-slug="character-encodings/general-encoding-strategies">
+  In: <a href="/character-encodings/">Character Encodings</a>
+  <span>|</span>
+  Tags: <a href="/tags/Multilingualization/">Multilingualization</a> &amp; <a href="/tags/Unicode/">Unicode</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/character-encodings/general-encoding-strategies#comments">4 Comments</a>
+</div>
+
+      </li>
+</ul>
+
+<div class="pagination text-center"><ul><li class="previous_page disabled"><a class="previous_page disabled">&#8592; Previous</a></li> <li class="active"><a class="active">1</a></li> <li><a rel="next" href="/tags/Multilingualization/p2/">2</a></li> <li class="next"><a class="next" rel="next" href="/tags/Multilingualization/p2/">Next &#8594;</a></li></ul></div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

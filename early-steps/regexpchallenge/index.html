@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="utf-8">
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/assets/favicon.ico">
+
+    <title>Gray Soft / Early Steps / RegexpChallenge</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="I want to share a trivial challenge and response library I whipped up for practicing regular expressions.">
+    <meta name="keywords"    content="learning to program, guidelines, clean code, Regular Expression, Ruby, programming, James Edward Gray II, JEG2">
+    <meta name="author"      content="James Edward Gray II">
+
+      <link rel="alternate" type="application/atom+xml" href="http://graysoftinc.com/early-steps/regexpchallenge/feed.xml" title="Atom Feed">
+
+    <link href="/assets/application.css" media="screen" rel="stylesheet" />
+
+    <script src="/assets/application.js"></script>
+    
+
+  </head>
+  <body>
+    <header>
+      <div class="info">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              Email: <a href="mailto:james@graysoftinc.com">james@graysoftinc.com</a>
+            </div>
+            <div class="span6 text-right">
+              <a class="label-custom" href="https://programmersstone.blog/">My Elixir Blog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div id="logo">
+          <div class="inner">
+            <a href="/"><img alt="Logo" height="45" src="/assets/logo.png" width="250" /></a>
+          </div>
+        </div>
+
+        <ul id="mainmenu">
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+      <ul>
+          <li><a href="/character-encodings/">Character Encodings</a></li>
+          <li><a href="/early-steps/">Early Steps</a></li>
+          <li><a href="/rubies-in-the-rough/">Rubies in the Rough</a></li>
+          <li><a href="/ruby-tutorials/">Ruby Tutorials</a></li>
+          <li><a href="/ruby-voodoo/">Ruby Voodoo</a></li>
+          <li><a href="/terminal-tricks/">Terminal Tricks</a></li>
+          <li><a href="/the-standard-library/">The Standard Library</a></li>
+          <li><a href="/throwing-darts/">Throwing Darts</a></li>
+      </ul>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+      </div>
+    </header>
+
+    <div id="subheader">
+      <div class="container">
+        <div class="row">
+          <div class="span12">
+            <h1><a href="http://graysoftinc.com/early-steps">Early Steps</a></h1>
+            <span>My content targeted at the newer Rubyists among us.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="span8">
+
+              <div class="blog-read">
+    <div>
+      <div class="info">
+  <div class="date">
+    <h4>2</h4>
+    <span>
+      AUG<br>
+      2006
+    </span>
+  </div>
+</div>
+
+      <div class="preview">
+        <h3 class="blog-title">RegexpChallenge</h3>
+        
+        <p>Just recently I have been working with two different people to improve their regular expression skills.  To help me in this endeavor, I built a trivial little script we have been using in IRb.  To get started, you construct a new challenge object and add a couple of challenges:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">reg_chal</span> <span class="o">=</span> <span class="no">RegexpChallenge</span><span class="o">.</span><span class="n">new</span>
+<span class="no">No</span> <span class="n">challenges</span><span class="o">.</span>
+<span class="o">=&gt;</span> 
+<span class="o">&gt;&gt;</span> <span class="n">reg_chal</span><span class="o">.</span><span class="n">challenge</span><span class="p">(</span><span class="s2">"Gray, James"</span><span class="p">,</span> <span class="s2">"James"</span><span class="p">,</span> <span class="s2">"The names can vary."</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">reg_chal</span><span class="o">.</span><span class="n">challenge</span><span class="p">(</span><span class="s2">"abbbbbbbc bc"</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">reg_chal</span><span class="o">.</span><span class="n">challenge</span><span class="p">(</span> <span class="s2">"    </span><span class="se">\n\t</span><span class="s2">  "</span><span class="p">,</span> <span class="kp">nil</span><span class="p">,</span>
+<span class="sc">?&gt;</span>                     <span class="s2">"We want to test for non-space data."</span> <span class="p">)</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">reg_chal</span><span class="o">.</span><span class="n">challenge</span><span class="p">(</span> <span class="s2">"cogs 9, widgets 12, ..."</span><span class="p">,</span> <span class="s2">"12"</span><span class="p">,</span>
+<span class="sc">?&gt;</span>                     <span class="s2">"The numbers can vary."</span> <span class="p">)</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">reg_chal</span><span class="o">.</span><span class="n">challenge</span><span class="p">(</span> <span class="s2">"I'm a simple sentence, with words."</span><span class="p">,</span>
+<span class="sc">?&gt;</span>                     <span class="sx">%w[I'm a simple sentence with words]</span> <span class="p">)</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+</pre></div>
+
+<p>You can ask for challenges to see what you would like to solve:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">reg_chal</span><span class="o">.</span><span class="n">challenges</span>
+<span class="no">Challenge</span> <span class="c1">#0:</span>
+   <span class="ss">Input</span><span class="p">:</span>  <span class="s2">"Gray, James"</span>
+  <span class="ss">Output</span><span class="p">:</span>  <span class="s2">"James"</span>
+    <span class="ss">Note</span><span class="p">:</span>  <span class="s2">"The names can vary."</span>
+<span class="no">Challenge</span> <span class="c1">#1:</span>
+   <span class="ss">Input</span><span class="p">:</span>  <span class="s2">"abbbbbbbc bc"</span>
+  <span class="ss">Output</span><span class="p">:</span>  <span class="mi">10</span>
+<span class="no">Challenge</span> <span class="c1">#2:</span>
+   <span class="ss">Input</span><span class="p">:</span>  <span class="s2">"    </span><span class="se">\n\t</span><span class="s2">  "</span>
+  <span class="ss">Output</span><span class="p">:</span>  <span class="kp">nil</span>
+    <span class="ss">Note</span><span class="p">:</span>  <span class="s2">"We want to test for non-space data."</span>
+<span class="no">Challenge</span> <span class="c1">#3:</span>
+   <span class="ss">Input</span><span class="p">:</span>  <span class="s2">"cogs 9, widgets 12, ..."</span>
+  <span class="ss">Output</span><span class="p">:</span>  <span class="s2">"12"</span>
+    <span class="ss">Note</span><span class="p">:</span>  <span class="s2">"The numbers can vary."</span>
+<span class="no">Challenge</span> <span class="c1">#4:</span>
+   <span class="ss">Input</span><span class="p">:</span>  <span class="s2">"I'm a simple sentence, with words."</span>
+  <span class="ss">Output</span><span class="p">:</span>  <span class="o">[</span><span class="s2">"I'm"</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">,</span> <span class="s2">"simple"</span><span class="p">,</span> <span class="s2">"sentence"</span><span class="p">,</span> <span class="s2">"with"</span><span class="p">,</span> <span class="s2">"words"</span><span class="o">]</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+</pre></div>
+
+<p>Finally, you attempt solutions by giving the system the index of the challenge, a method name to call on the input <code>String</code>, a <code>Regexp</code> to pass, and any other needed parameters:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">&gt;&gt;</span> <span class="n">reg_chal</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">:</span><span class="o">=~</span><span class="p">,</span> <span class="sr">/, \w+/</span><span class="p">)</span>
+<span class="no">That</span> <span class="n">is</span> <span class="ow">not</span> <span class="n">a</span> <span class="n">valid</span> <span class="n">solution</span><span class="o">.</span>
+<span class="no">Expected</span> <span class="ss">output</span><span class="p">:</span>  <span class="s2">"James"</span>
+    <span class="no">Your</span> <span class="ss">output</span><span class="p">:</span>  <span class="mi">4</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">reg_chal</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="ss">:[]</span><span class="p">,</span> <span class="sr">/\w+$/</span><span class="p">)</span>
+<span class="no">Correct</span><span class="o">.</span>  <span class="no">Nice</span> <span class="n">job</span><span class="o">.</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="o">&gt;&gt;</span> <span class="n">reg_chal</span><span class="o">.</span><span class="n">solutions</span>
+<span class="no">Solution</span> <span class="c1">#0:</span>
+     <span class="ss">Input</span><span class="p">:</span>  <span class="s2">"Gray, James"</span>
+    <span class="ss">Output</span><span class="p">:</span>  <span class="s2">"James"</span>
+      <span class="ss">Note</span><span class="p">:</span>  <span class="s2">"The names can vary."</span>
+  <span class="ss">Solution</span><span class="p">:</span>  <span class="o">[]</span><span class="p">(</span><span class="sr">/\w+$/</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+</pre></div>
+
+<p>After you have played with it for a while you will probably build up some solutions and challenges.  You can use the <code>save()</code> method to dump those to a YAML file and even <code>load()</code> them back later, if needed.</p>
+
+<p>Finally, for some real fun, the challenger supports sharing the challenges over a network with another user.  The host should just change the initial construction call to:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">reg_chal</span> <span class="o">=</span> <span class="no">RegexpChallenge</span><span class="o">.</span><span class="n">host</span>
+</pre></div>
+
+<p>And then another user can get a copy of the challenge object with:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">reg_chal</span> <span class="o">=</span> <span class="no">RegexpChallenge</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">"HOST IP ADDRESS HERE"</span><span class="p">)</span>
+</pre></div>
+
+<p>If that sounds like something you would like to play with, here's the actual code for the library you load into IRb:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1">#!/usr/bin/env ruby -w</span>
+
+<span class="nb">require</span> <span class="s2">"yaml"</span>
+<span class="nb">require</span> <span class="s2">"drb"</span>
+
+<span class="vg">$SAFE</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="no">PORT</span>  <span class="o">=</span> <span class="mi">61676</span>
+
+<span class="k">class</span> <span class="nc">RegexpChallenge</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">host</span><span class="p">(</span><span class="n">challenges</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+    <span class="n">hosted_challenges</span> <span class="o">=</span> <span class="n">challenges</span> <span class="o">||</span> <span class="kp">new</span>
+    <span class="no">DRb</span><span class="o">.</span><span class="n">start_service</span><span class="p">(</span><span class="s2">"druby://0.0.0.0:</span><span class="si">#{</span><span class="no">PORT</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">hosted_challenges</span><span class="p">)</span>
+    <span class="nb">puts</span> <span class="s2">"Now serving challenges on port </span><span class="si">#{</span><span class="no">PORT</span><span class="si">}</span><span class="s2">..."</span>
+    <span class="n">hosted_challenges</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">join</span><span class="p">(</span><span class="n">ip_address</span><span class="p">)</span>
+    <span class="no">DRb</span><span class="o">.</span><span class="n">start_service</span>
+    <span class="nb">puts</span> <span class="s2">"Connecting to challenges on port </span><span class="si">#{</span><span class="no">PORT</span><span class="si">}</span><span class="s2"> at IP </span><span class="si">#{</span><span class="n">ip_address</span><span class="si">}</span><span class="s2">..."</span>
+    <span class="n">challenges</span> <span class="o">=</span> <span class="no">DRbObject</span><span class="o">.</span><span class="n">new_with_uri</span><span class="p">(</span><span class="s2">"druby://</span><span class="si">#{</span><span class="n">ip_address</span><span class="si">}</span><span class="s2">:</span><span class="si">#{</span><span class="no">PORT</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="vg">$stdout</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="no">DRbUndumped</span><span class="p">)</span>
+    <span class="n">challenges</span><span class="o">.</span><span class="n">drb_stdout</span> <span class="o">=</span> <span class="vg">$stdout</span>
+    <span class="n">challenges</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">load</span><span class="p">(</span><span class="n">file_name</span> <span class="o">=</span> <span class="s2">"regexp_challenge.yaml"</span><span class="p">)</span>
+    <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">file</span><span class="o">|</span> <span class="no">YAML</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="p">}</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">initialize</span>
+    <span class="vi">@challenges</span> <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span>
+    <span class="vi">@solutions</span>  <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span>
+
+    <span class="vi">@drb_stdout</span> <span class="o">=</span> <span class="kp">nil</span>
+  <span class="k">end</span>
+
+  <span class="kp">attr_writer</span> <span class="ss">:drb_stdout</span>
+
+  <span class="k">def</span> <span class="nf">io</span>
+    <span class="k">if</span> <span class="nb">caller</span><span class="o">.</span><span class="n">any?</span> <span class="p">{</span> <span class="o">|</span><span class="n">call</span><span class="o">|</span> <span class="n">call</span> <span class="o">=~</span> <span class="sr">/\bdrb\b/</span> <span class="p">}</span>
+      <span class="vi">@drb_stdout</span> <span class="o">||</span> <span class="vg">$stdout</span>
+    <span class="k">else</span>
+      <span class="vg">$stdout</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">challenge</span><span class="p">(</span><span class="n">input</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">note</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+    <span class="vi">@challenges</span> <span class="o">&lt;&lt;</span> <span class="o">[</span><span class="n">input</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">note</span><span class="o">]</span> <span class="ow">and</span> <span class="kp">nil</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">challenges</span>
+    <span class="k">if</span> <span class="vi">@challenges</span><span class="o">.</span><span class="n">empty?</span>
+      <span class="n">io</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"No challenges."</span>
+    <span class="k">else</span>
+      <span class="vi">@challenges</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">challenge</span><span class="p">,</span> <span class="n">i</span><span class="o">|</span>
+        <span class="n">io</span><span class="o">.</span><span class="n">puts</span> <span class="n">describe_challenge</span><span class="p">(</span><span class="n">challenge</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span> <span class="o">&amp;&amp;</span> <span class="kp">nil</span>
+  <span class="k">end</span>
+  <span class="n">alias_method</span> <span class="ss">:inspect</span><span class="p">,</span> <span class="ss">:challenges</span>
+
+  <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="n">challenge_number</span><span class="p">,</span> <span class="n">method_call</span><span class="p">,</span> <span class="n">regexp</span><span class="p">,</span> <span class="o">*</span><span class="n">additional_args</span><span class="p">)</span>
+    <span class="n">answer</span> <span class="o">=</span> <span class="vi">@challenges</span><span class="o">[</span><span class="n">challenge_number</span><span class="o">][</span><span class="mi">0</span><span class="o">].</span><span class="n">send</span><span class="p">(</span> <span class="n">method_call</span><span class="p">,</span>
+                                                    <span class="n">regexp</span><span class="p">,</span>
+                                                    <span class="o">*</span><span class="n">additional_args</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">answer</span> <span class="o">==</span> <span class="vi">@challenges</span><span class="o">[</span><span class="n">challenge_number</span><span class="o">][</span><span class="mi">1</span><span class="o">]</span>
+      <span class="n">io</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"Correct.  Nice job."</span>
+      <span class="vi">@solutions</span> <span class="o">&lt;&lt;</span> <span class="vi">@challenges</span><span class="o">.</span><span class="n">slice!</span><span class="p">(</span><span class="n">challenge_number</span><span class="p">)</span> <span class="o">+</span> <span class="o">[</span> <span class="n">method_call</span><span class="p">,</span>
+                                                             <span class="n">regexp</span><span class="p">,</span>
+                                                             <span class="n">additional_args</span> <span class="o">]</span>
+    <span class="k">else</span>
+      <span class="n">io</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"That is not a valid solution."</span>
+      <span class="n">io</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"Expected output:  </span><span class="si">#{</span><span class="vi">@challenges</span><span class="o">[</span><span class="n">challenge_number</span><span class="o">][</span><span class="mi">1</span><span class="o">].</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span>
+      <span class="n">io</span><span class="o">.</span><span class="n">puts</span> <span class="s2">"    Your output:  </span><span class="si">#{</span><span class="n">answer</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">end</span> <span class="o">&amp;&amp;</span> <span class="kp">nil</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">solutions</span>
+    <span class="vi">@solutions</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">solution</span><span class="p">,</span> <span class="n">i</span><span class="o">|</span>
+      <span class="n">io</span><span class="o">.</span><span class="n">puts</span> <span class="n">describe_challenge</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="s2">"Solution"</span><span class="p">)</span><span class="o">.</span>
+              <span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">line</span><span class="o">|</span> <span class="n">line</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sr">/^  /</span><span class="p">,</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">0</span><span class="se">\\</span><span class="s2">0"</span><span class="p">)</span> <span class="p">}</span>
+      <span class="n">description</span> <span class="o">=</span> <span class="s2">"  Solution:  </span><span class="si">#{</span><span class="n">solution</span><span class="o">[</span><span class="mi">3</span><span class="o">]</span><span class="si">}</span><span class="s2">(</span><span class="si">#{</span><span class="n">solution</span><span class="o">[</span><span class="mi">4</span><span class="o">].</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span>
+      <span class="k">unless</span> <span class="n">solution</span><span class="o">[</span><span class="mi">5</span><span class="o">].</span><span class="n">empty?</span>
+        <span class="n">description</span> <span class="o">&lt;&lt;</span> <span class="s2">", </span><span class="si">#{</span><span class="n">solution</span><span class="o">[</span><span class="mi">5</span><span class="o">].</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">arg</span><span class="o">|</span> <span class="n">arg</span><span class="o">.</span><span class="n">inspect</span> <span class="si">}</span><span class="s2">.join(', ')}"</span>
+      <span class="k">end</span>
+      <span class="n">io</span><span class="o">.</span><span class="n">puts</span> <span class="n">description</span> <span class="o">+</span> <span class="s2">")"</span>
+    <span class="k">end</span> <span class="o">&amp;&amp;</span> <span class="kp">nil</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="n">file_name</span> <span class="o">=</span> <span class="s2">"regexp_challenge.yaml"</span><span class="p">)</span>
+    <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">file</span><span class="o">|</span> <span class="no">YAML</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span> <span class="p">}</span>
+  <span class="k">end</span>
+
+  <span class="kp">private</span>
+
+  <span class="k">def</span> <span class="nf">describe_challenge</span><span class="p">(</span><span class="n">challenge</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="s2">"Challenge"</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="o">[</span> <span class="s2">"</span><span class="si">#{</span><span class="n">title</span><span class="si">}</span><span class="s2"> #</span><span class="si">#{</span><span class="n">number</span><span class="si">}</span><span class="s2">:"</span><span class="p">,</span>
+                    <span class="s2">"   Input:  </span><span class="si">#{</span><span class="n">challenge</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                    <span class="s2">"  Output:  </span><span class="si">#{</span><span class="n">challenge</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="o">]</span>
+    <span class="k">unless</span> <span class="n">challenge</span><span class="o">[</span><span class="mi">2</span><span class="o">].</span><span class="n">nil?</span>
+      <span class="n">description</span> <span class="o">&lt;&lt;</span> <span class="s2">"    Note:  </span><span class="si">#{</span><span class="n">challenge</span><span class="o">[</span><span class="mi">2</span><span class="o">].</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">end</span>
+    <span class="n">description</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Feel free to post challenges for people to try in the comments of this post.</p>
+        
+      </div>
+      <div class="meta-info" data-slug="early-steps/regexpchallenge">
+  In: <a href="/early-steps/">Early Steps</a>
+  <span>|</span>
+  Tags: <a href="/tags/Regular%20Expression/">Regular Expression</a>
+  <span>|</span>
+  <a class="link_to_comments" href="/early-steps/regexpchallenge#comments">5 Comments</a>
+</div>
+
+    </div>
+  </div>
+
+  <div id="blog-comment">
+    <h5 class="title"><span>Comments (5)</span></h5>
+
+    <ol>
+        <li id="comment_58">
+    <div class="avatar"><img alt="Jeff" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="58">
+      <span class="c_name"><a href="http://www.softiesonrails.com">Jeff</a></span>
+      <span class="c_date">August 2nd, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/regexpchallenge#comment_58">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Great idea, James.  Can I ask a quick question about the code?  I didn't understand the purpose behind this line in the 'solutions' method:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">line</span><span class="o">|</span> <span class="n">line</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sr">/^  /</span><span class="p">,</span> <span class="s2">"</span><span class="se">\\\\</span><span class="s2">0</span><span class="se">\\\\</span><span class="s2">0"</span><span class="p">)</span> <span class="p">}</span>
+</pre></div>
+
+<p>You're replacing leading spaces in each line with what exactly (and why)?</p>
+
+<p>Thanks!</p></div>
+    <ol>
+      
+        <li id="comment_59">
+    <div class="avatar"><img alt="James Edward Gray II" height="70" src="http://www.gravatar.com/avatar/259f23c3b129f07b0c496b9f0495f07e?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="59">
+      <span class="c_name"><a href="https://github.com/JEG2">James Edward Gray II</a></span>
+      <span class="c_date">August 2nd, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/regexpchallenge#comment_59">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p><code>\0</code> is the entire match in a replacement String (<code>$&amp;</code> after the match).  I'm just doubling the leading space so that the longer word "Solution," lines up neatly with the others.</p></div>
+    <ol>
+      
+        <li id="comment_61">
+    <div class="avatar"><img alt="Jeff" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="61">
+      <span class="c_name"><a href="http://www.softiesonrails.com">Jeff</a></span>
+      <span class="c_date">August 3rd, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/regexpchallenge#comment_61">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>(waps forehead) of course!  Thanks, James.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+
+    </ol>
+  </li>
+  <li id="comment_60">
+    <div class="avatar"><img alt="Ryan Bates" height="70" src="http://www.gravatar.com/avatar/085541f9546d0505433183b5f95bbf62?s=70&amp;d=http%3A%2F%2Fgraysoftinc.com%2Fassets%2Favatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="60">
+      <span class="c_name"><a href="mailto:rbates@artbeats.com">Ryan Bates</a></span>
+      <span class="c_date">August 3rd, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/regexpchallenge#comment_60">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Very cool. I'll definitely be playing around with this. Thanks!</p>
+
+<p>Interestingly, I created something similar for my Rails Day project. You can download the source here: <a href="http://svn.railsday2006.com/railsday/team61/regex_tutor/trunk/">http://svn.railsday2006.com/railsday/team61/regex_tutor/trunk/</a></p>
+
+<p>You may need to use the latest version of Safari or Firefox to see it properly though. Maybe someday I'll turn it into a real site.</p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+  <li id="comment_62">
+    <div class="avatar"><img alt="Gregory" height="70" src="/assets/avatar-a3a140c344ec1086ec7ebc548e05f598.jpg" width="70" /></div>
+    <div class="comment-info" data-comment-id="62">
+      <span class="c_name"><a href="http://ruport.infogami.com">Gregory</a></span>
+      <span class="c_date">August 16th, 2006</span>
+      
+      <span class="c_link"><a class="link_to_comment" href="/early-steps/regexpchallenge#comment_62">Link</a></span>
+      <div class="clearfix"></div>
+    </div>
+    <div class="comment"><p>Here is my (completed untested) modification which allows you to use a block for your solution and match any ruby object.</p>
+
+<p>This does all sorts of destruction to the pretty 'solutions' stuff you do, but was a fun hack on the plane on the way back from  OKC</p>
+
+<p><a href="http://stonecode.org/drb_challenger.rb">http://stonecode.org/drb_challenger.rb</a></p></div>
+    <ol>
+      
+      
+    </ol>
+  </li>
+
+    </ol>
+
+    
+  </div>
+
+          </div>
+
+          <div id="sidebar" class="span4">
+            
+
+            <div class="widget widget_category">
+              <h4 class="title">Categories</h4>
+              <ul>
+                  <li data-slug="about-this-blog"><a href="/about-this-blog/">About This Blog</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="book-reviews"><a href="/book-reviews/">Book Reviews</a><span class="posts_count">(8)</span></li>
+                  <li data-slug="character-encodings"><a href="/character-encodings/">Character Encodings</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="conferences"><a href="/conferences/">Conferences</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="deadly-regular-expressions"><a href="/deadly-regular-expressions/">Deadly Regular Expressions</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="early-steps"><a href="/early-steps/">Early Steps</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="higher-order-ruby"><a href="/higher-order-ruby/">Higher-Order Ruby</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="key-value-stores"><a href="/key-value-stores/">Key-Value Stores</a><span class="posts_count">(7)</span></li>
+                  <li data-slug="language-comparisons"><a href="/language-comparisons/">Language Comparisons</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="my-heroes"><a href="/my-heroes/">My Heroes</a><span class="posts_count">(2)</span></li>
+                  <li data-slug="my-projects"><a href="/my-projects/">My Projects</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="non-code"><a href="/non-code/">Non-code</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rails"><a href="/rails/">Rails</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="rubies-in-the-rough"><a href="/rubies-in-the-rough/">Rubies in the Rough</a><span class="posts_count">(24)</span></li>
+                  <li data-slug="ruby-tutorials"><a href="/ruby-tutorials/">Ruby Tutorials</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="ruby-voodoo"><a href="/ruby-voodoo/">Ruby Voodoo</a><span class="posts_count">(12)</span></li>
+                  <li data-slug="rusting"><a href="/rusting/">Rusting</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="screencasts"><a href="/screencasts/">Screencasts</a><span class="posts_count">(3)</span></li>
+                  <li data-slug="terminal-tricks"><a href="/terminal-tricks/">Terminal Tricks</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-gateway"><a href="/the-gateway/">The Gateway</a><span class="posts_count">(4)</span></li>
+                  <li data-slug="the-ruby-vm-interview"><a href="/the-ruby-vm-interview/">The Ruby VM Interview</a><span class="posts_count">(6)</span></li>
+                  <li data-slug="the-standard-library"><a href="/the-standard-library/">The Standard Library</a><span class="posts_count">(5)</span></li>
+                  <li data-slug="throwing-darts"><a href="/throwing-darts/">Throwing Darts</a><span class="posts_count">(1)</span></li>
+                  <li data-slug="tools-of-the-trade"><a href="/tools-of-the-trade/">Tools of the Trade</a><span class="posts_count">(2)</span></li>
+              </ul>
+            </div>
+
+            <div class="widget widget_tags">
+              <h4 class="title">Tags</h4>
+              <ul>
+                <li><a href="/tags/ActiveRecord/">ActiveRecord</a></li>
+<li><a href="/tags/Alternative%20Implementations/">Alternative Implementations</a></li>
+<li><a href="/tags/APIs/">APIs</a></li>
+<li><a href="/tags/AWS/">AWS</a></li>
+<li><a href="/tags/Blogging/">Blogging</a></li>
+<li><a href="/tags/Bugs/">Bugs</a></li>
+<li><a href="/tags/Code%20Reading/">Code Reading</a></li>
+<li><a href="/tags/Community/">Community</a></li>
+<li><a href="/tags/Concurrency/">Concurrency</a></li>
+<li><a href="/tags/Configuration/">Configuration</a></li>
+<li><a href="/tags/Curses/">Curses</a></li>
+<li><a href="/tags/Dart/">Dart</a></li>
+<li><a href="/tags/Databases/">Databases</a></li>
+<li><a href="/tags/Data%20Objects/">Data Objects</a></li>
+<li><a href="/tags/Date%2FTime/">Date/Time</a></li>
+<li><a href="/tags/Documentation/">Documentation</a></li>
+<li><a href="/tags/DSLs/">DSLs</a></li>
+<li><a href="/tags/Editors/">Editors</a></li>
+<li><a href="/tags/Erlang/">Erlang</a></li>
+<li><a href="/tags/Error%20Handling/">Error Handling</a></li>
+<li><a href="/tags/Experimentation/">Experimentation</a></li>
+<li><a href="/tags/FasterCSV/">FasterCSV</a></li>
+<li><a href="/tags/Feeds/">Feeds</a></li>
+<li><a href="/tags/For%20Fun/">For Fun</a></li>
+<li><a href="/tags/Functional%20Programming/">Functional Programming</a></li>
+<li><a href="/tags/Game%20Development/">Game Development</a></li>
+<li><a href="/tags/Git/">Git</a></li>
+<li><a href="/tags/Heredocs/">Heredocs</a></li>
+<li><a href="/tags/Hidden%20Features/">Hidden Features</a></li>
+<li><a href="/tags/Iterators/">Iterators</a></li>
+<li><a href="/tags/Java/">Java</a></li>
+<li><a href="/tags/Leap%20Year/">Leap Year</a></li>
+<li><a href="/tags/Metaprogramming/">Metaprogramming</a></li>
+<li><a href="/tags/Mix-ins/">Mix-ins</a></li>
+<li><a href="/tags/Monitoring/">Monitoring</a></li>
+<li><a href="/tags/Multilingualization/">Multilingualization</a></li>
+<li><a href="/tags/Object%20Orientation/">Object Orientation</a></li>
+<li><a href="/tags/Open%20Source/">Open Source</a></li>
+<li><a href="/tags/Parsing/">Parsing</a></li>
+<li><a href="/tags/Patterns/">Patterns</a></li>
+<li><a href="/tags/Performance/">Performance</a></li>
+<li><a href="/tags/Presentations/">Presentations</a></li>
+<li><a href="/tags/Process/">Process</a></li>
+<li><a href="/tags/Redis/">Redis</a></li>
+<li><a href="/tags/Refactoring/">Refactoring</a></li>
+<li><a href="/tags/Regular%20Expression/">Regular Expression</a></li>
+<li><a href="/tags/Rust/">Rust</a></li>
+<li><a href="/tags/Scripting/">Scripting</a></li>
+<li><a href="/tags/Spam/">Spam</a></li>
+<li><a href="/tags/Style/">Style</a></li>
+<li><a href="/tags/Syntax/">Syntax</a></li>
+<li><a href="/tags/System%20Administration/">System Administration</a></li>
+<li><a href="/tags/Teaching/">Teaching</a></li>
+<li><a href="/tags/Terminal%20I%2FO/">Terminal I/O</a></li>
+<li><a href="/tags/Test-Driven%20Development/">Test-Driven Development</a></li>
+<li><a href="/tags/Tokyo%20Cabinet/">Tokyo Cabinet</a></li>
+<li><a href="/tags/Unicode/">Unicode</a></li>
+<li><a href="/tags/Unix%20Shells/">Unix Shells</a></li>
+<li><a href="/tags/Version%20Control/">Version Control</a></li>
+<li><a href="/tags/Web%20Services/">Web Services</a></li>
+<li><a href="/tags/XMPP/">XMPP</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span3">
+            <h3>About</h3>
+            James Edward Gray II was a part the Ruby community before Rails
+            ever shipped.  He wrote code and documentation that now come with
+            the language.  He ran two Red Dirt Ruby Conferences and was
+            a regular on the Ruby Rogues podcast for years.
+          </div>
+
+          <div class="span3">
+            <h3>Projects</h3>
+            <div id="flickr-photo-stream">
+              <div class="flickr_badge_image">
+                <a href="https://www.youtube.com/watch?v=fIhIjub1ry0" target="_blank"><img alt="Code Reading:  Equalizer and Concord" height="75" src="/assets/code_reading_equalizer_and_concord.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=0hGvVJBW-eQ" target="_blank"><img alt="Ruby Quiz Study Group" height="75" src="/assets/ruby_quiz_study_group.png" width="75" /></a>
+                <a href="https://www.youtube.com/watch?v=FYHChPsfVnw" target="_blank"><img alt="An Emacs Introduction Video" height="75" src="/assets/emacs_video.png" width="75" /></a>
+                <a href="http://rubyquiz.com/" target="_blank"><img alt="Ruby Quiz" height="75" src="/assets/ruby_quiz.png" width="75" /></a>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+
+          <div class="span3">
+            <h3>Follow</h3>
+            <div class="social-icons">
+              <a href="https://x.com/JEG2" target="_blank"><img alt="Twitter" src="/assets/twitter.png" /></a>
+              <a href="http://graysoftinc.com/feed.xml"><img alt="Rss" src="/assets/rss.png" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subfooter">
+        <div class="container">
+          <div class="row">
+            <div class="span6">
+              <nav>
+                <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/">Blog</a>
+  </li>
+  <li><a href="/contact/">Contact</a></li>
+</ul>
+
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-11092556-3', 'graysoftinc.com');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>
